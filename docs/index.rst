@@ -13,11 +13,10 @@ The code is freely available under the GNU Affero General Public License.
 .. _Python: https://www.python.org/
 
 >>>  # Example: pair analysis
->>> from pairanalysis import PairAnalysisCalculator
->>> pa = PairAnalysisCalculator()
+>>> from pairanalysis import calculator as pa_calc
 >>> primitive_cell = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 >>> basis_vectors = np.array([[0, 0, 0], [.5, .5, 0], [.5, 0, .5], [0, .5, .5]])
->>> pa.pair_analysis('AABA', np.array([1, 1, 1]), 2, np.array([0, 0, 0]), basis_vectors, primitive_cell)
+>>> pa_calc.pair_analysis('AABA', np.array([1, 1, 1]), 2, np.array([0, 0, 0]), basis_vectors, primitive_cell)
 (array([0.70710678, 1.        , 1.22474487, 1.41421356, 1.58113883,
        1.73205081, 1.87082869]), array([[ 6. ,  6. ,  0. ],
        [ 4.5,  0. ,  1.5],

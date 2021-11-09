@@ -1,1 +1,0 @@
-from pairanalysis.calculator import PairAnalysisCalculator

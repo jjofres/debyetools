@@ -1,10 +1,11 @@
 import unittest
 import numpy as np
-from pairanalysis import PairAnalysisCalculator
+from pairanalysis import calculator as pa_calc
 
 class GenerateCellCoordinatesTestCase(unittest.TestCase):
     def setUp(self):
-        self.NL = PairAnalysisCalculator()
+        #self.NL = PairAnalysisCalculator()
+        pass
 
     def test_gencellcoords_unitary_cell(self):
         """ Test cubic cell of lattice a=1 1x1x1 times and center=(0,0,0)"""
@@ -12,7 +13,7 @@ class GenerateCellCoordinatesTestCase(unittest.TestCase):
         a =1
         primitive_cell = np.array([[a, 0, 0], [0, a, 0], [0, 0, a]])
         center = np.array([0, 0, 0])
-        result = self.NL.generate_cells_coordinates(size, primitive_cell, center)
+        result = pa_calc.generate_cells_coordinates(size, primitive_cell, center)
 
         self.assertTrue(np.array_equal(result, np.array([[0,0,0]])))
 
@@ -23,7 +24,7 @@ class GenerateCellCoordinatesTestCase(unittest.TestCase):
         a = 4
         primitive_cell = np.array([[a, 0, 0], [0, a, 0], [0, 0, a]])
         center = np.array([0, 0, 0])
-        result = self.NL.generate_cells_coordinates(size, primitive_cell, center)
+        result = pa_calc.generate_cells_coordinates(size, primitive_cell, center)
 
         self.assertTrue(np.array_equal(result, np.array([[0, 0, 0], [0, 0, 4], [0, 4, 0], [0, 4, 4], [4, 0, 0], [4, 0, 4], [4, 4, 0], [4, 4, 4]])))
 
@@ -35,7 +36,7 @@ class GenerateCellCoordinatesTestCase(unittest.TestCase):
         a = 1
         primitive_cell = np.array([[a, 0, 0], [0, a, 0], [0, 0, a]])
         basis_vectors = np.array([[0,0,0],[.5,.5,0],[.5,0,.5],[0,.5,.5]])
-        result = self.NL.neighbor_list(size,cutoff,center,basis_vectors,primitive_cell)
+        result = pa_calc.neighbor_list(size,cutoff,center,basis_vectors,primitive_cell)
         bool_1 = None==np.testing.assert_array_almost_equal(result[0][3:10],np.array([1.87082869,1.87082869,1.87082869,1.87082869,1.87082869,1.58113883,1.87082869]))
         bool_2 = None==np.testing.assert_array_almost_equal(result[1][3:10],np.array([0,3,0,3,0,0,3]))
         bool_3 = None==np.testing.assert_array_almost_equal(result[2][3:10],np.array([2,1,1,1,1,2,2]))
@@ -52,7 +53,7 @@ class GenerateCellCoordinatesTestCase(unittest.TestCase):
         basis_vectors = np.array([[0, 0, 0], [.5, .5, 0], [.5, 0, .5], [0, .5, .5]])
         atom_types = 'AABA'
 
-        results =self.NL.pair_analysis(atom_types, size, cutoff, center, basis_vectors, primitive_cell)
+        results =pa_calc.pair_analysis(atom_types, size, cutoff, center, basis_vectors, primitive_cell)
 
 
         bool_1 = None == np.testing.assert_array_almost_equal(results[0], np.array(

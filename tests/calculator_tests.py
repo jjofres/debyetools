@@ -54,6 +54,7 @@ class GenerateCellCoordinatesTestCase(unittest.TestCase):
 
         results =self.NL.pair_analysis(atom_types, size, cutoff, center, basis_vectors, primitive_cell)
 
+
         bool_1 = None == np.testing.assert_array_almost_equal(results[0], np.array(
             [0.70710678, 1., 1.22474487, 1.41421356, 1.58113883, 1.73205081, 1.87082869]))
         bool_2 = None == np.testing.assert_array_almost_equal(results[1][1:3,:], np.array([[4.5,0.,1.5],[12.,12.,0.]]))

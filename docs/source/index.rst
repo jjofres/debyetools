@@ -10,7 +10,7 @@ Welcome to Debye Tool's documentation!
    :maxdepth: 2
    :caption: Python API:
 
-   source/api/calculator.rst
+   ./api/calculator
 
 
 

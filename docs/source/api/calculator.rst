@@ -1,9 +1,9 @@
-==============
-Calculator
-==============
+=========================
+Pair Analysis Calculation
+=========================
 
 .. currentmodule:: pairanalysis.calculator
 
 .. Don't include inherited members to keep the doc short
-.. autoclass:: pairanalysis.NeighborList
+.. autoclass:: pairanalysis.PairAnalysisCalculator
     :members:

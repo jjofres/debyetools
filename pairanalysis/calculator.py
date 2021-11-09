@@ -1,10 +1,10 @@
 import numpy as np
 import itertools as it
+import pairanalysis.aux_functions as afn
 
-class NeighborList:
+class PairAnalysisCalculator:
     """
     Calculate neighbor list for pair analysis.
-
     """
 
     def __init__(self):
@@ -28,15 +28,15 @@ class NeighborList:
         return cell_coords_centered
 
     def neighbor_list(self,size, cutoff, center, basis_vectors, primitive_cell):
-        """ calculate a list i,j,dij where i is the index of an atom j is the
-        index of its neighbor and dij is the distance between atoms i and j.
+        """ calculate a list i, j, dij where i and j are a pair of atoms of
+        indexes i and j, respectively, and dij is the distance between them.
 
         :param array size: Number of times we are replicating the primitive cel
-        :param int cutoff: Number of times we are replicating the supercell
-        up to which we are considering for the calculation (uses pbc)
+        :param int cutoff: Number of times we are replicating the supercell up to which we are considering for the calculation (uses pbc)
         :param array center: The position in space where the system of reference is
         :param array basis_vectors: atoms position within a single primitive cell
-        :param array primitive_cell: the primitive cell"""
+        :param array primitive_cell: the primitive cell
+        """
 
         size_g = size + 2*cutoff  #change cutoff for some other word and add a cutoff distance.
                                   # new_co= int(min(cutoff,....))
@@ -72,3 +72,47 @@ class NeighborList:
         distances = np.sqrt(np.sum(XCs[ix], axis=1))
 
         return distances, Is[ix], Js[ix]
+
+    def pair_analysis(self, atom_types, size, cutoff, center, basis_vectors, primitive_cell):
+        """
+        run a pair analysis of a crystal structure of almost any type of symmetry.
+
+        :param list_of_str atom_types: the types of each atom in the primitive cell in the same order as the basis vectors.
+        :param array size: Number of times we are replicating the primitive cel
+        :param int cutoff: Number of times we are replicating the supercell up to which we are considering for the calculation (uses pbc)
+        :param array center: The position in space where the system of reference is
+        :param array basis_vectors: atoms position within a single primitive cell
+        :param array primitive_cell: the primitive cell
+        :return:  pair distance, pair number, pair types
+        """
+        cutoff = np.array([int(cutoff), int(cutoff), int(cutoff)]) ##<--- fix_here
+        dAxBy, iAxBy, jAxBy  = self.neighbor_list(size, cutoff, center, basis_vectors, primitive_cell)
+
+        nat = np.prod(size)*len(basis_vectors)
+
+        combs_types,types_all = afn.c_types(atom_types)
+
+        dAxBy = np.array([float('%0.10e'%(d)) for d in dAxBy])
+        bins_dAxBy =list(set([li for li in list(set(np.append(dAxBy, [max(cutoff)])))]))
+        bins_dAxBy.sort()
+        distances = bins_dAxBy[:-1]
+
+        ptlst = []
+        for i,j,d in zip(iAxBy,jAxBy,dAxBy):
+            for ii in range(len(combs_types)):
+                if (types_all[i]+'-'+types_all[j] == combs_types[ii]) or (types_all[j]+'-'+types_all[i] == combs_types[ii]):
+                    pairtype = ii
+            ptlst.append(pairtype)
+
+        ptlst=np.array(ptlst)
+
+        ds = ['' for x in range(len(combs_types))]
+        for i in range(len(combs_types)):
+            ds[i] = np.array([d for d in dAxBy[np.where(ptlst==i)[0]]])
+        hs = ['' for x in range(len(combs_types))]
+        bs = ['' for x in range(len(combs_types))]
+        for i in range(len(combs_types)):
+            hs[i], bs[i] = np.histogram(ds[i], bins=bins_dAxBy)
+        tot_num_bonds_per_molecule = np.array(hs).T
+        num_bonds_per_formula = tot_num_bonds_per_molecule/nat
+        return np.array(distances), num_bonds_per_formula, combs_types

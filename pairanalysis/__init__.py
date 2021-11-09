@@ -1,1 +1,1 @@
-from pairanalysis.calculator import NeighborList
+from pairanalysis.calculator import PairAnalysisCalculator

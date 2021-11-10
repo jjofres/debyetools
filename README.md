@@ -1,7 +1,7 @@
-#debyetools
+# debyetools
 A little library for the implementation of a Debye approximation tool for calculating self-consistent thermodynamic properties.
 
-#Requirements:
+### Requirements:
 - numpy
 
 To Do's:

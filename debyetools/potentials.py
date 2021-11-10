@@ -1,5 +1,5 @@
 from __future__ import division
-from scipy.optimize import leastsq,least_squares
+#from scipy.optimize import leastsq,least_squares
 # import dependencies.thermo.functions as fns
 import numpy as np
 # import dependencies.thermo.pair_analysis as pair_analysis

@@ -12,26 +12,33 @@ The code is freely available under the GNU Affero General Public License.
 
 .. _Python: https://www.python.org/
 
->>>  # Example: pair analysis
->>> from pairanalysis import calculator as pa_calc
->>> primitive_cell = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
->>> basis_vectors = np.array([[0, 0, 0], [.5, .5, 0], [.5, 0, .5], [0, .5, .5]])
->>> pa_calc.pair_analysis('AABA', np.array([1, 1, 1]), 2, np.array([0, 0, 0]), basis_vectors, primitive_cell)
-(array([0.70710678, 1.        , 1.22474487, 1.41421356, 1.58113883,
-       1.73205081, 1.87082869]), array([[ 6. ,  6. ,  0. ],
-       [ 4.5,  0. ,  1.5],
-       [12. , 12. ,  0. ],
-       [ 9. ,  0. ,  3. ],
-       [12. , 12. ,  0. ],
-       [ 6. ,  0. ,  2. ],
-       [28.5, 24. ,  1.5]]), ['A-A', 'A-B', 'B-B'])
-
+>>>  ########################################################################
+>>>  # Example: heat capacity of Al fcc using 3rd order Birch-Murnaghan EOS #
+>>>  ########################################################################
+>>> from debyetools.ndeb import nDeb
+>>> nu, m = 0.32, 0.026981500000000002
+>>> Tmelting = 933
+>>> p_EOS = [-3.617047894e+05, 9.929931142e-06
+>>>          7.618619745e+10, 4.591924487e+00]
+>>> p_intanh = 0, 1, p_EOS[1]
+>>> p_electronic = [3.8027342892e-01, -1.8875015171e-02,
+>>>                 5.3071034596e-04, -7.0100707467e-06]
+>>> p_defects = 8.46, 1.69, Tmelting, 0.1, p_EOS[2],p_EOS[1]
+>>> p_anh = 0,0,0
+>>> EOS_name = 'BM'
+>>> ndeb_BM = nDeb(nu, m, p_intanh, p_EOS, p_electronic,
+>>>                p_defects,p_anh,EOS_name)
+>>> T,V = 9.33000000000e+02,1.07790131286e-05
+>>> ndeb_BM.eval_props(T,V)['Cp']
+33.249439691599925
 
 .. toctree::
    :maxdepth: 2
    :caption: Python code:
 
-   source/api/calculator
+   source/api/installation
+   source/api/pairanalysis
+   source/api/nDeb
 
 Indices and tables
 ==================
@@ -42,4 +49,3 @@ Indices and tables
 
 News
 ====
-

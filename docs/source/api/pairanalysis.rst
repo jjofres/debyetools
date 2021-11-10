@@ -2,6 +2,5 @@
 Pair Analysis Calculation
 =========================
 
-.. automodule:: pairanalysis.calculator
+.. automodule:: debyetools.pairanalysis
     :members:
-

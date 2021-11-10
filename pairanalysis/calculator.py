@@ -2,22 +2,7 @@ import numpy as np
 import itertools as it
 import pairanalysis.aux_functions as afn
 
-def generate_cells_coordinates(size, primitive_cell,center):
-    """ generate the cell coordinates for which we are going
-    to calculate the neighbor list.
 
-    :param array size: Number of times we are replicating the primitive cell
-    :param array primitive_cell: The primitive cell
-    :param array center: The position in space where the system of reference is
-    """
-
-    cell_coords = np.array(list((it.product(np.arange(size[0]),
-                                            np.arange(size[1]),
-                                            np.arange(size[2])))))
-    cell_coords_centered = cell_coords + center
-    cell_coords_centered = np.dot(cell_coords_centered, primitive_cell)
-
-    return cell_coords_centered
 
 def neighbor_list(size, cutoff, center, basis_vectors, primitive_cell):
     """ calculate a list i, j, dij where i and j are a pair of atoms of
@@ -33,8 +18,8 @@ def neighbor_list(size, cutoff, center, basis_vectors, primitive_cell):
     size_g = size + 2*cutoff  #change cutoff for some other word and add a cutoff distance.
                               # new_co= int(min(cutoff,....))
 
-    cell_coords_centered = generate_cells_coordinates(size, primitive_cell, center)
-    cell_coords_centered_g = generate_cells_coordinates(size_g, primitive_cell, center-cutoff)
+    cell_coords_centered = afn.generate_cells_coordinates(size, primitive_cell, center)
+    cell_coords_centered_g = afn.generate_cells_coordinates(size_g, primitive_cell, center-cutoff)
 
     XCs = []
     Is = []

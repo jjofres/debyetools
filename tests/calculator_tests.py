@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 from pairanalysis import calculator as pa_calc
+from pairanalysis import aux_functions as aux_fn
 
 class GenerateCellCoordinatesTestCase(unittest.TestCase):
     def setUp(self):
@@ -13,7 +14,7 @@ class GenerateCellCoordinatesTestCase(unittest.TestCase):
         a =1
         primitive_cell = np.array([[a, 0, 0], [0, a, 0], [0, 0, a]])
         center = np.array([0, 0, 0])
-        result = pa_calc.generate_cells_coordinates(size, primitive_cell, center)
+        result = aux_fn.generate_cells_coordinates(size, primitive_cell, center)
 
         self.assertTrue(np.array_equal(result, np.array([[0,0,0]])))
 
@@ -24,7 +25,7 @@ class GenerateCellCoordinatesTestCase(unittest.TestCase):
         a = 4
         primitive_cell = np.array([[a, 0, 0], [0, a, 0], [0, 0, a]])
         center = np.array([0, 0, 0])
-        result = pa_calc.generate_cells_coordinates(size, primitive_cell, center)
+        result = aux_fn.generate_cells_coordinates(size, primitive_cell, center)
 
         self.assertTrue(np.array_equal(result, np.array([[0, 0, 0], [0, 0, 4], [0, 4, 0], [0, 4, 4], [4, 0, 0], [4, 0, 4], [4, 4, 0], [4, 4, 4]])))
 

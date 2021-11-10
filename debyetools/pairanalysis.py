@@ -1,7 +1,7 @@
 import numpy as np
 import itertools as it
-import pairanalysis.aux_functions as afn
-hola
+import debyetools.aux_functions as afn
+
 
 
 def neighbor_list(size, cutoff, center, basis_vectors, primitive_cell):

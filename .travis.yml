@@ -12,6 +12,7 @@ install:
 
 script:
   - python -m unittest tests/pairanalysis_tests.py
+  - python -m unittest tests/Cp_tests.py
 
 deploy:
   provider: pypi

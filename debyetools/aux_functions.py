@@ -1,7 +1,7 @@
 import itertools as it
 import re
 import numpy as np
-hola
+
 def c_types(atom_types):
     """
     returns all the pair types combinations.

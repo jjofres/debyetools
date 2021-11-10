@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
-from pairanalysis import calculator as pa_calc
-from pairanalysis import aux_functions as aux_fn
-hola
+from debyetools import pairanalysis as pa_calc
+from debyetools import aux_functions as aux_fn
+
 class GenerateCellCoordinatesTestCase(unittest.TestCase):
     def setUp(self):
         #self.NL = PairAnalysisCalculator()

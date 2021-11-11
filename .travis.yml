@@ -13,6 +13,7 @@ install:
 script:
   - python -m unittest tests/pairanalysis_tests.py
   - python -m unittest tests/Cp_tests.py
+  - python -m unittest tests/EOS_fitting_tests.py
 
 deploy:
   provider: pypi

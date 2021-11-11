@@ -3,6 +3,7 @@ A little library for the implementation of a Debye approximation tool for calcul
 
 ### Requirements:
 - numpy
+- scipy
 
 To Do's:
 

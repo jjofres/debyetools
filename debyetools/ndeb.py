@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.optimize import fmin
 
 from debyetools.anharmonicity import Anharmonicity, intAnharmonicity
 from debyetools.electronic import Electronic
@@ -45,6 +46,53 @@ class nDeb:
 
         r=1
         self.xDcte = hbar*6**(1/3.)*(np.pi**2*NAv*r)**(1/3.)
+
+    def F(self,T,V):
+        d2E0dV2_T = self.EOS.d2E0dV2_T(V)
+        if type(V) == np.ndarray:
+            if min(d2E0dV2_T)<0:return 1
+
+        nu,r,m = self.nu,self.r,self.m
+        kv = self.kv
+
+        E_0 = self.EOS.E0(V)
+        dP0dV   = - d2E0dV2_T
+
+        xDcte = self.xDcte
+        xD      = xDcte*(1/V)**(1/3.)/kB
+        vDPrm  = - dP0dV/(r*m)
+        vDsqrt = np.sqrt( vDPrm)
+        vD      = kv*V*vDsqrt
+        Anh         = self.intanh.Anh(T,V)
+        tD        = xD*vD*Anh
+
+        x = tD/T
+        D3 = D_3(x)
+        Fvib = 3*r*NAv*kB*(tD*3/8 + T*np.log(1-np.exp(-x))  - D3*T/3)
+        Fa = self.anh.F(T,V)
+        Fdef = self.deff.F(T,V)
+        Fel = self.el.F(T,V)
+        _F = E_0 + Fvib + Fel + Fdef + Fa
+        return _F
+
+    def min_F(self,T):
+        V0i=self.V_0
+        V=[]
+        for Ti in T:
+            f2min = lambda Vi: self.F(Ti,Vi)
+            V0i = fmin(f2min,x0=V0i,disp=False)[0]
+            V.append(V0i)
+
+        newV = np.array(V)
+        del V
+
+        ixs = np.where(newV<=1.5*newV[0])
+        Tmax = T[-1]
+        T,V = T[ixs],newV[ixs]
+        # if Tmax>T[-1]:
+        #     print('\t-> WARNING: Maximum temperature recommended <= %.3f'%(T[-1]))
+
+        return T,V
 
     def eval_props(self, T, V):
         """

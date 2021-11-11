@@ -31,3 +31,10 @@ def generate_cells_coordinates(size, primitive_cell,center):
     cell_coords_centered = np.dot(cell_coords_centered, primitive_cell)
 
     return cell_coords_centered
+
+def gen_Ts(Ti,Tf,nTs):
+    minF_step = (Tf - Ti)/(nTs - 1.)
+    Ts = np.arange(Ti, Tf+1, minF_step)
+    Ts = np.r_[Ts, [298.15]]
+    Ts.sort()
+    return Ts

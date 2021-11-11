@@ -77,8 +77,6 @@ class EOSparametrizationTestCase(unittest.TestCase):
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_Morse.min_F(T)
 
-        for Ti, Vi in zip(T,V):
-            print(Ti, Vi, ndeb_Morse.eval_props(Ti,Vi)['Cp'])
         self.assertAlmostEqual(36.27864377340611, ndeb_Morse.eval_props(T[-1],V[-1])['Cp'])
 
 

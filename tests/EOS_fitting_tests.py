@@ -61,7 +61,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
         eos_Morse.fitEOS(self.V_DFT, self.E_DFT, initial_parameters=initial_parameters)
 
-        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([1.86428338e-02,1.08771586e+00,1.26776095e+00,1.01661602e+00,1.00535350e+00,2.98199738e+00,2.56370530e-07,1.10512008e+00,1.81521927e+00,1.49362736e+00]))
+        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([1.86428338e-02,1.08771586e+00,1.26776095e+00,1.01661602e+00,1.00535350e+00,2.98199738e+00,2.56370530e-07,1.10512008e+00,1.81521927e+00,1.49362736e+00]),decimal=3)
 
 
 if __name__=='__main__':

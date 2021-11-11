@@ -16,7 +16,7 @@ class BM:
 
     :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
     """
-    def __init__(self, parameters = ''):
+    def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
 
@@ -72,7 +72,7 @@ class BM:
         return Ecalc-Edata
 
 class RV:#Rose-Vinet
-    def __init__(self, parameters = ''):
+    def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
 
@@ -112,7 +112,7 @@ class RV:#Rose-Vinet
         return Ecalc-Edata
 
 class MG:#Mie-Gruneisen
-    def __init__(self, parameters = ''):
+    def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
 
@@ -150,7 +150,7 @@ class MG:#Mie-Gruneisen
         return Ecalc-Edata
 
 class TB:#TB-SMA
-    def __init__(self, parameters = ''):
+    def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
 
@@ -188,7 +188,8 @@ class TB:#TB-SMA
         return Ecalc-Edata
 
 class MP:#Morse
-    def __init__(self, formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels, units='J/mol', parameters = ''):
+    def __init__(self, *args, units='J/mol', parameters = ''):
+        formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = [ai for ai in args]
         # formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
         size=np.array([1, 1, 1])
         center=np.array([0, 0, 0])
@@ -219,7 +220,6 @@ class MP:#Morse
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
         pEOS = initial_parameters
-        tic=time()
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata),bounds=(0,1e3))['x']
 
         self.pEOS = popt
@@ -329,7 +329,7 @@ class MP:#Morse
         return Ecalc-Edata
 
 class MU:#Murnaghan
-    def __init__(self, parameters = ''):
+    def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
 
@@ -367,7 +367,7 @@ class MU:#Murnaghan
         return Ecalc-Edata
 
 class BM3:#Birch-Murnaghan
-    def __init__(self, parameters = ''):
+    def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
 
@@ -406,7 +406,7 @@ class BM3:#Birch-Murnaghan
         return Ecalc-Edata
 
 class PT:#Poirier-Tarantola
-    def __init__(self, parameters = ''):
+    def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
 
@@ -444,7 +444,7 @@ class PT:#Poirier-Tarantola
         return Ecalc-Edata
 
 class BM4:#Poirier-Tarantola
-    def __init__(self, parameters = ''):
+    def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
 
@@ -481,7 +481,7 @@ class BM4:#Poirier-Tarantola
         return Ecalc-Edata
 
 class MU2:#Poirier-Tarantola
-    def __init__(self, parameters = ''):
+    def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
 
@@ -526,17 +526,23 @@ class MU2:#Poirier-Tarantola
 
 Chr_fix = ['Aa','Ba','Ca','Da','Ea','Fa','Ga','Ha','Ia','Ja','Ka','La','Ma','Na','Oa','Pa','Qa','Ra','Sa','Ta','Ua','Va','Wa','Xa','Ya','Za','Ab','Bb','Cb','Db','Eb','Fb','Gb','Hb','Ib','Jb','Kb','Lb','Mb','Nb','Ob','Pb','Qb','Rb','Sb','Tb','Ub','Vb','Wb','Xb','Yb','Zb']
 class EAM:#Morse
-    def __init__(self,ins_atoms_positions_filename,cutoff,number_of_neighbor_levels,units='J/mol', parameters = ''):
-        formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
+    def __init__(self, *args, units='J/mol', parameters = ''):
+        # print('EAMXXX',args)
+        formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = [ai for ai in args]
+
+        #formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
 
         self.nats=len(basis_vectors)
-
         formula_ABCD = ''.join([Chr_fix[i] for i in range(len(re.findall('[A-Z][**A-Z]*', formula)))])
         self.formula_ABCD=formula_ABCD
 
-        print('formula, formula_ABCD')
-        print(formula, formula_ABCD,re.findall('[A-Z][**A-Z]*', formula))
-        neigbor_distances_at_Vstar, number_of_pairs_per_distance, comb_types = pair_analysis.CalculateSRO(formula_ABCD, cutoff, basis_vectors, primitive_cell, number_of_neighbor_levels)
+        size=np.array([1, 1, 1])
+        center=np.array([0, 0, 0])
+        atom_types = formula*np.prod(size)
+        neigbor_distances_at_Vstar, number_of_pairs_per_distance, comb_types = pairanalysis.pair_analysis(atom_types, size, cutoff, center, basis_vectors, primitive_cell)
+        neigbor_distances_at_Vstar, number_of_pairs_per_distance = neigbor_distances_at_Vstar[:number_of_neighbor_levels], number_of_pairs_per_distance[:number_of_neighbor_levels,:]
+
+        #neigbor_distances_at_Vstar, number_of_pairs_per_distance, comb_types = pair_analysis.CalculateSRO(formula_ABCD, cutoff, basis_vectors, primitive_cell, number_of_neighbor_levels)
         self.comb_type_ABCD=comb_types
         Vstar = np.linalg.det(primitive_cell)/len(basis_vectors)
 
@@ -544,7 +550,6 @@ class EAM:#Morse
         self.ndist = np.reshape(self.ndist,(-1,1))
         self.npair = number_of_pairs_per_distance
         self.Vstar = Vstar
-        #print('Vstar',Vstar)
 
         if units == 'J/mol':
             self.mult_V = (1e-30*6.02e23)
@@ -558,13 +563,16 @@ class EAM:#Morse
 
         if parameters != '':
             self.pEOS = parameters
+            pEOS_pt , pEOS_et = self.paramos_raw_2_pt_et(self.pEOS)
+
+            self.params_pair_type(pEOS_pt)
+            self.params_elmt_type(pEOS_et)
 
 
-    def fitEOS(self, Vdata, Edata, p_initial):
-        print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
-        tic = time()
-        popt = least_squares(self.error2min, p_initial,args=(Vdata, Edata),bounds=(0,1e1), ftol=1e-05,xtol=1e-04)['x']
-        print('XXXXXXXXXXX',time()-tic)
+    def fitEOS(self, Vdata,Edata,initial_parameters=''):
+        pEOS = initial_parameters
+        popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata),bounds=(0,1e3))['x']
+
         self.pEOS = popt
 
         pEOS_pt , pEOS_et = self.paramos_raw_2_pt_et(self.pEOS)

@@ -15,6 +15,7 @@ def neighbor_list(size, cutoff, center, basis_vectors, primitive_cell):
     :param array primitive_cell: the primitive cell
     """
 
+    basis_vectors = np.dot(basis_vectors,primitive_cell)
     size_g = size + 2*cutoff  #change cutoff for some other word and add a cutoff distance.
                               # new_co= int(min(cutoff,....))
 
@@ -43,7 +44,7 @@ def neighbor_list(size, cutoff, center, basis_vectors, primitive_cell):
     XCs = np.array(XCs)
     Is = np.array(Is)
     Js = np.array(Js)
-    CX = np.sum(XCs/cutoff**2, axis=1) #<--- /cutoff**2 is arbitraty, change to a function
+    CX = np.sum(XCs/cutoff**2, axis=1)
 
     ix = np.where(np.all([CX<=1, CX>0], axis=0))[0]
     distances = np.sqrt(np.sum(XCs[ix], axis=1))

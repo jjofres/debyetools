@@ -1,4 +1,6 @@
 from __future__ import division
+from scipy.optimize import least_squares
+
 #from scipy.optimize import leastsq,least_squares
 # import dependencies.thermo.functions as fns
 import numpy as np
@@ -6,10 +8,12 @@ import numpy as np
 import re
 from time import time
 import itertools as it
+import debyetools.pairanalysis as pairanalysis
 
 class BM:#Birch-Murnaghan
-    def __init__(self):
-        pass
+    def __init__(self, parameters = ''):
+        if parameters is not '':
+            self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
         print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
@@ -47,8 +51,9 @@ class BM:#Birch-Murnaghan
         return Ecalc-Edata
 
 class RV:#Rose-Vinet
-    def __init__(self):
-        pass
+    def __init__(self, parameters = ''):
+        if parameters is not '':
+            self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
         print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
@@ -86,8 +91,9 @@ class RV:#Rose-Vinet
         return Ecalc-Edata
 
 class MG:#Mie-Gruneisen
-    def __init__(self):
-        pass
+    def __init__(self, parameters = ''):
+        if parameters is not '':
+            self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
         print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
@@ -123,8 +129,9 @@ class MG:#Mie-Gruneisen
         return Ecalc-Edata
 
 class TB:#TB-SMA
-    def __init__(self):
-        pass
+    def __init__(self, parameters = ''):
+        if parameters is not '':
+            self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
         print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
@@ -160,10 +167,15 @@ class TB:#TB-SMA
         return Ecalc-Edata
 
 class MP:#Morse
-    def __init__(self,ins_atoms_positions_filename,cutoff,number_of_neighbor_levels,units='J/mol'):
-        formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
+    def __init__(self, formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels, units='J/mol', parameters = ''):
+        # formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
+        size=np.array([1, 1, 1])
+        center=np.array([0, 0, 0])
+        atom_types = formula*np.prod(size)
+        neigbor_distances_at_Vstar, number_of_pairs_per_distance, comb_types = pairanalysis.pair_analysis(atom_types, size, cutoff, center, basis_vectors, primitive_cell)
 
-        neigbor_distances_at_Vstar,    number_of_pairs_per_distance, comb_types    = pair_analysis.CalculateSRO(formula, cutoff, basis_vectors, primitive_cell, number_of_neighbor_levels)
+        neigbor_distances_at_Vstar, number_of_pairs_per_distance = neigbor_distances_at_Vstar[:number_of_neighbor_levels], number_of_pairs_per_distance[:number_of_neighbor_levels,:]
+
         self.comb_types=comb_types
         Vstar = np.linalg.det(primitive_cell)/len(basis_vectors)
 
@@ -179,13 +191,15 @@ class MP:#Morse
             self.mult_V = 1
             self.mult_E = 1
         self.ixsss = 0
+
+        if parameters is not '':
+            self.pEOS = parameters
         #print('xxx',self.ndist,self.npair,self.Vstar)
 
-    def fitEOS(self, Vdata,Edata,pEOS):
-        print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
+    def fitEOS(self, Vdata,Edata,initial_parameters=''):
+        pEOS = initial_parameters
         tic=time()
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata),bounds=(0,1e3))['x']
-        print('XXXXXXXXXXX',time()-tic)
 
         self.pEOS = popt
         return popt
@@ -294,8 +308,9 @@ class MP:#Morse
         return Ecalc-Edata
 
 class MU:#Murnaghan
-    def __init__(self):
-        pass
+    def __init__(self, parameters = ''):
+        if parameters is not '':
+            self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
         print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
@@ -331,8 +346,9 @@ class MU:#Murnaghan
         return Ecalc-Edata
 
 class BM3:#Birch-Murnaghan
-    def __init__(self):
-        pass
+    def __init__(self, parameters = ''):
+        if parameters is not '':
+            self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
         print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
@@ -369,8 +385,9 @@ class BM3:#Birch-Murnaghan
         return Ecalc-Edata
 
 class PT:#Poirier-Tarantola
-    def __init__(self):
-        pass
+    def __init__(self, parameters = ''):
+        if parameters is not '':
+            self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
         print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
@@ -406,8 +423,9 @@ class PT:#Poirier-Tarantola
         return Ecalc-Edata
 
 class BM4:#Poirier-Tarantola
-    def __init__(self):
-        pass
+    def __init__(self, parameters = ''):
+        if parameters is not '':
+            self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
         print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
@@ -442,8 +460,9 @@ class BM4:#Poirier-Tarantola
         return Ecalc-Edata
 
 class MU2:#Poirier-Tarantola
-    def __init__(self):
-        pass
+    def __init__(self, parameters = ''):
+        if parameters is not '':
+            self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
         print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
@@ -486,7 +505,7 @@ class MU2:#Poirier-Tarantola
 
 Chr_fix = ['Aa','Ba','Ca','Da','Ea','Fa','Ga','Ha','Ia','Ja','Ka','La','Ma','Na','Oa','Pa','Qa','Ra','Sa','Ta','Ua','Va','Wa','Xa','Ya','Za','Ab','Bb','Cb','Db','Eb','Fb','Gb','Hb','Ib','Jb','Kb','Lb','Mb','Nb','Ob','Pb','Qb','Rb','Sb','Tb','Ub','Vb','Wb','Xb','Yb','Zb']
 class EAM:#Morse
-    def __init__(self,ins_atoms_positions_filename,cutoff,number_of_neighbor_levels,units='J/mol'):
+    def __init__(self,ins_atoms_positions_filename,cutoff,number_of_neighbor_levels,units='J/mol', parameters = ''):
         formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
 
         self.nats=len(basis_vectors)
@@ -515,6 +534,10 @@ class EAM:#Morse
             self.mult_E = 1
         self.formula=formula
         self.ntypes_A()
+
+        if parameters is not '':
+            self.pEOS = parameters
+
 
     def fitEOS(self, Vdata, Edata, p_initial):
         print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')

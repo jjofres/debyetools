@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from debyetools.ndeb import nDeb
-class GenerateCellCoordinatesTestCase(unittest.TestCase):
+class CpTestCase(unittest.TestCase):
     def setUp(self):
         #self.NL = PairAnalysisCalculator()
         pass

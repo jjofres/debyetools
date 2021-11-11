@@ -34,7 +34,7 @@ The code is freely available under the GNU Affero General Public License.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Python code:
+   :caption: Documentation:
 
    source/api/installation
    source/api/pairanalysis

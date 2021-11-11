@@ -10,13 +10,26 @@ from time import time
 import itertools as it
 import debyetools.pairanalysis as pairanalysis
 
-class BM:#Birch-Murnaghan
+class BM:
+    """
+    Birch-Murnaghan EOS and derivatives.
+
+    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
+    """
     def __init__(self, parameters = ''):
-        if parameters is not '':
+        if parameters != '':
             self.pEOS = parameters
 
-    def fitEOS(self, Vdata,Edata,pEOS):
-        print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
+    def fitEOS(self, Vdata,Edata,initial_parameters=''):
+        """
+        Parameters fitting.
+
+        :param list_of_floats Vdata: Intput data.
+        :param list_of_floats Edata: Target data.
+        :param list_of_floats initial_parameters: initial_parameters.
+
+        :return list_of_floats: Optimal parameters.
+        """
         popt = leastsq(self.error2min, pEOS,args=(Vdata, Edata))[0]
         self.pEOS = popt
 
@@ -27,7 +40,15 @@ class BM:#Birch-Murnaghan
         return  P0 + P1/V**(2/3) + P2/V**(4/3) + P3*V**(-6/3)
 
     def E0(self, V):
+        """
+        Internal energy.
+
+        :param float V: Volume.
+
+        :return float: Energy.
+        """
         return  self.E04min(V, self.pEOS)
+
     def dE0dV_T(self,V):
         P0,P1,P2,P3 = EVBBp_to_BMparams(self.pEOS)
         return -2*P1/(3*V**(5/3))-4*P2/(3*V**(7/3))-2*P3/V**3
@@ -52,7 +73,7 @@ class BM:#Birch-Murnaghan
 
 class RV:#Rose-Vinet
     def __init__(self, parameters = ''):
-        if parameters is not '':
+        if parameters != '':
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
@@ -92,7 +113,7 @@ class RV:#Rose-Vinet
 
 class MG:#Mie-Gruneisen
     def __init__(self, parameters = ''):
-        if parameters is not '':
+        if parameters != '':
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
@@ -130,7 +151,7 @@ class MG:#Mie-Gruneisen
 
 class TB:#TB-SMA
     def __init__(self, parameters = ''):
-        if parameters is not '':
+        if parameters != '':
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
@@ -192,7 +213,7 @@ class MP:#Morse
             self.mult_E = 1
         self.ixsss = 0
 
-        if parameters is not '':
+        if parameters != '':
             self.pEOS = parameters
         #print('xxx',self.ndist,self.npair,self.Vstar)
 
@@ -309,7 +330,7 @@ class MP:#Morse
 
 class MU:#Murnaghan
     def __init__(self, parameters = ''):
-        if parameters is not '':
+        if parameters != '':
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
@@ -347,7 +368,7 @@ class MU:#Murnaghan
 
 class BM3:#Birch-Murnaghan
     def __init__(self, parameters = ''):
-        if parameters is not '':
+        if parameters != '':
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
@@ -386,7 +407,7 @@ class BM3:#Birch-Murnaghan
 
 class PT:#Poirier-Tarantola
     def __init__(self, parameters = ''):
-        if parameters is not '':
+        if parameters != '':
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
@@ -424,7 +445,7 @@ class PT:#Poirier-Tarantola
 
 class BM4:#Poirier-Tarantola
     def __init__(self, parameters = ''):
-        if parameters is not '':
+        if parameters != '':
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
@@ -461,7 +482,7 @@ class BM4:#Poirier-Tarantola
 
 class MU2:#Poirier-Tarantola
     def __init__(self, parameters = ''):
-        if parameters is not '':
+        if parameters != '':
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
@@ -535,7 +556,7 @@ class EAM:#Morse
         self.formula=formula
         self.ntypes_A()
 
-        if parameters is not '':
+        if parameters != '':
             self.pEOS = parameters
 
 

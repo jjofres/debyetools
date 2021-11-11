@@ -77,7 +77,6 @@ class RV:#Rose-Vinet
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
-        print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = leastsq(self.error2min, pEOS,args=(Vdata, Edata))[0]
         self.pEOS = popt
 
@@ -117,7 +116,7 @@ class MG:#Mie-Gruneisen
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
-        print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
+        ##print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = leastsq(self.error2min, pEOS,args=(Vdata, Edata))[0]
         self.pEOS = popt
 
@@ -155,7 +154,7 @@ class TB:#TB-SMA
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
-        print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
+        #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = leastsq(self.error2min, pEOS,args=(Vdata, Edata))[0]
         self.pEOS = popt
 
@@ -216,7 +215,7 @@ class MP:#Morse
 
         if parameters != '':
             self.pEOS = parameters
-        #print('xxx',self.ndist,self.npair,self.Vstar)
+        ##print('xxx',self.ndist,self.npair,self.Vstar)
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
         pEOS = initial_parameters
@@ -334,7 +333,7 @@ class MU:#Murnaghan
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
-        print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
+        #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = leastsq(self.error2min, pEOS,args=(Vdata, Edata))[0]
         self.pEOS = popt
 
@@ -372,7 +371,7 @@ class BM3:#Birch-Murnaghan
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
-        print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
+        #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         # popt = leastsq(self.error2min, pEOS,args=(Vdata, Edata))[0]
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
@@ -411,7 +410,7 @@ class PT:#Poirier-Tarantola
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
-        print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
+        #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = leastsq(self.error2min, pEOS,args=(Vdata, Edata))[0]
         self.pEOS = popt
         return popt
@@ -449,7 +448,7 @@ class BM4:#Poirier-Tarantola
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
-        print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
+        #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = leastsq(self.error2min, pEOS,args=(Vdata, Edata))[0]
         self.pEOS = popt
 
@@ -486,7 +485,7 @@ class MU2:#Poirier-Tarantola
             self.pEOS = parameters
 
     def fitEOS(self, Vdata,Edata,pEOS):
-        print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
+        #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = leastsq(self.error2min, pEOS,args=(Vdata, Edata))[0]
         self.pEOS = popt
 
@@ -527,7 +526,7 @@ class MU2:#Poirier-Tarantola
 Chr_fix = ['Aa','Ba','Ca','Da','Ea','Fa','Ga','Ha','Ia','Ja','Ka','La','Ma','Na','Oa','Pa','Qa','Ra','Sa','Ta','Ua','Va','Wa','Xa','Ya','Za','Ab','Bb','Cb','Db','Eb','Fb','Gb','Hb','Ib','Jb','Kb','Lb','Mb','Nb','Ob','Pb','Qb','Rb','Sb','Tb','Ub','Vb','Wb','Xb','Yb','Zb']
 class EAM:#Morse
     def __init__(self, *args, units='J/mol', parameters = ''):
-        # print('EAMXXX',args)
+        # #print('EAMXXX',args)
         formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = [ai for ai in args]
 
         #formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
@@ -645,7 +644,7 @@ class EAM:#Morse
                 if types_list[i]!=types_list[i-1]:
                     ix=max(types_keys.values())+1
             try:
-                types_keys[types_list[i]]#print(types_list[i],types_keys[types_list[i]])
+                types_keys[types_list[i]]##print(types_list[i],types_keys[types_list[i]])
             except:
                 types_keys[types_list[i]]=ix
             types_dict[chr(65+i)] =str(ix)

@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.optimize import least_squares
+
 NAv  = 0.6022140857e24
 kB   = 0.138064852e-22
 
@@ -42,3 +44,20 @@ class Electronic:
         return -2*np.pi**2*NAv*self.r*kB**2*T*self.d2NfVdV2_T(V)*(1/6)/(0.160218e-18)
     def d3FdVdT2(self,T,V):
         return -2*np.pi**2*NAv*self.r*kB**2*self.dNfVdV_T(V)*(1/6)/(0.160218e-18)
+
+def fit_electronic(Vs, p_el,E,N,Ef):
+    q00,q10,q20,q30 = p_el
+
+    V = Vs
+    ix_V0=10
+    EfV0 = float(Ef[ix_V0])
+    ixs=[i for i,x in enumerate(E[ix_V0]) if x>=Ef[ix_V0]]
+    E1 = float(E[ix_V0][ixs[0]-1])
+    E2 = float(E[ix_V0][ixs[0]])
+    N1 = float(N[ix_V0][ixs[0]-1])
+    N2 = float(N[ix_V0][ixs[0]])
+    NfV0 = (EfV0 - E1)*(N2 - N1)/(E2 - E1) + N1
+    NfV = np.array([NfV0*np.sqrt(ef/EfV0) for ef in Ef][8:-1])
+    P2=least_squares(NfV2m,[6e-01,-2e+04,1e7,1e11], args=(V[8:-1], NfV))['x']
+
+    return P2

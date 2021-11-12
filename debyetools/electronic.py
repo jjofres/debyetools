@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.optimize import least_squares
+from scipy.optimize import leastsq
 
 NAv  = 0.6022140857e24
 kB   = 0.138064852e-22
@@ -46,9 +46,9 @@ class Electronic:
         return -2*np.pi**2*NAv*self.r*kB**2*self.dNfVdV_T(V)*(1/6)/(0.160218e-18)
 
 def fit_electronic(Vs, p_el,E,N,Ef):
-    q00,q10,q20,q30 = p_el
+    q00, q10 = p_el
 
-    V = Vs
+    V = np.array(Vs)
     ix_V0=10
     EfV0 = float(Ef[ix_V0])
     ixs=[i for i,x in enumerate(E[ix_V0]) if x>=Ef[ix_V0]]
@@ -58,6 +58,16 @@ def fit_electronic(Vs, p_el,E,N,Ef):
     N2 = float(N[ix_V0][ixs[0]])
     NfV0 = (EfV0 - E1)*(N2 - N1)/(E2 - E1) + N1
     NfV = np.array([NfV0*np.sqrt(ef/EfV0) for ef in Ef][8:-1])
-    P2=least_squares(NfV2m,[6e-01,-2e+04,1e7,1e11], args=(V[8:-1], NfV))['x']
+    P2 = leastsq(NfV2m, p_el, args=(V[8:-1], NfV),maxfev=1000)
+    P2 = P2[0]
 
     return P2
+
+def NfV_poly_fun(V, _A, _B):
+    #A, B, C = A*1e-1, B*(-1e4), C*1e-9
+    return _A + _B*V #+ C*V**2
+
+def NfV2m(P, Vdata, NfVdata):
+    NfVcalc = [NfV_poly_fun(Vi, P[0], P[1]) for Vi in Vdata]
+    # print('NfVcalc', NfVcalc, 'NfVdata', NfVdata)
+    return NfVcalc-NfVdata

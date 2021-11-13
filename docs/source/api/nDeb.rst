@@ -10,7 +10,13 @@ EOS parametrization
 .. autoclass:: debyetools.potentials.BM
   :members:
 
-Evaluation of Thermodynamic Properties
+Poisson's ratio
+========================
+
+.. automodule:: debyetools.poisson
+    :members:
+
+Thermodynamic Properties
 ======================================
 
 .. currentmodule:: debyetools.ndeb

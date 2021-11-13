@@ -11,10 +11,8 @@ To Do's:
 - Documentation
 - Improve error handling
 - Add better comments
-- Implement EOS parameters fitting
-- Implement Free energy minimization
-- Implement creation of FS compound database
 - Implement GUI
+- Move Fvib to a new class.
 
 Made by Javier Jofre: javier.jofre@polymtl.ca
 Please cite.

@@ -1,10 +1,7 @@
 from __future__ import division
 from scipy.optimize import least_squares
 
-#from scipy.optimize import leastsq,least_squares
-# import dependencies.thermo.functions as fns
 import numpy as np
-# import dependencies.thermo.pair_analysis as pair_analysis
 import re
 from time import time
 import itertools as it
@@ -72,6 +69,9 @@ class BM:
         return Ecalc-Edata
 
 class RV:#Rose-Vinet
+    """
+    document.
+    """
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
@@ -111,6 +111,10 @@ class RV:#Rose-Vinet
         return Ecalc-Edata
 
 class MG:#Mie-Gruneisen
+    """
+    document.
+    """
+
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
@@ -149,6 +153,10 @@ class MG:#Mie-Gruneisen
         return Ecalc-Edata
 
 class TB:#TB-SMA
+    """
+    document.
+    """
+
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
@@ -187,6 +195,10 @@ class TB:#TB-SMA
         return Ecalc-Edata
 
 class MP:#Morse
+    """
+    document.
+    """
+
     def __init__(self, *args, units='J/mol', parameters = ''):
         formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = [ai for ai in args]
         # formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
@@ -328,6 +340,10 @@ class MP:#Morse
         return Ecalc-Edata
 
 class MU:#Murnaghan
+    """
+    document.
+    """
+
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
@@ -366,6 +382,10 @@ class MU:#Murnaghan
         return Ecalc-Edata
 
 class BM3:#Birch-Murnaghan
+    """
+    document.
+    """
+
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
@@ -405,6 +425,10 @@ class BM3:#Birch-Murnaghan
         return Ecalc-Edata
 
 class PT:#Poirier-Tarantola
+    """
+    document.
+    """
+
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
@@ -443,6 +467,10 @@ class PT:#Poirier-Tarantola
         return Ecalc-Edata
 
 class BM4:#Poirier-Tarantola
+    """
+    document.
+    """
+
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
@@ -480,6 +508,10 @@ class BM4:#Poirier-Tarantola
         return Ecalc-Edata
 
 class MU2:#Poirier-Tarantola
+    """
+    document.
+    """
+
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters
@@ -525,6 +557,10 @@ class MU2:#Poirier-Tarantola
 
 Chr_fix = ['Aa','Ba','Ca','Da','Ea','Fa','Ga','Ha','Ia','Ja','Ka','La','Ma','Na','Oa','Pa','Qa','Ra','Sa','Ta','Ua','Va','Wa','Xa','Ya','Za','Ab','Bb','Cb','Db','Eb','Fb','Gb','Hb','Ib','Jb','Kb','Lb','Mb','Nb','Ob','Pb','Qb','Rb','Sb','Tb','Ub','Vb','Wb','Xb','Yb','Zb']
 class EAM:#Morse
+    """
+    document.
+    """
+
     def __init__(self, *args, units='J/mol', parameters = ''):
         # #print('EAMXXX',args)
         formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = [ai for ai in args]

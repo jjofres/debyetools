@@ -38,7 +38,7 @@ class nDeb:
 
         self.anh = Anharmonicity(s0,s1,s2)
         self.intanh = intAnharmonicity(a0,m0,V0_anh)
-        self.el = Electronic(1,q0,q1,q2,q3)
+        self.el = Electronic(q0,q1,q2,q3)
         self.deff = Defects(Evac00,Svac00,Tm,a,P2,V0_def)
 
         self.EOS = getattr(pots,EOS_name)(*args,units=units, parameters = p_EOS)
@@ -48,6 +48,12 @@ class nDeb:
         self.xDcte = hbar*6**(1/3.)*(np.pi**2*NAv*r)**(1/3.)
 
     def F(self,T,V):
+        """
+        Helmholtz free energy.
+
+        :param float T: Temperature.
+        :param float V: Volume.
+        """
         d2E0dV2_T = self.EOS.d2E0dV2_T(V)
         if type(V) == np.ndarray:
             if min(d2E0dV2_T)<0:return 1
@@ -76,6 +82,11 @@ class nDeb:
         return _F
 
     def min_F(self,T):
+        """
+        Procedure for the calculation of the volume as function of temperature.
+
+        :param float T: Temperature.
+        """
         V0i=self.V_0
         V=[]
         for Ti in T:
@@ -89,8 +100,6 @@ class nDeb:
         ixs = np.where(newV<=1.5*newV[0])
         Tmax = T[-1]
         T,V = T[ixs],newV[ixs]
-        # if Tmax>T[-1]:
-        #     print('\t-> WARNING: Maximum temperature recommended <= %.3f'%(T[-1]))
 
         return T,V
 

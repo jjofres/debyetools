@@ -2,7 +2,7 @@ import unittest
 from debyetools.ndeb import nDeb
 from debyetools.aux_functions import gen_Ts
 import numpy as np
-class EOSparametrizationTestCase(unittest.TestCase):
+class FminTestCase(unittest.TestCase):
     def setUp(self):
         self.nu, self.m = 0.31681, 0.026981500000000002
         self.Tmelting = 933
@@ -15,7 +15,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
         self.number_Temps = 51
 
     def test_Free_energy_minimization_Al_fcc_BM(self):
-        """ Test V(T) calculation by free energy minimization."""
+        """ Test V(T) calculation by free energy minimization. BM."""
 
         EOS_name = 'BM'
         ndeb_BM = nDeb(self.nu, self.m, self.p_intanh, self.p_EOS, self.p_electronic, self.p_defects, self.p_anh, EOS_name)
@@ -27,7 +27,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
         self.assertAlmostEqual(35.166117790049896, ndeb_BM.eval_props(T[-1],V[-1])['Cp'])
 
     def test_Free_energy_minimization_Al_fcc_RV(self):
-        """ Test V(T) calculation by free energy minimization."""
+        """ Test V(T) calculation by free energy minimization. RV."""
 
         EOS_name = 'RV'
         ndeb_BM = nDeb(self.nu, self.m, self.p_intanh, self.p_EOS, self.p_electronic, self.p_defects, self.p_anh, EOS_name)
@@ -39,7 +39,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
         self.assertAlmostEqual(37.96026289773106, ndeb_BM.eval_props(T[-1],V[-1])['Cp'])
 
     def test_Free_energy_minimization_Al_fcc_Morse(self):
-        """ Test V(T) calculation by free energy minimization."""
+        """ Test V(T) calculation by free energy minimization. Morse."""
 
         EOS_name = 'MP'
         p_EOS = np.array([3.492281316e-01, 9.977375168e-01, 3.246481751e+00])
@@ -60,7 +60,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
         self.assertAlmostEqual(33.3512709396212, ndeb_Morse.eval_props(T[-1],V[-1])['Cp'])
 
     def test_Free_energy_minimization_Al_fcc_EAM(self):
-        """ Test V(T) calculation by free energy minimization."""
+        """ Test V(T) calculation by free energy minimization. EAM."""
 
         EOS_name = 'EAM'
         p_EOS = np.array([1.864283e-02, 1.087716e+00, 1.267761e+00, 1.016616e+00, 1.005353e+00, 2.981997e+00, 2.563705e-07, 1.105120e+00,1.815219e+00, 1.493627e+00])
@@ -71,13 +71,13 @@ class EOSparametrizationTestCase(unittest.TestCase):
         cutoff = 5.
         number_of_neighbor_levels = 6
         ndeb_Morse = nDeb(self.nu, self.m, self.p_intanh, p_EOS,
-                        self.p_electronic, self.p_defects, self.p_anh, EOS_name, formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
+                          self.p_electronic, self.p_defects, self.p_anh, EOS_name, formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
 
         ndeb_Morse.V_0 = self.p_EOS[1]
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_Morse.min_F(T)
 
-        self.assertAlmostEqual(36.27864377340611, ndeb_Morse.eval_props(T[-1],V[-1])['Cp'])
+        self.assertAlmostEqual(36.27864377340611, ndeb_Morse.eval_props(T[-1], V[-1])['Cp'])
 
 
 if __name__=='__main__':

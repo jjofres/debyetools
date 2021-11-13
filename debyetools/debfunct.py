@@ -10,11 +10,13 @@ A21 = (2*np.pi**4)/5 - A11 - A12 - 1/2*A13
 A22 = (2*np.pi**4)/5 - A12 - A13
 A23 = (np.pi**4)/5 - A13
 
-def lncomplex(_z):
-    """Complex natural logaritm"""
-    x=np.real(_z)
-    _y=np.imag(_z)
-    _r=np.abs(_z)
+def lncomplex(z):
+    """
+    Complex natural logaritm.
+    """
+    x=np.real(z)
+    _y=np.imag(z)
+    _r=np.abs(z)
     return complex(np.log(_r),np.arctan2(_y, x))
 
 def K_24(x):
@@ -24,6 +26,9 @@ def dK_24(x):
     return -3*A03/x**4-(-A11/x**2-2*A12/x**3-3*A13/x**4)*np.exp(-x)+(A10+A11/x+A12/x**2+A13/x**3)*np.exp(-x)-(-A21/x**2-2*A22/x**3-3*A23/x**4)*np.exp(-2*x)+(2*(A20+A21/x+A22/x**2+A23/x**3))*np.exp(-2*x)
 
 def D_3(x):
+    """
+    Debye function with n=3.
+    """
     if type(x)==np.ndarray:
         return np.array([D_3(xi) for xi in x])
     return K_24(x)

@@ -3,10 +3,10 @@ import numpy as np
 from debyetools.fs_compound_db import fit_FS
 class FSBBTestCase(unittest.TestCase):
     def setUp(self):
-        #self.NL = PairAnalysisCalculator()
         pass
 
     def test_FSDB(self):
+        """Test the calculation of FS comp database paramters to thermoprops."""
         T_from = 298.15
         T_to = 1000
 

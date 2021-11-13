@@ -2,6 +2,13 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 def poisson_ratio(EM):
+    """
+    Calculation of the Poisson's ratio from elastic moduli matrix.
+
+    :param list_of_lists_of_floats EM: Elastic moduli matrix.
+
+    :return float: Poisson's ratio.
+    """
     C11, C12, C13 = EM[0,0]*1e-1, EM[0,1]*1e-1, EM[0,2]*1e-1
     C22, C23 = EM[1,1]*1e-1, EM[1,2]*1e-1
     C33 = EM[2,2]*1e-1

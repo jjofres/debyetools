@@ -22,6 +22,7 @@ def generate_cells_coordinates(size, primitive_cell,center):
     :param array size: Number of times we are replicating the primitive cell
     :param array primitive_cell: The primitive cell
     :param array center: The position in space where the system of reference is
+    
     """
 
     cell_coords = np.array(list((it.product(np.arange(size[0]),
@@ -33,6 +34,15 @@ def generate_cells_coordinates(size, primitive_cell,center):
     return cell_coords_centered
 
 def gen_Ts(Ti,Tf,nTs):
+    """
+    Function to generate a range of temperatures.
+
+    :param float Ti: Initial temperature. (Try not to use the value 0. Use 0.1 instead.)
+    :param float Tf: Final temperature.
+    :param int nTs: Number of values. This does not include room temperature, which is included anyways.
+
+    :retun list_of_floats: Values of temperatures between Ti and Tf, inclusive, plus room temperature.
+    """
     minF_step = (Tf - Ti)/(nTs - 1.)
     Ts = np.arange(Ti, Tf+1, minF_step)
     Ts = np.r_[Ts, [298.15]]

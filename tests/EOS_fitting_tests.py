@@ -25,7 +25,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
         self.assertTrue(np.sqrt(np.sum(np.array([(Ei-Emi)**2 for Ei, Emi in zip(self.E_DFT, E_model)])))/np.abs(np.mean(self.E_DFT))*100<0.5)
 
     def test_EOS_Morse_Al_fcc_evaluations_eV_units(self):
-        """ Test evaluation of Morse potential using Al fcc DFT data."""
+        """ Test evaluation of Morse potential using Al fcc DFT data, eV/atom units."""
         V_DFT = self.V_DFT/(1e-30*6.02e23)
         E_DFT = self.E_DFT/(0.160218e-18*6.02214e23)
 
@@ -37,6 +37,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
         self.assertTrue(np.sqrt(np.sum(np.array([(Ei-Emi)**2 for Ei, Emi in zip(E_DFT, E_model)])))/np.abs(np.mean(E_DFT))*100<0.5)
 
     def test_EOS_Morse_Al_fcc_fitting(self):
+        """ Test fitting of Morse potential using Al fcc DFT data."""
         eos_Morse = MP(self.formula, self.primitive_cell(4.0396918604), self.basis_vectors, self.cutoff, self.number_of_neighbor_levels, units='J/mol')
         initial_parameters = np.array([0.35, 1, 3.5])
 
@@ -45,6 +46,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
         np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([3.492281316e-01, 9.977375168e-01, 3.246481751e+00]))
 
     def test_EOS_BM3_Al_fcc_fitting(self):
+        """ Test fitting of BM3 potential using Al fcc DFT data."""
         pEOS = np.array([-3.617047894e+05, 9.929931142e-06, 7.618619745e+10, 4.591924487e+00])
         eos_BM3 = BM(parameters=pEOS)
 
@@ -53,6 +55,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
         self.assertTrue(np.sqrt(np.sum(np.array([(Ei-Emi)**2 for Ei, Emi in zip(self.E_DFT, E_model)])))/np.abs(np.mean(self.E_DFT))*100<0.5)
 
     def test_EOS_EAM_Al_fcc_fitting(self):
+        """ Test fitting of EAM potential using Al fcc DFT data."""
         eos_Morse = EAM(self.formula, self.primitive_cell(4.0396918604), self.basis_vectors, self.cutoff,
                         self.number_of_neighbor_levels, units='J/mol')
         initial_parameters = np.array([3.601752881e-01, 1.090829630e+00, 1.098542954e+00, 1.012121606e+00,

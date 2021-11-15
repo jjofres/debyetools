@@ -7,12 +7,9 @@ A little library for the implementation of a Debye approximation tool for calcul
 
 To Do's:
 
-- Tests
-- Documentation
+- Add Examples to Documentation
 - Improve error handling
-- Add better comments
 - Implement GUI
-- Move Fvib to a new class.
 
 Made by Javier Jofre: javier.jofre@polymtl.ca
 Please cite.

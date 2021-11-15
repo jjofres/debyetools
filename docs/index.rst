@@ -39,6 +39,8 @@ The code is freely available under the GNU Affero General Public License.
    source/api/installation
    source/api/pairanalysis
    source/api/nDeb
+   source/api/contributions
+   source/api/fsdb
 
 Indices and tables
 ==================

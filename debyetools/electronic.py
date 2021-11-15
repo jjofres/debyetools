@@ -8,7 +8,7 @@ class Electronic:
     """
     Implementation of the electronic contribution to the free energy.
 
-    :param *float *params: N(Ef)(V) function parameters.
+    :param float params: N(Ef)(V) function parameters.
     """
     def __init__(self,*params):
         self.r=1
@@ -18,6 +18,8 @@ class Electronic:
     def NfV(self,V):
         """
         N(Ef)(V)
+
+        :param float V: Volume.
         """
         return self.q0*V**0 + self.q1*V**1 + self.q2*V**2 + self.q3*V**3
     def dNfVdV_T(self,V):

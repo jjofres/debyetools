@@ -70,7 +70,7 @@ class nDeb:
         _F = E_0 + Fvib + Fel + Fdef + Fa
         return _F
 
-    def min_F(self,T):
+    def min_F(self,T, initial_V):
         """
         Procedure for the calculation of the volume as function of temperature.
 
@@ -79,7 +79,7 @@ class nDeb:
         :return list_of_floats: Temperature.
         :return list_of_floats: Equilibrium Volume.
         """
-        V0i=self.V_0
+        V0i=initial_V
         V=[]
         for Ti in T:
             f2min = lambda Vi: self.F(Ti,Vi)
@@ -177,4 +177,39 @@ class nDeb:
         dVdT_P = - dPdT_V/dPdV_T
         a  = 1/V*dVdT_P
 
-        return {'Cp':-T*( d2FdT2_V - (d2FdVdT)**2 / d2FdV2_T)}
+
+        Cp = -T*( d2FdT2_V - (d2FdVdT)**2 / d2FdV2_T)
+
+        Ks = Kt*Cp/Cv
+        dCpdV_T = T*(2*d2FdVdT*d2FdV2_T*d3FdV2dT-d2FdVdT**2*d3FdV3_T-d3FdVdT2*d2FdV2_T**2)/d2FdV2_T**2
+        dCvdV_T = -T*d3FdVdT2
+        dKsdV_T = dKtdV_T*Cp/Cv+Kt*dCpdV_T/Cv-Kt*Cp*dCvdV_T/Cv**2
+
+        dKsdP_T = dKsdV_T/dPdV_T
+        Ksp = dKsdP_T
+        F = self.F(T, V)
+
+        Evib = self.vib.E(T,V)
+        Eel = self.el.E(T,V)
+        Edef = self.deff.E(T,V)
+        Ea = self.anh.E(T,V)
+        E0 = d2E0dV2_T = self.EOS.E0(V)
+        E = E0 + Evib + Eel + Edef + Ea
+
+        Svib = self.vib.S(T,V)
+        Sel = self.el.S(T,V)
+        Sdef = self.deff.S(T,V)
+        Sa = self.anh.S(T,V)
+        S = Svib + Sel + Sdef + Sa
+
+        Fvib = self.vib.F(T,V)
+        Evib = self.vib.E(T,V)
+        Svib = self.vib.S(T,V)
+
+        Cvvib = -T*d2FvibdT2_V
+        dE0dV_T = self.EOS.dE0dV_T(V)
+        Pcold = -dE0dV_T
+        return {'T':T,'V':V,'tD':tD,'g':g,'Kt':Kt,'Ktp':Ktp,'Ktpp':Ktpp,
+                'Cv':Cv,'a':a,'Cp':Cp,'Ks':Ks,'Ksp':Ksp,
+                'F':F,'E':E,'S':S,'E0':E0,'Fvib':Fvib,'Evib':Evib,'Svib':Svib,
+                'Cvvib':Cvvib,'Pcold':Pcold,'dPdT_V':dPdT_V,'G^2':Ktp**2-2*Kt*Ktpp}

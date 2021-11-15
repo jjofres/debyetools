@@ -81,6 +81,17 @@ class Vibrational:
         self.d3tDdVdT2 = dxDdV*vD*self.d2AnhdT2_V + xD*dvDdV*self.d2AnhdT2_V + xD*vD*self.d3AnhdVdT2
         self.d4tDdV4_T = xD*vD*self.d4AnhdV4_T + d4xDdV4*vD*self.Anh + 4*d3xDdV3*dvDdV*self.Anh + 4*d3xDdV3*vD*self.dAnhdV_T + 6*d2xDdV2*d2vDdV2*self.Anh + 12*d2xDdV2*dvDdV*self.dAnhdV_T + 6*d2xDdV2*vD*self.d2AnhdV2_T + 4*dxDdV*d3vDdV3*self.Anh + 12*dxDdV*d2vDdV2*self.dAnhdV_T + 12*dxDdV*dvDdV*self.d2AnhdV2_T + 4*dxDdV*vD*self.d3AnhdV3_T + xD*d4vDdV4*self.Anh + 4*xD*d3vDdV3*self.dAnhdV_T + 6*xD*d2vDdV2*self.d2AnhdV2_T + 4*xD*dvDdV*self.d3AnhdV3_T
 
+    def E(self, T, V):
+        x = self.tD/T
+        D3 = D_3(x)
+
+        return -(3*(self.dtDdT_V*T-self.tD))*r*NAv*kB*(T*D3+3*self.tD*(1/8))/self.tD
+
+    def S(self, T, V):
+        x = self.tD/T
+        D3 = D_3(x)
+        
+        return -3*kB*(np.log(1-np.exp(-self.tD/T))*self.tD+(self.dtDdT_V*T-4*self.tD*(1/3))*D3+3*self.dtDdT_V*self.tD*(1/8))*r*NAv/self.tD
     def F(self, T, V):
         """
         Vibration Helmholtz free energy.

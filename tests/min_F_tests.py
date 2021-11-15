@@ -20,9 +20,8 @@ class FminTestCase(unittest.TestCase):
         EOS_name = 'BM'
         ndeb_BM = nDeb(self.nu, self.m, self.p_intanh, self.p_EOS, self.p_electronic, self.p_defects, self.p_anh, EOS_name)
 
-        ndeb_BM.V_0 = self.p_EOS[1]
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
-        T, V = ndeb_BM.min_F(T)
+        T, V = ndeb_BM.min_F(T,self.p_EOS[1])
 
         self.assertAlmostEqual(35.166117790049896, ndeb_BM.eval_props(T[-1],V[-1])['Cp'])
 
@@ -32,9 +31,8 @@ class FminTestCase(unittest.TestCase):
         EOS_name = 'RV'
         ndeb_BM = nDeb(self.nu, self.m, self.p_intanh, self.p_EOS, self.p_electronic, self.p_defects, self.p_anh, EOS_name)
 
-        ndeb_BM.V_0 = self.p_EOS[1]
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
-        T, V = ndeb_BM.min_F(T)
+        T, V = ndeb_BM.min_F(T,self.p_EOS[1])
 
         self.assertAlmostEqual(37.96026289773106, ndeb_BM.eval_props(T[-1],V[-1])['Cp'])
 
@@ -53,9 +51,8 @@ class FminTestCase(unittest.TestCase):
         ndeb_Morse = nDeb(self.nu, self.m, self.p_intanh, p_EOS,
                         self.p_electronic, self.p_defects, self.p_anh, EOS_name, formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
 
-        ndeb_Morse.V_0 = self.p_EOS[1]
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
-        T, V = ndeb_Morse.min_F(T)
+        T, V = ndeb_Morse.min_F(T, self.p_EOS[1])
 
         self.assertAlmostEqual(33.3512709396212, ndeb_Morse.eval_props(T[-1],V[-1])['Cp'])
 
@@ -73,9 +70,8 @@ class FminTestCase(unittest.TestCase):
         ndeb_Morse = nDeb(self.nu, self.m, self.p_intanh, p_EOS,
                           self.p_electronic, self.p_defects, self.p_anh, EOS_name, formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
 
-        ndeb_Morse.V_0 = self.p_EOS[1]
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
-        T, V = ndeb_Morse.min_F(T)
+        T, V = ndeb_Morse.min_F(T,self.p_EOS[1])
 
         self.assertAlmostEqual(36.27864377340611, ndeb_Morse.eval_props(T[-1], V[-1])['Cp'])
 

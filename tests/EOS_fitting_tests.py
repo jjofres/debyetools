@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from debyetools.potentials import MP, BM, EAM
-
+from debyetools.aux_functions import load_V_E
 class EOSparametrizationTestCase(unittest.TestCase):
     def setUp(self):
         self.V_DFT = np.array([7.2328381349E-06,7.4766214899E-06,7.7258220323E-06,7.9804992917E-06,8.2407127976E-06,8.5065220794E-06,8.7779866668E-06,9.0551660893E-06,9.3381198763E-06,9.6269075575E-06,9.9215886624E-06,1.0222222720E-05,1.0528869261E-05,1.0841587814E-05,1.1160437909E-05,1.1485479075E-05,1.1816770842E-05,1.2154372740E-05,1.2498344297E-05,1.2848745044E-05,1.3205634510E-05])
@@ -45,10 +45,20 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([3.492281316e-01, 9.977375168e-01, 3.246481751e+00]))
 
-    def test_EOS_BM3_Al_fcc_fitting(self):
+    def test_EOS_BM3_Al_fcc_eval(self):
         """ Test fitting of BM3 potential using Al fcc DFT data."""
         pEOS = np.array([-3.617047894e+05, 9.929931142e-06, 7.618619745e+10, 4.591924487e+00])
         eos_BM3 = BM(parameters=pEOS)
+
+        E_model = [eos_BM3.E0(Vi) for Vi in self.V_DFT]
+
+        self.assertTrue(np.sqrt(np.sum(np.array([(Ei-Emi)**2 for Ei, Emi in zip(self.E_DFT, E_model)])))/np.abs(np.mean(self.E_DFT))*100<0.5)
+
+    def test_EOS_BM3_Al_fcc_fit(self):
+        """ Test fitting of BM3 potential using Al fcc DFT data."""
+        eos_BM3 = BM()
+        initial_parameters = np.array([-3.617047894e+05, 9.929931142e-06, 7.618619745e+10, 4.591924487e+00])
+        pEOS = eos_BM3.fitEOS(self.V_DFT, self.E_DFT,initial_parameters=initial_parameters)
 
         E_model = [eos_BM3.E0(Vi) for Vi in self.V_DFT]
 
@@ -66,6 +76,18 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
         np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([1.86428338e-02,1.08771586e+00,1.26776095e+00,1.01661602e+00,1.00535350e+00,2.98199738e+00,2.56370530e-07,1.10512008e+00,1.81521927e+00,1.49362736e+00]),decimal=3)
 
+    def test_EOS_BM3_Al_fcc_fit_read_inpts(self):
+        """ Test fitting of BM3 potential using Al fcc DFT data."""
+
+        V_DFT, E_DFT = load_V_E('../tests/inpt_files/Al_fcc', '../tests/inpt_files/Al_fcc/CONTCAR.5', units='J/mol')
+
+        eos_BM3 = BM()
+        initial_parameters = np.array([-3.617047894e+05, 9.929931142e-06, 7.618619745e+10, 4.591924487e+00])
+        pEOS = eos_BM3.fitEOS(V_DFT, E_DFT,initial_parameters=initial_parameters)
+
+        E_model = [eos_BM3.E0(Vi) for Vi in self.V_DFT]
+
+        self.assertTrue(np.sqrt(np.sum(np.array([(Ei-Emi)**2 for Ei, Emi in zip(self.E_DFT, E_model)])))/np.abs(np.mean(self.E_DFT))*100<0.5)
 
 if __name__=='__main__':
     unittest.main()

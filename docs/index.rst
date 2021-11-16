@@ -41,6 +41,7 @@ The code is freely available under the GNU Affero General Public License.
    source/api/nDeb
    source/api/contributions
    source/api/fsdb
+   source/api/gui
 
 Indices and tables
 ==================

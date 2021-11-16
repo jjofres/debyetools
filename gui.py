@@ -2,13 +2,11 @@
 import PySimpleGUI as sg
 from debyetools.tpropsgui.layout import layout
 import debyetools.tpropsgui.events as events
-# from dependencies.ifgui.layout import layout
-# import dependencies.ifgui.events as events
 import debyetools.tpropsgui.toolbox as tbox
-# from scipy.optimize import fmin, curve_fit
 from debyetools.aux_functions import load_doscar, load_V_E, load_EM, load_cell
 import debyetools.potentials as potentials
 import traceback
+from debyetools.poisson import poisson_ratio
 
 EOS_long_lst = {'Morse':'MP','Birch-Murnaghan (3)':'BM','Rose-Vinet':'RV','Mie-Gruneisen':'MG','TB-SMA':'TB','Murnaghan (1)':'MU','Poirier-Tarantola':'PT','Birch-Murnaghan (4)':'BM4','Murnaghan (2)':'MU2','EAM':'EAM',
                 }#'*Morse':'MP','*Birch-Murnaghan (3)':'*BM','*Rose-Vinet':'*RV','*Mie-Gruneisen':'*MG','*TB-SMA':'*TB','*Murnaghan (1)':'*MU','*Poirier-Tarantola':'*PT','*Birch-Murnaghan (4)':'*BM4','*Murnaghan (2)':'*MU2','*EAM':'*EAM'}
@@ -101,7 +99,18 @@ while True:
             EOS2plot_dict['E_DFT']=E_DFT
         except Exception as e:
             sg.popup_ok(traceback.format_exc())
+    # Plot the fitting
+    if event == 'plot fitting::PlotfittingEOS':
+        try:
+            events.plot_EvV(window, EOS2plot_dict, opened_EOS_dict)
+        except Exception as e:
+            sg.popup_ok(traceback.format_exc())
 
+    if event == '||B_calc_nu':
+        EM = EM = load_EM(str_folderbrowser+'/OUTCAR.eps')
+        nu = poisson_ratio(EM)
+        print(nu)
+        window['--I_nu'].update('%.3f' % (nu))
 
 
     #     try:
@@ -198,8 +207,6 @@ while True:
     #     events.plot_fsprops(window,event,fs_params_Cp_dict,fs_params_alpha_dict,fs_params_Ksinv_dict,fs_params_Ksp_dict,T_data,ix_Tfrom,ix_Tto,TPs_calculated_dict)
     #
     # #open fittingToolEOS button
-    if event == 'plot fitting::PlotfittingEOS':
-        events.plot_EvV(window, EOS2plot_dict, opened_EOS_dict)
     #     initial_compound_path = window['--I_compound'].get()
     #     if initial_compound_path == '':
     #         sg.popup_ok('Please select a compound/element.')

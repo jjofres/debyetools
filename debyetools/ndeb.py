@@ -28,7 +28,7 @@ class nDeb:
     :param list_of_floats p_anh: Excess contribution parameters.
     :param string EOS_name: The EOS or potential to use as internal energy description.
     """
-    def __init__(self, nu, m, p_intanh, p_EOS, p_electronic, p_defects, p_anh,EOS_name,*args,units='J/mol'):
+    def __init__(self, nu, m, p_intanh, EOS, p_electronic, p_defects, p_anh,EOS_name,*args,units='J/mol'):
         a0, m0, V0_anh = p_intanh
         q0,q1,q2,q3 = p_electronic
         Evac00,Svac00,Tm,a,P2,V0_def = p_defects
@@ -44,7 +44,7 @@ class nDeb:
         self.el = Electronic(q0,q1,q2,q3)
         self.deff = Defects(Evac00,Svac00,Tm,a,P2,V0_def)
 
-        self.EOS = getattr(pots,EOS_name)(*args,units=units, parameters = p_EOS)
+        self.EOS = EOS#getattr(pots,EOS_name)(*args,units=units, parameters = p_EOS)
         # self.EOS.pEOS = p_EOS
         self.vib = Vibrational(nu, self.EOS, m, self.intanh)
 

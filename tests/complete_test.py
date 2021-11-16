@@ -52,7 +52,7 @@ class CpTestCase(unittest.TestCase):
         # F minimization
         #=========================
         m = 0.026981500000000002
-        ndeb_BM4 = nDeb(nu, m, p_intanh, p_EOS, p_electronic,
+        ndeb_BM4 = nDeb(nu, m, p_intanh, eos_BM4, p_electronic,
                         p_defects, p_anh, EOS_name)
 
         T_initial, T_final, number_Temps = 0.1, 1000, 10

@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 from debyetools.potentials import MP, BM, EAM
-from debyetools.aux_functions import load_V_E
+from debyetools.aux_functions import load_V_E, load_cell
 class EOSparametrizationTestCase(unittest.TestCase):
     def setUp(self):
         self.V_DFT = np.array([7.2328381349E-06,7.4766214899E-06,7.7258220323E-06,7.9804992917E-06,8.2407127976E-06,8.5065220794E-06,8.7779866668E-06,9.0551660893E-06,9.3381198763E-06,9.6269075575E-06,9.9215886624E-06,1.0222222720E-05,1.0528869261E-05,1.0841587814E-05,1.1160437909E-05,1.1485479075E-05,1.1816770842E-05,1.2154372740E-05,1.2498344297E-05,1.2848745044E-05,1.3205634510E-05])
@@ -79,11 +79,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
     def test_EOS_BM3_Al_fcc_fit_read_inpts(self):
         """ Test fitting of BM3 potential using Al fcc DFT data."""
 
-        import os
-        cwd = os.getcwd()
-        print("Current working directory: {0}".format(cwd))
-
-        folder_name = './tests/inpt_files/Al_fcc'#../tests/inpt_files/Al_fcc'
+        folder_name = '../tests/inpt_files/Al_fcc'#../tests/inpt_files/Al_fcc'
         V_DFT, E_DFT = load_V_E(folder_name, folder_name+'/CONTCAR.5', units='J/mol')
 
         eos_BM3 = BM()
@@ -93,6 +89,20 @@ class EOSparametrizationTestCase(unittest.TestCase):
         E_model = [eos_BM3.E0(Vi) for Vi in self.V_DFT]
 
         self.assertTrue(np.sqrt(np.sum(np.array([(Ei-Emi)**2 for Ei, Emi in zip(self.E_DFT, E_model)])))/np.abs(np.mean(self.E_DFT))*100<0.5)
+
+    def test_EOS_Morse_Al_fcc_fitting_reading_from_file(self):
+        """ Test fitting of Morse potential using Al fcc DFT data."""
+        folder_name = './tests/inpt_files/Al_fcc'
+        V_DFT, E_DFT = load_V_E(folder_name, folder_name + '/CONTCAR.5', units='J/mol')
+
+        formula, primitive_cell, sbasis_vectors = load_cell(folder_name+'/CONTCAR.5')
+
+        eos_Morse = MP(formula, primitive_cell, sbasis_vectors, self.cutoff, self.number_of_neighbor_levels, units='J/mol')
+        initial_parameters = np.array([0.35, 1, 3.5])
+
+        eos_Morse.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters)
+
+        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([3.492281316e-01, 9.977375168e-01, 3.246481751e+00]))
 
 if __name__=='__main__':
     unittest.main()

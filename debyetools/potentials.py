@@ -15,7 +15,7 @@ class BM:
     """
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
-            self.pEOS = parameters
+            self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
         """
@@ -27,7 +27,7 @@ class BM:
 
         :return list_of_floats: Optimal parameters.
         """
-        pEOS = initial_parameters
+        pEOS = initial_parameters[:4]
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
 
@@ -75,10 +75,10 @@ class RV:#Rose-Vinet
     """
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
-            self.pEOS = parameters
+            self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
-        pEOS = initial_parameters
+        pEOS = initial_parameters[:4]
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
 
@@ -119,10 +119,10 @@ class MG:#Mie-Gruneisen
 
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
-            self.pEOS = parameters
+            self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
-        pEOS = initial_parameters
+        pEOS = initial_parameters[:4]
         ##print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
@@ -162,10 +162,10 @@ class TB:#TB-SMA
 
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
-            self.pEOS = parameters
+            self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
-        pEOS = initial_parameters
+        pEOS = initial_parameters[:4]
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
@@ -204,7 +204,7 @@ class MP:#Morse
     """
 
     def __init__(self, *args, units='J/mol', parameters = ''):
-        formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = [ai for ai in args]
+        formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = args
         # formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
         size=np.array([1, 1, 1])
         center=np.array([0, 0, 0])
@@ -350,10 +350,10 @@ class MU:#Murnaghan
 
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
-            self.pEOS = parameters
+            self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
-        pEOS = initial_parameters
+        pEOS = initial_parameters[:4]
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
@@ -393,10 +393,10 @@ class BM3:#Birch-Murnaghan
 
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
-            self.pEOS = parameters
+            self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
-        pEOS = initial_parameters
+        pEOS = initial_parameters[:4]
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         # popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
@@ -437,10 +437,10 @@ class PT:#Poirier-Tarantola
 
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
-            self.pEOS = parameters
+            self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
-        pEOS = initial_parameters
+        pEOS = initial_parameters[:4]
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
@@ -448,27 +448,29 @@ class PT:#Poirier-Tarantola
 
     def E04min(self, V, pEOS):
         E0,V0,B0,Bp0 = pEOS
-        return  -(1/6)*B0*V0*(Bp0-2)*np.log(V0/V)**3-(1/2)*B0*V0*np.log(V0/V)**2+E0
+
+        # E0 + K/6*V0(ln(V/V0))^2 (3-(Kp-2)ln(V/V0))
+        return  E0+(1/6)*B0*V0*np.log(V/V0)**2*(3-(Bp0-2)*np.log(V/V0))#(1/6)*B0*V0*(Bp0-2)*np.log(V0/V)**3-(1/2)*B0*V0*np.log(V0/V)**2+E0
     def E0(self, V):
         return  self.E04min(V, self.pEOS)
     def dE0dV_T(self,V):
         E0,V0,B0,Bp0 = self.pEOS
-        return B0*(2+(Bp0-2)*np.log(V0/V))*V0*np.log(V0/V)/(2*V)
+        return -V0*(-2+(Bp0-2)*np.log(V/V0))*B0*np.log(V/V0)/(2*V)#B0*(2+(Bp0-2)*np.log(V0/V))*V0*np.log(V0/V)/(2*V)
     def d2E0dV2_T(self,V):
         E0,V0,B0,Bp0 = self.pEOS
-        return -(2+(Bp0-2)*np.log(V0/V)**2+(2*Bp0-2)*np.log(V0/V))*B0*V0/(2*V**2)
+        return V0*B0*(2+(Bp0-2)*np.log(V/V0)**2+(-2*Bp0+2)*np.log(V/V0))/(2*V**2)#-(2+(Bp0-2)*np.log(V0/V)**2+(2*Bp0-2)*np.log(V0/V))*B0*V0/(2*V**2)
     def d3E0dV3_T(self,V):
         E0,V0,B0,Bp0 = self.pEOS
-        return  B0*((Bp0-2)*np.log(V0/V)**2+(3*Bp0-4)*np.log(V0/V)+Bp0+1)*V0/V**3
+        return  -V0*B0*((Bp0-2)*np.log(V/V0)**2+(-3*Bp0+4)*np.log(V/V0)+Bp0+1)/V**3#B0*((Bp0-2)*np.log(V0/V)**2+(3*Bp0-4)*np.log(V0/V)+Bp0+1)*V0/V**3
     def d4E0dV4_T(self,V):
         E0,V0,B0,Bp0 = self.pEOS
-        return -B0*V0*(3*np.log(V0/V)**2*Bp0+11*np.log(V0/V)*Bp0-6*np.log(V0/V)**2+6*Bp0-16*np.log(V0/V)-1)/V**4
+        return B0*V0*(3*np.log(V/V0)**2*Bp0-11*np.log(V/V0)*Bp0-6*np.log(V/V0)**2+6*Bp0+16*np.log(V/V0)-1)/V**4#-B0*V0*(3*np.log(V0/V)**2*Bp0+11*np.log(V0/V)*Bp0-6*np.log(V0/V)**2+6*Bp0-16*np.log(V0/V)-1)/V**4
     def d5E0dV5_T(self,V):
         E0,V0,B0,Bp0 = self.pEOS
-        return B0*V0*(12*np.log(V0/V)**2*Bp0+50*np.log(V0/V)*Bp0-24*np.log(V0/V)**2+35*Bp0-76*np.log(V0/V)-20)/V**5
+        return -B0*V0*(12*np.log(V/V0)**2*Bp0-50*np.log(V/V0)*Bp0-24*np.log(V/V0)**2+35*Bp0+76*np.log(V/V0)-20)/V**5#B0*V0*(12*np.log(V0/V)**2*Bp0+50*np.log(V0/V)*Bp0-24*np.log(V0/V)**2+35*Bp0-76*np.log(V0/V)-20)/V**5
     def d6E0dV6_T(self,V):
         E0,V0,B0,Bp0 = self.pEOS
-        return -B0*V0*(60*np.log(V0/V)**2*Bp0+274*np.log(V0/V)*Bp0-120*np.log(V0/V)**2+225*Bp0-428*np.log(V0/V)-176)/V**6
+        return B0*V0*(60*np.log(V/V0)**2*Bp0-274*np.log(V/V0)*Bp0-120*np.log(V/V0)**2+225*Bp0+428*np.log(V/V0)-176)/V**6#-B0*V0*(60*np.log(V0/V)**2*Bp0+274*np.log(V0/V)*Bp0-120*np.log(V0/V)**2+225*Bp0-428*np.log(V0/V)-176)/V**6
     def error2min(self, P, Vdata,Edata):
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
         return Ecalc-Edata
@@ -480,10 +482,10 @@ class BM4:#Poirier-Tarantola
 
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
-            self.pEOS = parameters
+            self.pEOS = parameters[:5]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
-        pEOS = initial_parameters
+        pEOS = initial_parameters[:5]
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         # popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
@@ -523,10 +525,10 @@ class MU2:#Poirier-Tarantola
 
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
-            self.pEOS = parameters
+            self.pEOS = parameters[:5]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
-        pEOS = initial_parameters
+        pEOS = initial_parameters[:5]
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt

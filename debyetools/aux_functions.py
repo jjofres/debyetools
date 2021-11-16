@@ -126,3 +126,25 @@ def load_EM(filename_outcar_eps):
     EM = np.array(EM)
 
     return EM
+
+def load_cell(filename_contcar):
+    with open(filename_contcar) as f:
+        poscar_lines=f.readlines()
+    mult = float(poscar_lines[1])
+    cell = np.array([np.fromstring(line_i, dtype=float,sep=' ') for line_i in poscar_lines[2:5]])
+    cell = cell*mult
+
+    ix_nats=6
+    ats_types = re.findall('[A-Z][^A-Z]*', poscar_lines[ix_nats-1].replace('  ','').replace(' ','').replace('\n',''))
+    nats = np.fromstring(poscar_lines[ix_nats], dtype=int,sep=' ')
+
+    formula_lst=[]
+    for at_i, na_i in zip(ats_types,nats):
+        formula_lst.append(at_i*na_i)
+    formula=''.join(formula_lst)
+    tots_nats=sum(nats)
+
+    basis = np.array([np.fromstring(line_i, dtype=float,sep=' ') for line_i in poscar_lines[8:8+tots_nats]])
+    # basis = np.dot(basis,cell)
+
+    return formula, cell, basis

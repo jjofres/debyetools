@@ -32,16 +32,19 @@ def lo_fsparams(i):
 
 def layout(EOS_str_lst):
     lo_options = {EOSStr:[[elmt.T(EOSStr+' params.:','params_'+EOSStr),elmt.dI('0, 0, 0, 0','params_'+EOSStr,25),elmt.dChk('fit','calc_params_'+EOSStr,True)]] for EOSStr in EOS_str_lst}
-    lo_options['MP'] = [[elmt.T('cutoff:','cutoff'),elmt.I('5.0','cutoff',3),elmt.T('# of neigh. lvls.:','ndists'),elmt.I('3','ndists',3)],
-                     [elmt.T('Morse params.:','params_MP'),elmt.dI('0, 0, 0','params_MP',15),elmt.dChk('calculate','calc_params_MP',True)]]
+    lo_options['MP'] = [[elmt.T('Morse cutoff:','cutoff_MP'),elmt.I('5.0','cutoff_MP',3),elmt.T('# of neigh. lvls.:','ndists_MP'),elmt.I('3','ndists_MP',3)],
+                     [elmt.T('Morse params.:','params_MP'),elmt.dI('0, 0, 0','params_MP',15),elmt.dChk('fit','calc_params_MP',True)]]
+    lo_options['EAM'] = [[elmt.T('EAM cutoff:','cutoff_EAM'),elmt.I('5.0','cutoff_EAM',3),elmt.T('# of neigh. lvls.:','ndists_EAM'),elmt.I('3','ndists_EAM',3)],
+                     [elmt.T('EAM params.:','params_EAM'),elmt.dI('0, 0, 0','params_EAM',15),elmt.dChk('fit','calc_params_EAM',True)]]
 
-    lo_EOS = [[elmt.listbox(['Morse','Rose-Vinet','TB-SMA','Birch-Murnaghan (3)','Mie-Gruneisen','Murnaghan (1)','Poirier-Tarantola','Birch-Murnaghan (4)','Murnaghan (2)','EAM',
+    lo_EOS = [[elmt.listbox(['Morse','EAM','Rose-Vinet','TB-SMA','Birch-Murnaghan (3)','Mie-Gruneisen','Murnaghan (1)','Poirier-Tarantola','Birch-Murnaghan (4)','Murnaghan (2)',
                              #'*Morse','*Rose-Vinet','*TB-SMA','*Birch-Murnaghan (3)','*Mie-Gruneisen','*Murnaghan (1)','*Poirier-Tarantola','*Birch-Murnaghan (4)','*Murnaghan (2)','*EAM'
                              ],'EOS_listbox')],
               [elmt.Be('Add','add_EOS',('white', 'green'))]]
 
     lo_EOS_collapes = [
                 [elmt.collapse(lo_options['MP'],'options_'+'MP')],
+                [elmt.collapse(lo_options['EAM'],'options_'+'EAM')],
               [elmt.collapse(lo_options['RV'],'options_'+'RV')],
               [elmt.collapse(lo_options['TB'],'options_'+'TB')],
               [elmt.collapse(lo_options['BM'],'options_'+'BM')],
@@ -50,7 +53,6 @@ def layout(EOS_str_lst):
               [elmt.collapse(lo_options['PT'],'options_'+'PT')],
               [elmt.collapse(lo_options['BM4'],'options_'+'BM4')],
               [elmt.collapse(lo_options['MU2'],'options_'+'MU2')],
-              [elmt.collapse(lo_options['EAM'],'options_'+'EAM')],
                 #   [elmt.collapse(lo_options['*MP'],'options_'+'*MP')],
                 # [elmt.collapse(lo_options['*RV'],'options_'+'*RV')],
                 # [elmt.collapse(lo_options['*TB'],'options_'+'*TB')],
@@ -64,7 +66,7 @@ def layout(EOS_str_lst):
 
               ]
     lo_EOS = lo_EOS+lo_EOS_collapes
-    lo_EOS = lo_EOS + [[elmt.Bc('fit EOS parameters','run_eos_fitting',('white', 'green'),right_click_menu=['',['open fitting tool::fittingToolEOS']])],]
+    lo_EOS = lo_EOS + [[elmt.Bc('fit EOS parameters','run_eos_fitting',('white', 'green'),right_click_menu=['',['plot fitting::PlotfittingEOS']])],]
 
     lo_poisson = [[elmt.T('nu:', 'nu'),elmt.dI('','nu',4), elmt.Bc('calculate','calc_nu',('white', 'green'),right_click_menu=['',['details...::nu']])]]
 

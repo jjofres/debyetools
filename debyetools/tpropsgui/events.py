@@ -12,7 +12,7 @@ import debyetools.tpropsgui.toolbox as tbox
 # import dependencies.thermo.anharmonicity as anharmonicity
 # import dependencies.thermo.electronic as electronic
 # import dependencies.thermo.defects as defects
-# import dependencies.plotsgui.plotter as plot
+import debyetools.tpropsgui.plotter as plot
 # import dependencies.thermo.pair_analysis as pair_analysis
 #
 # Cp2fit = lambda T, P0, P1, P2, P3, P4, P5: P0*T**0 + P1*T**1 + P2*T**(-2) + P3*T**2 + P4*T**(-.5) + P5*T**(-3)
@@ -149,19 +149,19 @@ def chk_eos(window,opened_dict):
     for k in opened_dict.keys():
         window['||Col_options_'+k].update(visible=opened_dict[k])
 #
-# def chk_calc_params(window,event):
-#     eos_str = event.split('_')[-1]
-#     window['--I_params_'+eos_str].update(disabled= bool(window[event].get()))
+def chk_calc_params(window,event):
+    eos_str = event.split('_')[-1]
+    window['--I_params_'+eos_str].update(disabled= bool(window[event].get()))
 #
-# def bool_chks(window,opened_dict):
-#     bool_lst_params_EOS = [window['--Chk_calc_params_'+stri].get() for stri in opened_dict.keys()]
-#     bool_lst_EOS =  [oi for oi in opened_dict]
-#     bool_run_eos_fitting = any([all([x,y]) for x,y in zip(bool_lst_params_EOS,bool_lst_EOS)])
+def bool_chks(window,opened_dict):
+    bool_dict_params_EOS = {stri:window['--Chk_calc_params_'+stri].get() for stri in opened_dict.keys()}
+    bool_dict_EOS =  {stri:opened_dict[stri] for stri in opened_dict.keys()}
+    bool_run_eos_fitting = any([all([bool_dict_params_EOS[stri],bool_dict_EOS[stri]]) for stri in opened_dict.keys()])
+
+    return bool_run_eos_fitting, bool_dict_params_EOS
 #
-#     return bool_run_eos_fitting
-#
-def update_diabled(window,opened_dict,eos_available):
-    bool_run_eos_fitting = bool_chks(window,opened_dict)
+def update_diabled(window,opened_dict,eos_available,bool_dict_params_EOS):
+    bool_run_eos_fitting, bool_dict_params_EOS = bool_chks(window,opened_dict)
     window['||B_run_eos_fitting'].update(disabled=not bool_run_eos_fitting)
 
     bool_minF = bool_run_eos_fitting and (True if window['--I_nu'].get()!='' else False)
@@ -184,8 +184,10 @@ def update_diabled(window,opened_dict,eos_available):
     window['--I_Tm'].update(disabled=True if window['--I_compound'].get()=='' else False)
     window['--I_ntemps'].update(disabled=True if window['--I_compound'].get()=='' else False)
     window['||B_plotter_tprops'].update(disabled=True if window['--IC_prop2plt'].get()== '' else False)
-    window['--I_cutoff'].update(disabled=False)
-    window['--I_ndists'].update(disabled=False)
+    window['--I_cutoff_MP'].update(disabled=False)
+    window['--I_ndists_MP'].update(disabled=False)
+
+    return bool_dict_params_EOS
 #
 # def eos_fitting(window,opened_dict,initial_compound_path,contcar_str,params_dict):
 #     initial_chk_selections ={eos_str:bool(opened_dict[eos_str]*window['--Chk_calc_params_'+eos_str].get()) for eos_str in opened_dict.keys()}
@@ -207,9 +209,8 @@ def update_diabled(window,opened_dict,eos_available):
 #
 #     return params_dict
 #
-# def eos_write_params(window,params_dict):
-#     for k in params_dict.keys():
-#         window['--I_params_'+k].update(', '.join(['%.9e' for i in params_dict[k]])%tuple(params_dict[k]))
+def eos_write_params(window,EOSStr,pEOS):
+        window['--I_params_'+EOSStr].update(', '.join(['%.9e' for i in pEOS])%tuple(pEOS))
 #
 # def calc_nu(window,eps_str):
 #     nu_bool = True
@@ -433,7 +434,36 @@ def update_diabled(window,opened_dict,eos_available):
 #         fs_params_S298_dict[str(k)]=S298
 #
 #     return fs_params_Cp_dict,fs_params_alpha_dict,fs_params_Ksinv_dict,fs_params_Ksp_dict,T_data,ix_Tfrom,ix_Tto,fs_params_H298_dict,fs_params_S298_dict
-#
+def plot_EvV(window, eosobj_dict, opened_EOS_dict):
+    pots_str_lst = [k for k in opened_EOS_dict if opened_EOS_dict[k]]
+    print(pots_str_lst)
+    V_DFT = eosobj_dict['V_DFT']
+    E_DFT = eosobj_dict['E_DFT']
+    tab3_str='#V          DFT         '+'          '.join(['%s' for i in pots_str_lst])%tuple(pots_str_lst)+'\n'
+    for Vi, Ei in zip(V_DFT, E_DFT):
+        Emi = [eosobj_dict[k].E0(Vi) for k in pots_str_lst]
+        tab3_str= tab3_str + '%.10e   %.10e  '%(Vi,Ei) + '  '.join(['%.10e' for i in Emi])%tuple(Emi)+'\n'
+    print(tab3_str)
+    initial_tabs_multilinetxt = {'t0':{'multiline':tab3_str}}
+    initial_lines_settings = {
+                              'l0':{'plot':True,'label':0,'linestyle':'None','color':'mediumpurple','marker':'o',   'markerfacecolor':'black', 'markeredgecolor':'mediumpurple','linewidth':2,'markersize':10},
+                              'l1':{'plot':True,'label':0,'linestyle':'None','color':'purple', 'marker':'+',   'markerfacecolor':'None', 'markeredgecolor':'deepskyblue','linewidth':2,'markersize':10},
+                              'l2':{'plot':True,'label':0,'linestyle':'None','color':'gray',        'marker':'x',   'markerfacecolor':'None', 'markeredgecolor':'aqua','linewidth':2,'markersize':10},
+                              'l3':{'plot':True,'label':0,'linestyle':'None','color':'orchid',        'marker':'s',   'markerfacecolor':'None', 'markeredgecolor':'gray','linewidth':2,'markersize':10},
+                              'l4':{'plot':True,'label':0,'linestyle':'None','color':'deepskyblue',          'marker':'^',   'markerfacecolor':'None', 'markeredgecolor':'C0','linewidth':2,'markersize':10},
+                              'l5':{'plot':True,'label':0,'linestyle':'None','color':'pink',          'marker':'>',   'markerfacecolor':'None', 'markeredgecolor':'C3','linewidth':2,'markersize':10},
+                              'l6':{'plot':True,'label':0,'linestyle':'None','color':'aqua',      'marker':'1',   'markerfacecolor':'None', 'markeredgecolor':'orange','linewidth':2,'markersize':10},
+                              'l7':{'plot':True,'label':0,'linestyle':'None','color':'cornflowerblue',        'marker':'<','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
+                              'l8':{'plot':True,'label':0,'linestyle':'None','color':'C0',        'marker':'2','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
+                              }
+    initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
+                            'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'Volume $\left[m^3/mol-at\\right]$','ylabel':'$E~\left[J/mol-at\\right]$','labelxsize':13,
+                            'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
+                            'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.2,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12}
+
+    plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)
+
+
 # def plot_VvT(window):
 #     initial_tabs_multilinetxt = {'t0':{'multiline':window['--M_minF_output'].get()}}
 #     initial_lines_settings = {

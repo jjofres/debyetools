@@ -64,20 +64,25 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
         self.assertTrue(np.sqrt(np.sum(np.array([(Ei-Emi)**2 for Ei, Emi in zip(self.E_DFT, E_model)])))/np.abs(np.mean(self.E_DFT))*100<0.5)
 
-    def test_EOS_EAM_Al_fcc_fitting(self):
-        """ Test fitting of EAM potential using Al fcc DFT data."""
-        eos_Morse = EAM(self.formula, self.primitive_cell(4.0396918604), self.basis_vectors, self.cutoff,
-                        self.number_of_neighbor_levels, units='J/mol')
-        initial_parameters = np.array([3.601752881e-01, 1.090829630e+00, 1.098542954e+00, 1.012121606e+00,
-                                       1.004830571e+00, 1.519642057e+00, 1.883696186e-01, 1.103658726e+00,
-                                       9.722673674e-01, 1.502896332e+00])
-
-        eos_Morse.fitEOS(self.V_DFT, self.E_DFT, initial_parameters=initial_parameters)
-
-        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([1.86428338e-02,1.08771586e+00,1.26776095e+00,1.01661602e+00,1.00535350e+00,2.98199738e+00,2.56370530e-07,1.10512008e+00,1.81521927e+00,1.49362736e+00]),decimal=3)
+    # def test_EOS_EAM_Al_fcc_fitting(self):
+    #     """ Test fitting of EAM potential using Al fcc DFT data."""
+    #     eos_Morse = EAM(self.formula, self.primitive_cell(4.0396918604), self.basis_vectors, self.cutoff,
+    #                     self.number_of_neighbor_levels, units='J/mol')
+    #     initial_parameters = np.array([3.601752881e-01, 1.090829630e+00, 1.098542954e+00, 1.012121606e+00,
+    #                                    1.004830571e+00, 1.519642057e+00, 1.883696186e-01, 1.103658726e+00,
+    #                                    9.722673674e-01, 1.502896332e+00])
+    #
+    #     eos_Morse.fitEOS(self.V_DFT, self.E_DFT, initial_parameters=initial_parameters)
+    #
+    #     np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([1.86428338e-02,1.08771586e+00,1.26776095e+00,1.01661602e+00,1.00535350e+00,2.98199738e+00,2.56370530e-07,1.10512008e+00,1.81521927e+00,1.49362736e+00]),decimal=3)
 
     def test_EOS_BM3_Al_fcc_fit_read_inpts(self):
         """ Test fitting of BM3 potential using Al fcc DFT data."""
+
+        import os
+        cwd = os.getcwd()
+        print("Current working directory: {0}".format(cwd))
+
         folder_name = './inpt_files/Al_fcc'#../tests/inpt_files/Al_fcc'
         V_DFT, E_DFT = load_V_E(folder_name, folder_name+'/CONTCAR.5', units='J/mol')
 

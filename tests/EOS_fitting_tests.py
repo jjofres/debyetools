@@ -83,7 +83,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
         cwd = os.getcwd()
         print("Current working directory: {0}".format(cwd))
 
-        folder_name = './inpt_files/Al_fcc'#../tests/inpt_files/Al_fcc'
+        folder_name = './tests/inpt_files/Al_fcc'#../tests/inpt_files/Al_fcc'
         V_DFT, E_DFT = load_V_E(folder_name, folder_name+'/CONTCAR.5', units='J/mol')
 
         eos_BM3 = BM()

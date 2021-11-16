@@ -78,8 +78,8 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
     def test_EOS_BM3_Al_fcc_fit_read_inpts(self):
         """ Test fitting of BM3 potential using Al fcc DFT data."""
-
-        V_DFT, E_DFT = load_V_E('../tests/inpt_files/Al_fcc', '../tests/inpt_files/Al_fcc/CONTCAR.5', units='J/mol')
+        folder_name = './inpt_files/Al_fcc'#../tests/inpt_files/Al_fcc'
+        V_DFT, E_DFT = load_V_E(folder_name, folder_name+'/CONTCAR.5', units='J/mol')
 
         eos_BM3 = BM()
         initial_parameters = np.array([-3.617047894e+05, 9.929931142e-06, 7.618619745e+10, 4.591924487e+00])

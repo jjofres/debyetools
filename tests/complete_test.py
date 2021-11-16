@@ -16,9 +16,10 @@ class CpTestCase(unittest.TestCase):
     def test_Complete_Al_fcc_BM4(self):
         """ Test complete algorithm to calculate TP for Al fcc using the 4th order Birch-Murnaghan EOS."""
 
+        folder_name = '../tests/inpt_files/Al_fcc'
         # EOS parametrization
         #=========================
-        V_DFT, E_DFT = load_V_E('../tests/inpt_files/Al_fcc', '../tests/inpt_files/Al_fcc/CONTCAR.5', units='J/mol')
+        V_DFT, E_DFT = load_V_E(folder_name, folder_name+'/CONTCAR.5', units='J/mol')
         EOS_name = 'BM4'
         initial_parameters =  [-3.6e+05, 9.9e-06, -7.8e+10, 4.7e+00, 1.e-10]
         eos_BM4 = getattr(potentials,EOS_name)()
@@ -30,7 +31,7 @@ class CpTestCase(unittest.TestCase):
         #=========================
         p_el_inittial = [3.8027342892e-01, -1.8875015171e-02,
                          5.3071034596e-04, -7.0100707467e-06]
-        E, N, Ef = load_doscar('../tests/inpt_files/Al_fcc/DOSCAR.EvV.')
+        E, N, Ef = load_doscar(folder_name+'/DOSCAR.EvV.')
         p_electronic = fit_electronic(V_DFT, p_el_inittial,E,N,Ef)
         #=========================
 
@@ -44,7 +45,7 @@ class CpTestCase(unittest.TestCase):
 
         # Poisson's ratio
         #=========================
-        EM = EM = load_EM('../tests/inpt_files/Al_fcc/OUTCAR.eps')
+        EM = EM = load_EM(folder_name+'/OUTCAR.eps')
         nu = poisson_ratio(EM)
         #=========================
 

@@ -1,19 +1,20 @@
 #### imports
 import PySimpleGUI as sg
 from debyetools.tpropsgui.layout import layout
+import debyetools.tpropsgui.events as events
 # from dependencies.ifgui.layout import layout
 # import dependencies.ifgui.events as events
-# import dependencies.ifgui.toolbox as tbox
+import debyetools.tpropsgui.toolbox as tbox
 # from scipy.optimize import fmin, curve_fit
 
-# EOS_long_lst = {'Morse':'MP','Birch-Murnaghan (3)':'BM','Rose-Vinet':'RV','Mie-Gruneisen':'MG','TB-SMA':'TB','Murnaghan (1)':'MU','Poirier-Tarantola':'PT','Birch-Murnaghan (4)':'BM4','Murnaghan (2)':'MU2','EAM':'EAM',
-#                 '*Morse':'MP','*Birch-Murnaghan (3)':'*BM','*Rose-Vinet':'*RV','*Mie-Gruneisen':'*MG','*TB-SMA':'*TB','*Murnaghan (1)':'*MU','*Poirier-Tarantola':'*PT','*Birch-Murnaghan (4)':'*BM4','*Murnaghan (2)':'*MU2','*EAM':'*EAM'}
-EOS_str_lst = ['MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']
-# contcar_str = '/CONTCAR.5'
-# opened_dict = {str_i:False for str_i in EOS_str_lst}#{'MP':False,'BM':False,'RV':False,'MG':False,'TB':False,'MU':False,'BM3':False}
+EOS_long_lst = {'Morse':'MP','Birch-Murnaghan (3)':'BM','Rose-Vinet':'RV','Mie-Gruneisen':'MG','TB-SMA':'TB','Murnaghan (1)':'MU','Poirier-Tarantola':'PT','Birch-Murnaghan (4)':'BM4','Murnaghan (2)':'MU2','EAM':'EAM',
+                }#'*Morse':'MP','*Birch-Murnaghan (3)':'*BM','*Rose-Vinet':'*RV','*Mie-Gruneisen':'*MG','*TB-SMA':'*TB','*Murnaghan (1)':'*MU','*Poirier-Tarantola':'*PT','*Birch-Murnaghan (4)':'*BM4','*Murnaghan (2)':'*MU2','*EAM':'*EAM'}
+EOS_str_lst = ['MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM']#,'*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']
+contcar_str = '/CONTCAR.5'
+opened_dict = {str_i:False for str_i in EOS_str_lst}#{'MP':False,'BM':False,'RV':False,'MG':False,'TB':False,'MU':False,'BM3':False}
 # doscar_str = '/DOSCAR.EvV.'
 # eps_str = '/OUTCAR.eps'
-# mws_dict, tms_dict, evacs_dict, svacs_dict = tbox.MWs('./table_MW')
+mws_dict = tbox.MWs('./tests/inpt_files/table_MW')
 #
 # #print(tms_dict)
 # params_dict = {}
@@ -33,25 +34,25 @@ while True:
         break
     #
     # #file browser
-    # if event == '--I_FILEBROWSE_':
-    #     try:
-    #         opened_dict = events.fbrowser_resets(window, opened_dict)
-    #         str_folderbrowser = events.fbrowser_fill_browser(window, event)
-    #         events.fbrowser_update_fields(window, contcar_str, mws_dict, str_folderbrowser, evacs_dict, svacs_dict, tms_dict)
+    if event == '--I_FILEBROWSE_':
+        # try:
+            # opened_dict = events.fbrowser_resets(window, opened_dict)
+        str_folderbrowser = events.fbrowser_fill_browser(window, event)
+        events.fbrowser_update_fields(window, contcar_str, mws_dict, str_folderbrowser)
     #     except Exception as e:
     #         sg.popup_ok(str(e))
-    # #EOS Checkbox
+    # # #EOS Checkbox
     # if '--LBx_EOS_listbox' in event:#'--Chk_eos_' in event:
     #     print(window[event].get())
     #     #
-    # if event == '||B_add_EOS':
-    #     for k in opened_dict.keys():
-    #         opened_dict[k]=False
-    #     for k in window['--LBx_EOS_listbox'].get():
-    #         opened_dict[EOS_long_lst[k]]=True
-    #     print(opened_dict)
-    #
-    #     events.chk_eos(window,opened_dict)
+    if event == '||B_add_EOS':
+        for k in opened_dict.keys():
+            opened_dict[k]=False
+        for k in window['--LBx_EOS_listbox'].get():
+            opened_dict[EOS_long_lst[k]]=True
+        print(opened_dict)
+
+        events.chk_eos(window,opened_dict)
     #
     # #EOS calculation Checkbox
     # if '--Chk_calc_params_' in event:
@@ -167,4 +168,4 @@ while True:
     #         sg.popup(txt_out,title='details...',font=('Courier',8))
     #
     # #update enabled/disabled boxes and buttons
-    # events.update_diabled(window,opened_dict,EOS_str_lst)
+    events.update_diabled(window,opened_dict,EOS_str_lst)

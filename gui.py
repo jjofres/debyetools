@@ -182,8 +182,15 @@ while True:
                 for rowi in TPs_arr:
                     tprops_str = tprops_str + ' '.join(['%.11e' for i in rowi])%tuple(rowi)+'\n'
                 window['--M_tprop_'+o].update(tprops_str)
+                window['--IC_prop2plt'].update(values=list(keys_TPs)[1:])
         window['--Tab_'].update(visible=False)
 
+    if event == '||B_plotter_tprops':
+        keys_EOS = []
+        for o in opened_EOS_dict:
+            if opened_EOS_dict[o]:
+                keys_EOS.append(o)
+        events.plot_tprops(window,keys_EOS)
 
     #electronic Checkbox
     if event == '--Chk_el':
@@ -245,8 +252,6 @@ while True:
     # #plot V(T)
     #
     # #plot TProps
-    # if event == '||B_plotter_tprops':
-    #     events.plot_tprops(window,minF_header)
     #
     # #plot FS TProps1
     # if '||B_plotter_fsprop2plt' in event:

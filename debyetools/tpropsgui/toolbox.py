@@ -18,16 +18,16 @@ def MWs(table_file):
                 mws_dict[li_lst[2]] = float(li_lst[0])/1000
     return mws_dict
 
-# def txt2dict(txt):
-#     lines=txt.split('\n')
-#     keys=lines[0][1:].split()
-#     vals_arr=[]
-#     for linei in lines[1:]:
-#         vals = linei.split()
-#         if len(vals)==len(keys):
-#             vals_arr.append([float(vali) for vali in vals])
-#     vals_arr=np.array(vals_arr)
-#     res_dict={}
-#     for k,v in zip(keys,vals_arr.T):
-#         res_dict[k]=v
-#     return res_dict
+def txt2dict(txt):
+    lines=txt.split('\n')
+    keys=lines[0][1:].split()
+    vals_arr=[]
+    for linei in lines[1:]:
+        vals = linei.split()
+        if len(vals)==len(keys):
+            vals_arr.append([float(vali) for vali in vals])
+    vals_arr=np.array(vals_arr)
+    res_dict={}
+    for k,v in zip(keys,vals_arr.T):
+        res_dict[k]=v
+    return res_dict

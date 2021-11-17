@@ -97,7 +97,7 @@ def layout(EOS_str_lst):
                [elmt.sCol([[elmt.M('','minF_output',100,7)]], 'minF_output', 480, 80)],
                [elmt.Bc('Open plotter','plotter',('gray','gray'))],]
 
-    lo_tabs_tprops = [[elmt.Tab(eos_str,[[elmt.sCol([[elmt.M('','tprop_'+eos_str,300,7)]], 'tprop_'+eos_str, 470, 80)]],eos_str,False) for eos_str in ['','MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']]]
+    lo_tabs_tprops = [[elmt.Tab(eos_str,[[elmt.sCol([[elmt.M('','tprop_'+eos_str,400,7)]], 'tprop_'+eos_str, 470, 80)]],eos_str,False) for eos_str in ['','MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']]]
 
     lo_tprops = [[elmt.Bc('evaluate','eval_tprops',('gray','gray'))],
              [elmt.TG(lo_tabs_tprops,'tabs_tprops')],

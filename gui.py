@@ -147,7 +147,7 @@ while True:
                 Tmin, Vmin = nDebs_dict[k]['ndeb'].min_F(T,nDebs_dict[k]['ndeb'].EOS.V0)
                 nDebs_dict[k]['T'] = np.array(Tmin)
                 nDebs_dict[k]['V'] = Vmin
-        txt2VT = '# T'
+        txt2VT = '#T'
 
         mtxs = np.array(T)
 
@@ -167,6 +167,22 @@ while True:
         events.plot_VvT(window)
 
 
+    tprops_dict_all = {}
+    if event == '||B_eval_tprops':
+        for o in opened_EOS_dict:
+            if opened_EOS_dict[o]:
+                print('Results for:',o)
+                tprops_dict_all[o] = nDebs_dict[o]['ndeb'].eval_props(nDebs_dict[o]['T'],nDebs_dict[o]['V'])
+
+                window['--Tab_'+o].update(visible=True)
+                #window['--Tab_'+o].select()
+                keys_TPs = tprops_dict_all[o].keys()
+                tprops_str = '#T          '+' '.join([(j+'            ') for j in list(keys_TPs)[1:]])+'\n'
+                TPs_arr = np.c_[tuple([tprops_dict_all[o][j] for j in keys_TPs])]
+                for rowi in TPs_arr:
+                    tprops_str = tprops_str + ' '.join(['%.11e' for i in rowi])%tuple(rowi)+'\n'
+                window['--M_tprop_'+o].update(tprops_str)
+        window['--Tab_'].update(visible=False)
 
 
     #electronic Checkbox

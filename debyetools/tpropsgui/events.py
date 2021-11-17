@@ -13,6 +13,7 @@ import debyetools.tpropsgui.toolbox as tbox
 # import dependencies.thermo.electronic as electronic
 # import dependencies.thermo.defects as defects
 import debyetools.tpropsgui.plotter as plot
+from debyetools.fs_compound_db import Cp2fit, alpha2fit, Ksinv2fit, Ksp2fit
 # import dependencies.thermo.pair_analysis as pair_analysis
 #
 # Cp2fit = lambda T, P0, P1, P2, P3, P4, P5: P0*T**0 + P1*T**1 + P2*T**(-2) + P3*T**2 + P4*T**(-.5) + P5*T**(-3)
@@ -492,62 +493,65 @@ def plot_tprops(window,minF_header):
                               'l8':{'plot':True,'label':0,'linestyle':'-','color':'C0',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
                               }
     initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
-                            'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':window['--IC_prop2plt'].get()+'$~\left[units\\right]$','labelxsize':13,
+                            'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':window['--IC_prop2plt'].get(),'labelxsize':13,
                             'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
                             'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12}
     plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)
 #
-# def plot_fsprops(window,event,fs_params_Cp_dict,fs_params_alpha_dict,fs_params_Ksinv_dict,fs_params_Ksp_dict,T_data,ix_Tfrom,ix_Tto,TPs_calculated_dict):
-#     str_eos = event.replace('||B_plotter_fsprop2plt','')
-#     fs_params_Cp = fs_params_Cp_dict[str_eos]
-#     fs_params_alpha = fs_params_alpha_dict[str_eos]
-#     fs_params_Ksinv = fs_params_Ksinv_dict[str_eos]
-#     fs_params_Ksp = fs_params_Ksp_dict[str_eos]
-#     if window['--IC_fsprop2plt'+str_eos].get()=='Cp':
-#         prop2plt = [Cp2fit(Ti,fs_params_Cp[0],fs_params_Cp[1],fs_params_Cp[2],fs_params_Cp[3],fs_params_Cp[4],fs_params_Cp[5]) for Ti in T_data[ix_Tfrom:ix_Tto+1]]
-#         prop_data = TPs_calculated_dict[str_eos]['Cp']
-#         txt1 = '#T $C_P=P_0T^0+P_1T^1+P_2T^{-2}+P_3T^2+P_4T^{-.5}+P_5T^{-3}$\n'
-#         txt2 = '#T $C_P$\n'
-#     if window['--IC_fsprop2plt'+str_eos].get()=='alpha':
-#         prop2plt = [alpha2fit(Ti,fs_params_alpha[0],fs_params_alpha[1],fs_params_alpha[2],fs_params_alpha[3]) for Ti in T_data[ix_Tfrom:ix_Tto+1]]
-#         prop_data = TPs_calculated_dict[str_eos]['a']
-#         txt1 = '#T $alpha=Q_0T^0+Q_1T^1+Q_2T^{-1}+Q_3T^{-2}$\n'
-#         txt2 = '#T $alpha$\n'
-#     if window['--IC_fsprop2plt'+str_eos].get()=='1/K':
-#         prop2plt = [Ksinv2fit(Ti,fs_params_Ksinv[0],fs_params_Ksinv[1],fs_params_Ksinv[2],fs_params_Ksinv[3]) for Ti in T_data[ix_Tfrom:ix_Tto+1]]
-#         prop_data = [1/ks for ks in TPs_calculated_dict[str_eos]['Ks']]
-#         txt1 = '#T $1/Ks=R_0T^0+R_1T^1+R_2T^2+R_3T^3$\n'
-#         txt2 = '#T $1/Ks$\n'
-#     if window['--IC_fsprop2plt'+str_eos].get()=='dK/dP':
-#         prop2plt = [Ksp2fit(Ti,fs_params_Ksp[0],fs_params_Ksp[1]) for Ti in T_data[ix_Tfrom:ix_Tto+1]]
-#         prop_data = TPs_calculated_dict[str_eos]['Ksp']
-#         txt1 = '#T $dK/dP=S_0+S_1\cdot(T-298.15K)\ln(T/298.15K)$\n'
-#         txt2 = '#T $dK/dP$\n'
-#
-#     initial_tabs_multilinetxt = {'t0':{'multiline':[]}}
-#     for Cpi,Ti in zip(prop2plt, T_data[ix_Tfrom:ix_Tto+1]):
-#         txt1 = txt1 + '%.9e %.9e'%(Ti, Cpi)+'\n'
-#     initial_tabs_multilinetxt['t1']={'multiline':txt1}
-#
-#     for Cpi,Ti in zip(prop_data, T_data):
-#         txt2 = txt2 + '%.9e %.9e'%(Ti, Cpi)+'\n'
-#     initial_tabs_multilinetxt['t0']={'multiline':txt2}
-#     initial_lines_settings = {
-#                               'l0':{'plot':True,'label':0,'linestyle':'-','color':'mediumpurple','marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'mediumpurple','linewidth':2,'markersize':10},
-#                               'l1':{'plot':True,'label':0,'linestyle':'-','color':'purple', 'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'deepskyblue','linewidth':2,'markersize':10},
-#                               'l2':{'plot':True,'label':0,'linestyle':'-','color':'gray',        'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'aqua','linewidth':2,'markersize':10},
-#                               'l3':{'plot':True,'label':0,'linestyle':'-','color':'orchid',        'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'gray','linewidth':2,'markersize':10},
-#                               'l4':{'plot':True,'label':0,'linestyle':'-','color':'deepskyblue',          'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'C0','linewidth':2,'markersize':10},
-#                               'l5':{'plot':True,'label':0,'linestyle':'-','color':'pink',          'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'C3','linewidth':2,'markersize':10},
-#                               'l6':{'plot':True,'label':0,'linestyle':'-','color':'aqua',      'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'orange','linewidth':2,'markersize':10},
-#                               'l7':{'plot':True,'label':0,'linestyle':'-','color':'cornflowerblue',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
-#                               'l8':{'plot':True,'label':0,'linestyle':'-','color':'C0',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
-#                               }
-#     initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
-#                             'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':window['--IC_prop2plt'].get()+'$~\left[units\\right]$','labelxsize':13,
-#                             'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
-#                             'legendncol':1,'legendfontsize':11,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12}
-#     plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)
+def plot_fsprops(window,event,fs_params,Tfrom,Tto,TPs_calculated_dict):
+    str_eos = event.replace('||B_plotter_fsprop2plt','')
+    fs_params_Cp = fs_params[str_eos]['Cp']
+    fs_params_alpha = fs_params[str_eos]['a']
+    fs_params_Ksinv = fs_params[str_eos]['1/Ks']
+    fs_params_Ksp = fs_params[str_eos]['Ksp']
+    T_data = TPs_calculated_dict[str_eos]['T']
+    ix_Tfrom = np.where(np.round(TPs_calculated_dict[str_eos]['T'],2) == np.round(Tfrom,2))[0][0]
+    ix_Tto = np.where(np.round(TPs_calculated_dict[str_eos]['T'],2) == np.round(Tto,2))[0][0]
+    if window['--IC_fsprop2plt'+str_eos].get()=='Cp':
+        prop2plt = [Cp2fit(Ti,fs_params_Cp[0],fs_params_Cp[1],fs_params_Cp[2],fs_params_Cp[3],fs_params_Cp[4],fs_params_Cp[5]) for Ti in T_data[ix_Tfrom:ix_Tto+1]]
+        prop_data = TPs_calculated_dict[str_eos]['Cp']
+        txt1 = '#T $C_P=P_0T^0+P_1T^1+P_2T^{-2}+P_3T^2+P_4T^{-.5}+P_5T^{-3}$\n'
+        txt2 = '#T $C_P$\n'
+    if window['--IC_fsprop2plt'+str_eos].get()=='alpha':
+        prop2plt = [alpha2fit(Ti,fs_params_alpha[0],fs_params_alpha[1],fs_params_alpha[2],fs_params_alpha[3]) for Ti in T_data[ix_Tfrom:ix_Tto+1]]
+        prop_data = TPs_calculated_dict[str_eos]['a']
+        txt1 = '#T $alpha=Q_0T^0+Q_1T^1+Q_2T^{-1}+Q_3T^{-2}$\n'
+        txt2 = '#T $alpha$\n'
+    if window['--IC_fsprop2plt'+str_eos].get()=='1/K':
+        prop2plt = [Ksinv2fit(Ti,fs_params_Ksinv[0],fs_params_Ksinv[1],fs_params_Ksinv[2],fs_params_Ksinv[3]) for Ti in T_data[ix_Tfrom:ix_Tto+1]]
+        prop_data = [1/ks for ks in TPs_calculated_dict[str_eos]['Ks']]
+        txt1 = '#T $1/Ks=R_0T^0+R_1T^1+R_2T^2+R_3T^3$\n'
+        txt2 = '#T $1/Ks$\n'
+    if window['--IC_fsprop2plt'+str_eos].get()=='dK/dP':
+        prop2plt = [Ksp2fit(Ti,fs_params_Ksp[0],fs_params_Ksp[1]) for Ti in T_data[ix_Tfrom:ix_Tto+1]]
+        prop_data = TPs_calculated_dict[str_eos]['Ksp']
+        txt1 = '#T $dK/dP=S_0+S_1\cdot(T-298.15K)\ln(T/298.15K)$\n'
+        txt2 = '#T $dK/dP$\n'
+
+    initial_tabs_multilinetxt = {'t0':{'multiline':[]}}
+    for Cpi,Ti in zip(prop2plt, T_data[ix_Tfrom:ix_Tto+1]):
+        txt1 = txt1 + '%.9e %.9e'%(Ti, Cpi)+'\n'
+    initial_tabs_multilinetxt['t1']={'multiline':txt1}
+
+    for Cpi,Ti in zip(prop_data, T_data):
+        txt2 = txt2 + '%.9e %.9e'%(Ti, Cpi)+'\n'
+    initial_tabs_multilinetxt['t0']={'multiline':txt2}
+    initial_lines_settings = {
+                              'l0':{'plot':True,'label':0,'linestyle':'-','color':'mediumpurple','marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'mediumpurple','linewidth':2,'markersize':10},
+                              'l1':{'plot':True,'label':0,'linestyle':'-','color':'purple', 'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'deepskyblue','linewidth':2,'markersize':10},
+                              'l2':{'plot':True,'label':0,'linestyle':'-','color':'gray',        'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'aqua','linewidth':2,'markersize':10},
+                              'l3':{'plot':True,'label':0,'linestyle':'-','color':'orchid',        'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'gray','linewidth':2,'markersize':10},
+                              'l4':{'plot':True,'label':0,'linestyle':'-','color':'deepskyblue',          'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'C0','linewidth':2,'markersize':10},
+                              'l5':{'plot':True,'label':0,'linestyle':'-','color':'pink',          'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'C3','linewidth':2,'markersize':10},
+                              'l6':{'plot':True,'label':0,'linestyle':'-','color':'aqua',      'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'orange','linewidth':2,'markersize':10},
+                              'l7':{'plot':True,'label':0,'linestyle':'-','color':'cornflowerblue',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
+                              'l8':{'plot':True,'label':0,'linestyle':'-','color':'C0',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
+                              }
+    initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
+                            'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':window['--IC_prop2plt'].get(),'labelxsize':13,
+                            'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
+                            'legendncol':1,'legendfontsize':11,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12}
+    plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)
 #
 # def open_fittin_tool(window, opened_dict, initial_compound_path, contcar_str):
 #

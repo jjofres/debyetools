@@ -37,7 +37,7 @@ all_props={}
 tprops_dict_all = {}
 p_el_inittial = [3.8027342892e-01, -1.8875015171e-02,
                 5.3071034596e-04, -7.0100707467e-06]
-
+FS_db_params = {}
 while True:
     event, values = window.read()
     print(event)
@@ -211,8 +211,7 @@ while True:
     if event == '||B_run_fs_params':
         for o in opened_EOS_dict:
             if opened_EOS_dict[o]:
-                FS_db_params = fit_FS(tprops_dict_all[o],float(window['--I_fs_Tfrom'].get()), float(window['--I_fs_Tto'].get()))
-                print(FS_db_params['Cp'])
+                FS_db_params[o] = fit_FS(tprops_dict_all[o],float(window['--I_fs_Tfrom'].get()), float(window['--I_fs_Tto'].get()))
 
                 ix_T0 = np.where(np.round(tprops_dict_all[o]['T'],2) == np.round(298.15,2))[0][0]
                 H298 = tprops_dict_all[o]['F'][ix_T0]+tprops_dict_all[o]['T'][ix_T0]*tprops_dict_all[o]['S'][ix_T0]
@@ -225,21 +224,24 @@ while True:
                 window['--I_H298'+o].update(H298)
                 window['--I_S298'+o].update(disabled=False)
                 window['--I_S298'+o].update(S298)
-                for i in range(len(FS_db_params['Cp'])):
+                for i in range(len(FS_db_params[o]['Cp'])):
                     window['--I_fsCp_P'+str(i)+o].update(disabled=False)
-                    window['--I_fsCp_P'+str(i)+o].update('%.4e'%(FS_db_params['Cp'][i]))
-                for i in range(len(FS_db_params['a'])):
+                    window['--I_fsCp_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['Cp'][i]))
+                for i in range(len(FS_db_params[o]['a'])):
                     window['--I_fsa_P'+str(i)+o].update(disabled=False)
-                    window['--I_fsa_P'+str(i)+o].update('%.4e'%(FS_db_params['a'][i]))
-                for i in range(len(FS_db_params['1/Ks'])):
+                    window['--I_fsa_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['a'][i]))
+                for i in range(len(FS_db_params[o]['1/Ks'])):
                     window['--I_fsK_P'+str(i)+o].update(disabled=False)
-                    window['--I_fsK_P'+str(i)+o].update('%.4e'%(FS_db_params['1/Ks'][i]))
-                for i in range(len(FS_db_params['Ksp'])):
+                    window['--I_fsK_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['1/Ks'][i]))
+                for i in range(len(FS_db_params[o]['Ksp'])):
                     window['--I_fsKp_P'+str(i)+o].update(disabled=False)
-                    window['--I_fsKp_P'+str(i)+o].update('%.4e'%(FS_db_params['Ksp'][i]))
+                    window['--I_fsKp_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['Ksp'][i]))
 
 
         window['--Tab_fs_'].update(visible=False)
+
+    if '||B_plotter_fsprop2plt' in event:
+        events.plot_fsprops(window,event,FS_db_params, float(window['--I_fs_Tfrom'].get()),float(window['--I_fs_Tto'].get()), tprops_dict_all)
 
 
     #     try:

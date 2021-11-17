@@ -55,13 +55,13 @@ def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser):
     window['--I_formula'].update(''.join(['%s%s' for i in els_lst])%tuple(np.reshape(list(zip(els_lst, nats_lst_int)),len(nats_lst)*2)))
     window['--I_mass'].update(mass/nat)
     window['--I_strkt'].update(str_folderbrowser.split('_')[-1])
-    window['--I_p_el'].update('0,0,0,0')
-    window['--I_p_intanh'].update('0,1')
-    window['--I_p_anhxc'].update('0,0,0')
-    window['--I_p_evac'].update('')
-    window['--I_p_svac'].update('')
+    window['--I_p_el'].update('0, 0, 0, 0')
+    window['--I_p_intanh'].update('0, 1')
+    window['--I_p_anhxc'].update('0, 0, 0')
+    window['--I_p_evac'].update('8')
+    window['--I_p_svac'].update('2')
     window['--I_Ti'].update('0.1')
-    window['--I_Tm'].update('')
+    window['--I_Tm'].update('1000')
     window['--I_Tf'].update(window['--I_Tm'].get())
     window['--I_ntemps'].update(20)
     window['--I_Tm'].update(disabled=False)
@@ -211,38 +211,23 @@ def update_diabled(window,opened_dict,eos_available,bool_dict_params_EOS):
 #
 def eos_write_params(window,EOSStr,pEOS):
         window['--I_params_'+EOSStr].update(', '.join(['%.9e' for i in pEOS])%tuple(pEOS))
+##
+def chk_el(window,event):
+    window['--I_p_el'].update(disabled= not bool(window[event].get()))
+    window['||B_calc_el'].update(disabled= not bool(window[event].get()))
 #
-# def calc_nu(window,eps_str):
-#     nu_bool = True
-#     nu,txt_out, txt_out2 = poisson.calculate3(window['--I_compound'].get()+eps_str)#,window['--I_compound'].get()+ '/SUMMARY.fcc.e')
-#     window['--I_nu'].update('%.2f'%(nu))
-#     return txt_out,nu_bool, txt_out2
+def chk_def(window,event):
+    window['--I_p_evac'].update(disabled= not bool(window[event].get()))
+    window['--I_p_svac'].update(disabled= not bool(window[event].get()))
+##
+def chk_intanh(window,event):
+    window['--I_p_intanh'].update(disabled= not bool(window[event].get()))
+def chk_anhxc(window,event):
+    window['--I_p_anhxc'].update(disabled= not bool(window[event].get()))
 #
-# def chk_el(window,event):
-#     window['--I_p_el'].update(disabled= not bool(window[event].get()))
-#     window['||B_calc_el'].update(disabled= not bool(window[event].get()))
-#
-# def chk_def(window,event):
-#     window['--I_p_evac'].update(disabled= not bool(window[event].get()))
-#     window['--I_p_svac'].update(disabled= not bool(window[event].get()))
-#
-# def calc_el(window,doscar_str,contcar_str):
-#     ins_data_DOS =  window['--I_compound'].get() +doscar_str
-#     q0,q1,q2,q3 = [float(i) for i in window['--I_p_el'].get().replace(',',' ').split()]
-#
-#     Edata,VDFT = load_ins.ReadEnergyVolume(window['--I_compound'].get(),window['--I_compound'].get()+contcar_str)
-#     Ps,NfV, VfV = electronic.fit_electronic(ins_data_DOS,q0,q1,q2,q3,VDFT)
-#     q0,q1,q2,q3 = Ps
-#     window['--I_p_el'].update('%.10e, %.10e, %.10e, %.10e'%(q0,q1,q2,q3))
-#
-# def chk_intanh(window,event):
-#     window['--I_p_intanh'].update(disabled= not bool(window[event].get()))
-# def chk_anhxc(window,event):
-#     window['--I_p_anhxc'].update(disabled= not bool(window[event].get()))
-#
-# def minF_enable_nexts(window):
-#     window['||B_plotter'].update(disabled=False)
-#     window['||B_eval_tprops'].update(disabled=False)
+def minF_enable_nexts(window):
+    window['||B_plotter'].update(disabled=False)
+    window['||B_eval_tprops'].update(disabled=False)
 #
 # def minF_get_ins(window):
 #     nu = float(window['--I_nu'].get())
@@ -464,26 +449,26 @@ def plot_EvV(window, eosobj_dict, opened_EOS_dict):
     plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)
 
 
-# def plot_VvT(window):
-#     initial_tabs_multilinetxt = {'t0':{'multiline':window['--M_minF_output'].get()}}
-#     initial_lines_settings = {
-#                               'l0':{'plot':True,'label':0,'linestyle':'-','color':'mediumpurple','marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'mediumpurple','linewidth':2,'markersize':10},
-#                               'l1':{'plot':True,'label':0,'linestyle':'-','color':'purple', 'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'deepskyblue','linewidth':2,'markersize':10},
-#                               'l2':{'plot':True,'label':0,'linestyle':'-','color':'gray',        'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'aqua','linewidth':2,'markersize':10},
-#                               'l3':{'plot':True,'label':0,'linestyle':'-','color':'orchid',        'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'gray','linewidth':2,'markersize':10},
-#                               'l4':{'plot':True,'label':0,'linestyle':'-','color':'deepskyblue',          'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'C0','linewidth':2,'markersize':10},
-#                               'l5':{'plot':True,'label':0,'linestyle':'-','color':'pink',          'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'C3','linewidth':2,'markersize':10},
-#                               'l6':{'plot':True,'label':0,'linestyle':'-','color':'aqua',      'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'orange','linewidth':2,'markersize':10},
-#                               'l7':{'plot':True,'label':0,'linestyle':'-','color':'cornflowerblue',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
-#                               'l8':{'plot':True,'label':0,'linestyle':'-','color':'C0',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
-#                               }
-#
-#     initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
-#                             'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':'$V~\left[m^3/atom\\right]$','labelxsize':13,
-#                             'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
-#                             'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12}
-#
-#     plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)
+def plot_VvT(window):
+    initial_tabs_multilinetxt = {'t0':{'multiline':window['--M_minF_output'].get()}}
+    initial_lines_settings = {
+                              'l0':{'plot':True,'label':0,'linestyle':'-','color':'mediumpurple','marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'mediumpurple','linewidth':2,'markersize':10},
+                              'l1':{'plot':True,'label':0,'linestyle':'-','color':'purple', 'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'deepskyblue','linewidth':2,'markersize':10},
+                              'l2':{'plot':True,'label':0,'linestyle':'-','color':'gray',        'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'aqua','linewidth':2,'markersize':10},
+                              'l3':{'plot':True,'label':0,'linestyle':'-','color':'orchid',        'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'gray','linewidth':2,'markersize':10},
+                              'l4':{'plot':True,'label':0,'linestyle':'-','color':'deepskyblue',          'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'C0','linewidth':2,'markersize':10},
+                              'l5':{'plot':True,'label':0,'linestyle':'-','color':'pink',          'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'C3','linewidth':2,'markersize':10},
+                              'l6':{'plot':True,'label':0,'linestyle':'-','color':'aqua',      'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'orange','linewidth':2,'markersize':10},
+                              'l7':{'plot':True,'label':0,'linestyle':'-','color':'cornflowerblue',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
+                              'l8':{'plot':True,'label':0,'linestyle':'-','color':'C0',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
+                              }
+
+    initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
+                            'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':'$V~\left[m^3/atom\\right]$','labelxsize':13,
+                            'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
+                            'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12}
+
+    plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)
 #
 # def plot_tprops(window,minF_header):
 #     initial_tabs_multilinetxt = {'t0':{'multiline':[]}}

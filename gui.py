@@ -7,7 +7,10 @@ from debyetools.aux_functions import load_doscar, load_V_E, load_EM, load_cell
 import debyetools.potentials as potentials
 import traceback
 from debyetools.poisson import poisson_ratio
-
+from debyetools.electronic import fit_electronic
+from debyetools.ndeb import nDeb
+from debyetools.aux_functions import gen_Ts
+import numpy as np
 EOS_long_lst = {'Morse':'MP','Birch-Murnaghan (3)':'BM','Rose-Vinet':'RV','Mie-Gruneisen':'MG','TB-SMA':'TB','Murnaghan (1)':'MU','Poirier-Tarantola':'PT','Birch-Murnaghan (4)':'BM4','Murnaghan (2)':'MU2','EAM':'EAM',
                 }#'*Morse':'MP','*Birch-Murnaghan (3)':'*BM','*Rose-Vinet':'*RV','*Mie-Gruneisen':'*MG','*TB-SMA':'*TB','*Murnaghan (1)':'*MU','*Poirier-Tarantola':'*PT','*Birch-Murnaghan (4)':'*BM4','*Murnaghan (2)':'*MU2','*EAM':'*EAM'}
 EOS_str_lst = ['MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM']#,'*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']
@@ -107,39 +110,76 @@ while True:
             sg.popup_ok(traceback.format_exc())
 
     if event == '||B_calc_nu':
-        EM = EM = load_EM(str_folderbrowser+'/OUTCAR.eps')
-        nu = poisson_ratio(EM)
-        print(nu)
-        window['--I_nu'].update('%.3f' % (nu))
+        try:
+            EM = EM = load_EM(str_folderbrowser+'/OUTCAR.eps')
+            nu = poisson_ratio(EM)
+            print(nu)
+            window['--I_nu'].update('%.3f' % (nu))
+        except Exception as e:
+            sg.popup_ok(traceback.format_exc())
+    if event == '||B_calc_el':
+        p_el_inittial = [3.8027342892e-01, -1.8875015171e-02,
+                        5.3071034596e-04, -7.0100707467e-06]
+        E, N, Ef = load_doscar(str_folderbrowser+'/DOSCAR.EvV.')
+        p_electronic = fit_electronic(V_DFT, p_el_inittial,E,N,Ef)
+
+        window['--I_p_el'].update(', '.join(['%.5e' for _ in p_electronic]) % tuple(p_electronic))
+
+    if event == '||B_run_minF':
+        nu = float(window['--I_nu'].get())
+        m =float(window['--I_mass'].get())
+        p_electronic = [float(stri) for stri in window['--I_p_el'].get().replace(' ','').split(',')]
+        p_intanh = [float(stri) for stri in window['--I_p_intanh'].get().replace(' ','').split(',')]
+        p_anh = [float(stri) for stri in window['--I_p_anhxc'].get().replace(' ','').split(',')]
+
+        p_defects = float(window['--I_p_evac'].get()),float(window['--I_p_svac'].get()), float(window['--I_Tm'].get()), 0.1
+        nDebs_dict = {}
+        for k in opened_EOS_dict.keys():
+            if opened_EOS_dict[k]:
+                nDebs_dict[k] = {'ndeb':'','T':'','V':'','tprops':''}
+        T_initial, T_final, number_Temps = float(window['--I_Ti'].get()), float(window['--I_Tf'].get()), float(window['--I_ntemps'].get())
+        T = gen_Ts(T_initial, T_final, number_Temps)
+
+        for k in opened_EOS_dict.keys():
+            if opened_EOS_dict[k]:
+                nDebs_dict[k]['ndeb'] = nDeb(nu, m, p_intanh, EOS2plot_dict[k], p_electronic,
+                                     p_defects, p_anh)
+                Tmin, Vmin = nDebs_dict[k]['ndeb'].min_F(T,nDebs_dict[k]['ndeb'].EOS.V0)
+                nDebs_dict[k]['T'] = np.array(Tmin)
+                nDebs_dict[k]['V'] = Vmin
+        txt2VT = '# T'
+
+        mtxs = np.array(T)
+
+        for o in opened_EOS_dict:
+            if opened_EOS_dict[o]:
+                txt2VT = txt2VT + '             '+ o
+                mtxs=np.c_[mtxs,nDebs_dict[o]['V']]
+
+        txt2VT = txt2VT+'\n'
+        for line in mtxs:
+            txt2VT = txt2VT + ' '.join(['%.9e' for _ in line]) % tuple(line) + '\n'
+        window['--M_minF_output'].update(txt2VT)
+
+        events.minF_enable_nexts(window)
+
+    if event == '||B_plotter':
+        events.plot_VvT(window)
 
 
-    #     try:
-    #         initial_compound_path = window['--I_compound'].get()
-    #         if initial_compound_path == '':
-    #             sg.popup_ok('Please select a compound/element.')
-    #             continue
-    #         params_dict = events.eos_fitting(window,opened_EOS_dict,initial_compound_path,contcar_str,params_dict)
-    #         events.eos_write_params(window,params_dict)
-    #         for K in EOS_str_lst:
-    #             try:
-    #                 print(K,' '.join(['%.10e' for _ in params_dict[K]]) % tuple(params_dict[K]))
-    #             except:
-    #                 print(K,';;;')
-    #     except Exception as e:
-    #         sg.popup_ok(str(e))
-    #
-    # #Nu calculation button
-    # if event == '||B_calc_nu':
-    #     try:
-    #         txt_out,nu_bool,txt_out2 = events.calc_nu(window,eps_str)
-    #
-    #         print(txt_out2)
-    #     except Exception as e:
-    #         sg.popup_ok(str(e))
-    #
-    # #electronic Checkbox
-    # if event == '--Chk_el':
-    #     events.chk_el(window,event)
+
+
+    #electronic Checkbox
+    if event == '--Chk_el':
+        events.chk_el(window,event)
+    #intrinsic anharmonicity Checkbox
+    if event == '--Chk_def':
+        events.chk_def(window,event)
+    #intrinsic anharmonicity Checkbox
+    if event == '--Chk_intanh':
+        events.chk_intanh(window,event)
+    if event == '--Chk_anhxc':
+        events.chk_anhxc(window,event)
     #
     # #electronic calculation button
     # if event == '||B_calc_el':
@@ -148,15 +188,7 @@ while True:
     #     except Exception as e:
     #         sg.popup_ok(str(e))
     #
-    # #intrinsic anharmonicity Checkbox
-    # if event == '--Chk_def':
-    #     events.chk_def(window,event)
     #
-    # #intrinsic anharmonicity Checkbox
-    # if event == '--Chk_intanh':
-    #     events.chk_intanh(window,event)
-    # if event == '--Chk_anhxc':
-    #     events.chk_anhxc(window,event)
     #
     # #run free energy minimization button
     # if event == '||B_run_minF':
@@ -195,8 +227,6 @@ while True:
     #         sg.popup_ok(str(e))
     #
     # #plot V(T)
-    # if event == '||B_plotter':
-    #     events.plot_VvT(window)
     #
     # #plot TProps
     # if event == '||B_plotter_tprops':

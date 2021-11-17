@@ -28,10 +28,10 @@ class nDeb:
     :param list_of_floats p_anh: Excess contribution parameters.
     :param string EOS_name: The EOS or potential to use as internal energy description.
     """
-    def __init__(self, nu, m, p_intanh, EOS, p_electronic, p_defects, p_anh,EOS_name,*args,units='J/mol'):
-        a0, m0, V0_anh = p_intanh
+    def __init__(self, nu, m, p_intanh, EOS, p_electronic, p_defects, p_anh,*args,units='J/mol'):
+        a0, m0 = p_intanh
         q0,q1,q2,q3 = p_electronic
-        Evac00,Svac00,Tm,a,P2,V0_def = p_defects
+        Evac00,Svac00,Tm,a = p_defects
         s0,s1,s2 = p_anh
 
         self.nu, self.r, self.m = nu, 1, m
@@ -40,9 +40,9 @@ class nDeb:
         self.kv = (2./3.*((2. + 2.*nu)/(3.-6.*nu))**(3./2.) + 1./3.*((1. + nu)/(3. - 3.*nu))**(3./2.))**(-1./3.)
 
         self.anh = Anharmonicity(s0,s1,s2)
-        self.intanh = intAnharmonicity(a0,m0,V0_anh)
+        self.intanh = intAnharmonicity(a0,m0,EOS.V0)
         self.el = Electronic(q0,q1,q2,q3)
-        self.deff = Defects(Evac00,Svac00,Tm,a,P2,V0_def)
+        self.deff = Defects(Evac00,Svac00,Tm,a,EOS.V0*EOS.d2E0dV2_T(EOS.V0),EOS.V0)
 
         self.EOS = EOS#getattr(pots,EOS_name)(*args,units=units, parameters = p_EOS)
         # self.EOS.pEOS = p_EOS

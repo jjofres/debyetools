@@ -38,8 +38,8 @@ class CpTestCase(unittest.TestCase):
         # Other Contributions parametrization
         #=========================
         Tmelting = 933
-        p_defects = 8.46, 1.69, Tmelting, 0.1, p_EOS[2], p_EOS[1]
-        p_intanh = 0, 1, p_EOS[1]
+        p_defects = 8.46, 1.69, Tmelting, 0.1
+        p_intanh = 0, 1
         p_anh = 0, 0, 0
         #=========================
 
@@ -53,7 +53,7 @@ class CpTestCase(unittest.TestCase):
         #=========================
         m = 0.026981500000000002
         ndeb_BM4 = nDeb(nu, m, p_intanh, eos_BM4, p_electronic,
-                        p_defects, p_anh, EOS_name)
+                        p_defects, p_anh)
 
         T_initial, T_final, number_Temps = 0.1, 1000, 10
         T = gen_Ts(T_initial, T_final, number_Temps)
@@ -76,8 +76,8 @@ class CpTestCase(unittest.TestCase):
         #=========================
 
         np.testing.assert_array_almost_equal(FS_db_params['Cp'],
-                                             [1.78679148e+02,-1.41618190e-01,1.52227551e+06,
-                                              7.28915016e-05,-2.35166309e+03,1.00000000e+00], decimal=2)
+                                             [1.77599423e+02,-1.40760202e-01,1.50746954e+06,7.25860531e-05,
+                                              -2.33410074e+03,1.00000000e+00], decimal=2)
 
 if __name__=='__main__':
     unittest.main()

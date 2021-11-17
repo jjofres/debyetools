@@ -1,5 +1,5 @@
 from __future__ import division
-from scipy.optimize import least_squares
+from scipy.optimize import least_squares, fmin, minimize
 
 import numpy as np
 import re
@@ -31,7 +31,12 @@ class BM:
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
 
+
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
+        self.V0 = mV['x'][0]
+
         return popt
+
 
     def E04min(self, V, pEOS):
         P0,P1,P2,P3 = EVBBp_to_BMparams(pEOS)
@@ -81,6 +86,8 @@ class RV:#Rose-Vinet
         pEOS = initial_parameters[:4]
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
+        self.V0 = mV['x'][0]
 
         return popt
 
@@ -126,6 +133,9 @@ class MG:#Mie-Gruneisen
         ##print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
+        self.V0 = mV['x'][0]
+
 
     def E04min(self, V, pEOS):
         E0,V0,B0,Bp0 = pEOS
@@ -169,6 +179,8 @@ class TB:#TB-SMA
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
+        self.V0 = mV['x'][0]
 
     def E04min(self, V, pEOS):
         p0,p1,p2,p3 = EVBBp_to_TBparams(pEOS)
@@ -238,6 +250,8 @@ class MP:#Morse
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata),bounds=(0,1e3))['x']
 
         self.pEOS = popt
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
+        self.V0 = mV['x'][0]
         return popt
 
     def E04min(self, V, pEOS):
@@ -357,6 +371,8 @@ class MU:#Murnaghan
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
+        self.V0 = mV['x'][0]
 
     def E04min(self, V, pEOS):
         E0,V0,B0,Bp0 = pEOS
@@ -401,6 +417,8 @@ class BM3:#Birch-Murnaghan
         # popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
+        self.V0 = mV['x'][0]
         return popt
 
     def E04min(self, V, pEOS):
@@ -444,6 +462,8 @@ class PT:#Poirier-Tarantola
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
+        self.V0 = mV['x'][0]
         return popt
 
     def E04min(self, V, pEOS):
@@ -491,6 +511,10 @@ class BM4:#Poirier-Tarantola
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
 
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))])
+        self.V0 = mV['x'][0]
+        return popt
+
     def E04min(self, V, pEOS):
         E0,V0,B0,Bp0,Bpp0 = pEOS
         return  E0-861*V0*B0*(1/128)+261*V0*B0*Bp0*(1/128)-27*V0*B0**2*Bpp0*(1/128)-27*V0*B0*Bp0**2*(1/128)-1791*V*B0*(V0/V)**(7/3)*(1/64)-207*B0*V0**3*Bp0/(32*V**2)+675*V*B0*(V0/V)**(7/3)*Bp0*(1/64)+501*B0*V0**3/(32*V**2)-27*V*(V0/V)**(11/3)*B0**2*Bpp0*(1/128)+27*V0**3*B0**2*Bpp0/(32*V**2)-81*V*(V0/V)**(7/3)*B0**2*Bpp0*(1/64)-27*V*B0*(V0/V)**(11/3)*Bp0**2*(1/128)+27*B0*V0**3*Bp0**2/(32*V**2)-81*V*B0*(V0/V)**(7/3)*Bp0**2*(1/64)+189*V*B0*(V0/V)**(11/3)*Bp0*(1/128)-429*V*B0*(V0/V)**(11/3)*(1/128)+717*V*B0*(V0/V)**(5/3)*(1/32)-243*V*B0*(V0/V)**(5/3)*Bp0*(1/32)+27*V*(V0/V)**(5/3)*B0**2*Bpp0*(1/32)+27*V*B0*(V0/V)**(5/3)*Bp0**2*(1/32)
@@ -532,6 +556,8 @@ class MU2:#Poirier-Tarantola
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))])
+        self.V0 = mV['x'][0]
 
     def E04min(self, V, pEOS):
         E0,V0,B0,Bp0,Bpp0 = pEOS
@@ -626,6 +652,8 @@ class EAM:#Morse
 
         self.params_pair_type(pEOS_pt)
         self.params_elmt_type(pEOS_et)
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))])
+        self.V0 = mV['x'][0]
 
         return popt
 

@@ -10,6 +10,7 @@ from debyetools.poisson import poisson_ratio
 from debyetools.electronic import fit_electronic
 from debyetools.ndeb import nDeb
 from debyetools.aux_functions import gen_Ts
+from debyetools.fs_compound_db import fit_FS
 import numpy as np
 EOS_long_lst = {'Morse':'MP','Birch-Murnaghan (3)':'BM','Rose-Vinet':'RV','Mie-Gruneisen':'MG','TB-SMA':'TB','Murnaghan (1)':'MU','Poirier-Tarantola':'PT','Birch-Murnaghan (4)':'BM4','Murnaghan (2)':'MU2','EAM':'EAM',
                 }#'*Morse':'MP','*Birch-Murnaghan (3)':'*BM','*Rose-Vinet':'*RV','*Mie-Gruneisen':'*MG','*TB-SMA':'*TB','*Murnaghan (1)':'*MU','*Poirier-Tarantola':'*PT','*Birch-Murnaghan (4)':'*BM4','*Murnaghan (2)':'*MU2','*EAM':'*EAM'}
@@ -33,6 +34,10 @@ window = sg.Window('ThermoProps V0.0', layout=layout)
 
 #### loop to wait for user action
 all_props={}
+tprops_dict_all = {}
+p_el_inittial = [3.8027342892e-01, -1.8875015171e-02,
+                5.3071034596e-04, -7.0100707467e-06]
+
 while True:
     event, values = window.read()
     print(event)
@@ -118,8 +123,6 @@ while True:
         except Exception as e:
             sg.popup_ok(traceback.format_exc())
     if event == '||B_calc_el':
-        p_el_inittial = [3.8027342892e-01, -1.8875015171e-02,
-                        5.3071034596e-04, -7.0100707467e-06]
         E, N, Ef = load_doscar(str_folderbrowser+'/DOSCAR.EvV.')
         p_electronic = fit_electronic(V_DFT, p_el_inittial,E,N,Ef)
 
@@ -167,7 +170,6 @@ while True:
         events.plot_VvT(window)
 
 
-    tprops_dict_all = {}
     if event == '||B_eval_tprops':
         for o in opened_EOS_dict:
             if opened_EOS_dict[o]:
@@ -184,6 +186,7 @@ while True:
                 window['--M_tprop_'+o].update(tprops_str)
                 window['--IC_prop2plt'].update(values=list(keys_TPs)[1:])
         window['--Tab_'].update(visible=False)
+        events.tprops_enable_nexts(window)
 
     if event == '||B_plotter_tprops':
         keys_EOS = []
@@ -204,36 +207,41 @@ while True:
     if event == '--Chk_anhxc':
         events.chk_anhxc(window,event)
     #
-    # #electronic calculation button
-    # if event == '||B_calc_el':
-    #     try:
-    #         events.calc_el(window,doscar_str,contcar_str)
-    #     except Exception as e:
-    #         sg.popup_ok(str(e))
-    #
-    #
-    #
-    # #run free energy minimization button
-    # if event == '||B_run_minF':
-    #     try:
-    #         events.minF_enable_nexts(window)
-    #         Ti,Tf,nu,r,m = events.minF_get_ins(window)
-    #         T = events.minF_generate_Temps(window,Ti,Tf)
-    #         minF_header,Volume_calculated,ndeb_dict = events.minF_run_minimization(window,T,nu, r, m,Tf,contcar_str,EOS_str_lst,opened_EOS_dict)
-    #     except Exception as e:
-    #         sg.popup_ok(str(e))
-    #
-    # #evaluation of the thermoproperties button
-    # if event == '||B_eval_tprops':
-    #     try:
-    #         events.tprops_enable_nexts(window)
-    #
-    #         TPs_calculated_dict = events.tprops_evaluate(window,minF_header,Volume_calculated,ndeb_dict,T)
-    #     except Exception as e:
-    #         sg.popup_ok(str(e))
-    #
     # #parametrization of FS parameters button
-    # if event == '||B_run_fs_params':
+    if event == '||B_run_fs_params':
+        for o in opened_EOS_dict:
+            if opened_EOS_dict[o]:
+                FS_db_params = fit_FS(tprops_dict_all[o],float(window['--I_fs_Tfrom'].get()), float(window['--I_fs_Tto'].get()))
+                print(FS_db_params['Cp'])
+
+                ix_T0 = np.where(np.round(tprops_dict_all[o]['T'],2) == np.round(298.15,2))[0][0]
+                H298 = tprops_dict_all[o]['F'][ix_T0]+tprops_dict_all[o]['T'][ix_T0]*tprops_dict_all[o]['S'][ix_T0]
+                S298 = tprops_dict_all[o]['S'][ix_T0]
+
+                window['--Tab_fs_'+o].update(visible=True)
+                window['--Tab_fs_'+o].select()
+
+                window['--I_H298'+o].update(disabled=False)
+                window['--I_H298'+o].update(H298)
+                window['--I_S298'+o].update(disabled=False)
+                window['--I_S298'+o].update(S298)
+                for i in range(len(FS_db_params['Cp'])):
+                    window['--I_fsCp_P'+str(i)+o].update(disabled=False)
+                    window['--I_fsCp_P'+str(i)+o].update('%.4e'%(FS_db_params['Cp'][i]))
+                for i in range(len(FS_db_params['a'])):
+                    window['--I_fsa_P'+str(i)+o].update(disabled=False)
+                    window['--I_fsa_P'+str(i)+o].update('%.4e'%(FS_db_params['a'][i]))
+                for i in range(len(FS_db_params['1/Ks'])):
+                    window['--I_fsK_P'+str(i)+o].update(disabled=False)
+                    window['--I_fsK_P'+str(i)+o].update('%.4e'%(FS_db_params['1/Ks'][i]))
+                for i in range(len(FS_db_params['Ksp'])):
+                    window['--I_fsKp_P'+str(i)+o].update(disabled=False)
+                    window['--I_fsKp_P'+str(i)+o].update('%.4e'%(FS_db_params['Ksp'][i]))
+
+
+        window['--Tab_fs_'].update(visible=False)
+
+
     #     try:
     #         fs_params_Cp_dict,fs_params_alpha_dict,fs_params_Ksinv_dict,fs_params_Ksp_dict,T_data,ix_Tfrom,ix_Tto,fs_params_H298_dict,fs_params_S298_dict = events.fs_params(window,minF_header,TPs_calculated_dict)
     #         for K in EOS_str_lst:

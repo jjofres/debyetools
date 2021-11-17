@@ -17,8 +17,9 @@ def fit_FS(tprops, T_from, T_to):
 
     :return dict: Dictionary with the optimal parameters.
     """
-    from_ix = np.where(tprops['T'] == T_from)[0][0]
-    to_ix = np.where(tprops['T'] == T_to)[0][0]
+
+    from_ix = np.where(np.round(tprops['T'],2) == np.round(T_from,2))[0][0]
+    to_ix = np.where(np.round(tprops['T'],2) == np.round(T_to,2))[0][0]
 
     fs_params_Cp, c = curve_fit(Cp2fit, tprops['T'][from_ix:to_ix+1], tprops['Cp'][from_ix:to_ix+1])
     fs_params_alpha, c = curve_fit(alpha2fit, tprops['T'][from_ix:to_ix+1], tprops['a'][from_ix:to_ix+1])

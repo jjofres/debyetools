@@ -314,13 +314,13 @@ def minF_enable_nexts(window):
 #
 #     return minF_header,Volume_calculated,ndeb_dict
 #
-# def tprops_enable_nexts(window):
-#     window['||B_run_fs_params'].update(disabled=False)
-#     window['--I_fs_Tfrom'].update('298.15')
-#     window['--I_fs_Tto'].update(window['--I_Tf'].get())
-#     window['--I_fs_Tfrom'].update(disabled=False)
-#     window['--I_fs_Tto'].update(disabled=False)
-#     window['--Tab_'].update(visible=False)
+def tprops_enable_nexts(window):
+    window['||B_run_fs_params'].update(disabled=False)
+    window['--I_fs_Tfrom'].update('298.15')
+    window['--I_fs_Tto'].update(window['--I_Tf'].get())
+    window['--I_fs_Tfrom'].update(disabled=False)
+    window['--I_fs_Tto'].update(disabled=False)
+    window['--Tab_'].update(visible=False)
 #
 # def tprops_evaluate(window,minF_header,Volume_calculated,ndeb_dict,T):
 #     TPs_calculated_dict={}

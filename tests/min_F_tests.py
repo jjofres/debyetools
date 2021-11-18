@@ -2,6 +2,8 @@ import unittest
 from debyetools.ndeb import nDeb
 from debyetools.aux_functions import gen_Ts
 import numpy as np
+import debyetools.potentials as potentials
+
 class FminTestCase(unittest.TestCase):
     def setUp(self):
         self.nu, self.m = 0.31681, 0.026981500000000002
@@ -9,7 +11,7 @@ class FminTestCase(unittest.TestCase):
         self.p_EOS = [-3.617047894e+05, 9.929931142e-06, 7.618619745e+10, 4.591924487e+00]
         self.p_intanh = 0, 1
         self.p_electronic = [3.8027342892e-01, -1.8875015171e-02, 5.3071034596e-04, -7.0100707467e-06]
-        self.p_defects = 8.46, 1.69, self.Tmelting, 0.1, self.p_EOS[2],self.p_EOS[1]
+        self.p_defects = 8.46, 1.69, self.Tmelting, 0.1
         self.p_anh = 0,0,0
         self.T_initial, self.T_final = 0.1, 1000.1
         self.number_Temps = 51
@@ -18,7 +20,10 @@ class FminTestCase(unittest.TestCase):
         """ Test V(T) calculation by free energy minimization. BM."""
 
         EOS_name = 'BM'
-        ndeb_BM = nDeb(self.nu, self.m, self.p_intanh, self.p_EOS, self.p_electronic, self.p_defects, self.p_anh, EOS_name)
+        EOS_BM = getattr(potentials, EOS_name)()
+        EOS_BM.pEOS = self.p_EOS
+        EOS_BM.V0 = self.p_EOS[1]
+        ndeb_BM = nDeb(self.nu, self.m, self.p_intanh, EOS_BM, self.p_electronic, self.p_defects, self.p_anh, EOS_name)
 
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_BM.min_F(T,self.p_EOS[1])
@@ -29,7 +34,10 @@ class FminTestCase(unittest.TestCase):
         """ Test V(T) calculation by free energy minimization. RV."""
 
         EOS_name = 'RV'
-        ndeb_BM = nDeb(self.nu, self.m, self.p_intanh, self.p_EOS, self.p_electronic, self.p_defects, self.p_anh, EOS_name)
+        EOS_BM = getattr(potentials, EOS_name)()
+        EOS_BM.pEOS = self.p_EOS
+        EOS_BM.V0 = self.p_EOS[1]
+        ndeb_BM = nDeb(self.nu, self.m, self.p_intanh, EOS_BM, self.p_electronic, self.p_defects, self.p_anh, EOS_name)
 
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_BM.min_F(T,self.p_EOS[1])
@@ -48,13 +56,16 @@ class FminTestCase(unittest.TestCase):
         basis_vectors = np.array([[0,0,0],[0, .5,.5],[.5,0,.5],[.5,.5,0]])
         cutoff = 5.
         number_of_neighbor_levels = 6
-        ndeb_Morse = nDeb(self.nu, self.m, self.p_intanh, p_EOS,
+        EOS_BM = getattr(potentials, EOS_name)(formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
+        EOS_BM.pEOS = p_EOS
+        EOS_BM.V0 = p_EOS[1]
+        ndeb_Morse = nDeb(self.nu, self.m, self.p_intanh, EOS_BM,
                         self.p_electronic, self.p_defects, self.p_anh, EOS_name, formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
 
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_Morse.min_F(T, self.p_EOS[1])
 
-        self.assertAlmostEqual(33.3512709396212, ndeb_Morse.eval_props(T[-1],V[-1])['Cp'])
+        self.assertAlmostEqual(32.15669813382092, ndeb_Morse.eval_props(T[-1],V[-1])['Cp'])
 
     def test_Free_energy_minimization_Al_fcc_EAM(self):
         """ Test V(T) calculation by free energy minimization. EAM."""
@@ -67,13 +78,15 @@ class FminTestCase(unittest.TestCase):
         basis_vectors = np.array([[0,0,0],[0, .5,.5],[.5,0,.5],[.5,.5,0]])
         cutoff = 5.
         number_of_neighbor_levels = 6
-        ndeb_Morse = nDeb(self.nu, self.m, self.p_intanh, p_EOS,
+        EOS_BM = getattr(potentials, EOS_name)(formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels, parameters=p_EOS)
+        EOS_BM.V0 = 10E-6
+        ndeb_Morse = nDeb(self.nu, self.m, self.p_intanh, EOS_BM,
                           self.p_electronic, self.p_defects, self.p_anh, EOS_name, formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
 
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_Morse.min_F(T,self.p_EOS[1])
 
-        self.assertAlmostEqual(36.27864377340611, ndeb_Morse.eval_props(T[-1], V[-1])['Cp'])
+        self.assertAlmostEqual(36.127494489465, ndeb_Morse.eval_props(T[-1], V[-1])['Cp'])
 
 
 if __name__=='__main__':

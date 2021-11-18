@@ -8,16 +8,26 @@ Welcome to Debye Tools's documentation!
 
 Debye tools is a set of tools written in Python_
 for the calculation of thermodynamic properties.
-The software presented here is based in the Debye approximation of the QHA using the crystal internal energetics parametrized at ground-state to project the thermodynamics properties at high temperatures.
-We present here how each contribution to the free energy are considered and a description of the architecture of the calculation engine and of the GUI.
+The software presented here is based in the Debye approximation of the QHA using the crystal internal energetics parametrized at ground-state to project the :ref:`thermodynamics properties <thermoprops>` at high temperatures.
+We present here how each contribution to the free energy are considered and a description of the architecture of the calculation engine and of the :ref:`GUI`.
 
-The code is freely available under the GNU Affero General Public License.
+The code_ is freely available under the GNU Affero General Public License.
+
 
 .. _Python: https://www.python.org/
+.. _code: https://github.com/jjofres/debyetools
 
-Example: Al fcc using Morse Potential:
+- Using ``debyetools`` through the GUI ``tProps``:
 
-- EOS parametrization:
+.. _tProps2:
+.. figure::  ./source/api/images/tprops_gui.jpeg
+   :align:   center
+
+   tProps v0.0
+
+- Using ``debyetools`` as a Python_ library. Example: Al fcc using Morse Potential:
+
+EOS parametrization:
 
 >>> import numpy as np
 >>> from debyetools.aux_functions import load_doscar, load_V_E, load_EM, load_cell
@@ -36,7 +46,7 @@ Example: Al fcc using Morse Potential:
 >>> initial_parameters = np.array([0.35, 1, 3.5])
 >>> eos_Morse.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters)
 
-- Electronic Contribution:
+Electronic Contribution:
 
 >>> from debyetools.electronic import fit_electronic
 >>>
@@ -44,14 +54,14 @@ Example: Al fcc using Morse Potential:
 >>> E, N, Ef = load_doscar(folder_name+'/DOSCAR.EvV.')
 >>> p_electronic = fit_electronic(V_DFT, p_el_inittial,E,N,Ef)
 
-- Poisson's ratio:
+Poisson's ratio:
 
 >>> from debyetools.poisson import poisson_ratio
 >>>
 >>> EM = EM = load_EM(folder_name+'/OUTCAR.eps')
 >>> nu = poisson_ratio(EM)
 
-- Free energy minimization:
+Free energy minimization:
 
 >>> from debyetools.ndeb import nDeb
 >>> from debyetools.aux_functions import gen_Ts
@@ -63,11 +73,11 @@ Example: Al fcc using Morse Potential:
 >>>
 >>> T, V = ndeb_Morse.min_F(T,ndeb_Morse.EOS.V0)
 
-- Evaluation of the thermodynamic properties:
+Evaluation of the thermodynamic properties:
 
 >>> tprops_dict = ndeb_Morse.eval_props(T, V)
 
-- FS compound database parameters:
+FS compound database parameters:
 
 >>> from debyetools.fs_compound_db import fit_FS
 >>>
@@ -91,12 +101,11 @@ Example: Al fcc using Morse Potential:
    source/api/gui
    source/api/plot
 
-Indices and tables
-==================
+Indices
+=======
 
 * :ref:`genindex`
 * :ref:`modindex`
-* :ref:`search`
 
 News
 ====

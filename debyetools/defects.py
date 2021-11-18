@@ -4,6 +4,16 @@ kB   = 0.138064852e-22
 NAv  = 0.6022140857e24
 
 class Defects:
+    """
+    Implementation of the defects contribution due to monovancies to the free energy.
+
+    :param float Evac00: Fomration energy of vacancies.
+    :param float Svac00: Fomration entropy of vacancies.
+    :param float Tm: Melting temperature.
+    :param float a: Volume ratio of a mono vacancie relative to the equilibrium volume.
+    :param float P2: Bulk modulus.
+    :param float V0: Equilibrium volume.
+    """
     def __init__(self,Evac00,Svac00,Tm,a,P2,V0):
         self.Evac00 = Evac00
         self.Svac00 = Svac00
@@ -15,6 +25,7 @@ class Defects:
         self.V0=V0
 
     def Svac(self,V):
+
         return self.Svac0
     def dSvacdV_T(self,V):
         return 0
@@ -36,8 +47,20 @@ class Defects:
         return 24*self.V0*self.a*self.P2/(NAv*V**4)-24*self.V0*self.a*(V-self.V0)*self.P2/(NAv*V**5)
 
     def E(self,T,V):
+        """
+        Defects energy.
+
+        :param float T: Temperature.
+        :param float V: Volume
+        """
         return self.Evac(V)*NAv*np.exp(self.Svac(V)/kB - self.Evac(V)/(kB*T))
     def S(self,T,V):
+        """
+        Defects entropy.
+
+        :param float T: Temperature.
+        :param float V: Volume
+        """
         return (T*kB+self.Evac(V))*NAv*np.exp(self.Svac(V)/kB - self.Evac(V)/(kB*T))/T
     def F(self,T,V):
         return -NAv*T*kB*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))

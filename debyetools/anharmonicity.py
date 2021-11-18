@@ -1,6 +1,11 @@
 import numpy as np
 
 class Anharmonicity:
+    """
+    Instance for the excess contribution to the free energy.
+
+    :param float s0,s1,s2: Parameters of the A(V) term.
+    """
     def __init__(self,s0,s1,s2):
         self.s0=s0
         self.s1=s1
@@ -17,10 +22,28 @@ class Anharmonicity:
         return 0
 
     def E(self,T,V):
+        """
+        Internal energy due the excess term.
+
+        :param float T: Temperature.
+        :param float V: Volume.
+        """
         return 1/2*self.A(V)*T**2
     def S(self,T,V):
+        """
+        Entropy due the excess term.
+
+        :param float T: Temperature.
+        :param float V: Volume.
+        """
         return self.A(V)*T
     def F(self,T,V):
+        """
+        Free energy due the excess term.
+
+        :param float T: Temperature.
+        :param float V: Volume.
+        """
         return -1/2*self.A(V)*T**2
     def d2FdT2_V(self,T,V):
         return -self.A(V)
@@ -39,12 +62,30 @@ class Anharmonicity:
 
 class intAnharmonicity:
     def __init__(self,a0=0,m0=1,V0=1):
+        """
+        Instantiate the corrections required to consider temperature dependence on the Debye temperature.
+
+        :param float a0: Parameter of the intrinsic anharmonicity correction function.
+        :param float m0: Pseudo-Gruneisen parameter of the intrinsic anharmonicity correction function.
+        :param float V0: Equilibrium volume.
+        """
         self.a0 = a0
         self.m0 = m0
         self.V0 = V0
     def an(self,V):
-         return self.a0*(V/self.V0)**self.m0
+        """
+        Intrinsic anharmonicity parameter.
+
+        :param float V: Volume
+        """
+        return self.a0*(V/self.V0)**self.m0
     def Anh(self,T,V):
+        """
+        Intrinsic anharmonicity correction to the Debye temperature.
+
+        :param float T: Temperature.
+        :param float V: Volume.
+        """
         self.an_val=self.an(V)
         self.Anh_val = np.exp(1/2*self.an_val*T)
         return self.Anh_val

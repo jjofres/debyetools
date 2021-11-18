@@ -17,6 +17,11 @@ The GUI can be launched by executing the interface script from the debyetools re
 
 $ python gui.py
 
+Or you can launch  inside python:
+
+>>> from debyetools.tpropsgui.gui import gui
+>>> gui()
+
 The interface:
 --------------
 
@@ -30,7 +35,7 @@ The interface:
 EOS Parametrization
 ===================
 
-The parameters of all contributions are entered and/or calculated in this module.  Parameters will be fitted for the the internal energy, for each selected EOS/potential (the user has the freedom to choose more than one EOS/potentials, simultaneously), if the 'fit' option is selected. The atom positions and energy as function of volume must be provided.
+The parameters of all contributions are entered and/or calculated in this module.  Parameters will be fitted for the internal energy, for each selected EOS/potential (the user has the freedom to choose more than one EOS/potentials, simultaneously), if the 'fit' option is selected. The atom positions and energy as function of volume must be provided.
 
 .. _tProps_EOS_parametrization:
 .. figure::  ./images/tprops_EOS_params.jpeg

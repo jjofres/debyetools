@@ -15,7 +15,7 @@ with open(path.join(HERE, 'README.md'), encoding='utf-8') as f:
 # This call to setup() does all the work
 setup(
     name="debyetools",
-    version="0.1.7",
+    version="0.2.0",
     description="Demo library",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -34,7 +34,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Operating System :: OS Independent"
     ],
-    packages=["pairanalysis"],
+    packages=["debyetools"],
     include_package_data=True,
-    install_requires=["numpy"]
+    install_requires=["numpy", "pysimplegui", "scipy", "matplotlib"]
 )

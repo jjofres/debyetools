@@ -9,11 +9,6 @@ A little library for the implementation of a Debye approximation tool for calcul
 - PySimpleGUI
 - matplotlib
 
-To Do's:
-
-- Add Examples to Documentation
-- Improve error handling
-
 Made by Javier Jofre: javier.jofre@polymtl.ca
 Please cite.
 
@@ -46,3 +41,9 @@ T,V = 9.33000000000e+02,1.07790131286e-05
                        #
 result = ndeb_BM.eval_props(T,V)['Cp']
 ```
+
+To Do's:
+
+- Add Examples to Documentation
+- Improve error handling
+- Add 'Compatible input files formats'

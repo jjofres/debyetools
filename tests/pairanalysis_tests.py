@@ -39,5 +39,21 @@ class GenerateCellCoordinatesTestCase(unittest.TestCase):
 
         self.assertTrue(bool_1 and bool_2 and bool_3 and True)
 
+    def test_pa_1(self):
+        formula = 'AABA'
+        supcell_size = np.array([1,1,1])
+        cutoff = 5
+        center = np.array([0,0,0])
+        basis_vectors = np.array([[0,0,0],[.5,.5,0],[.5,0,.5],[0,.5,.5]])
+        primitive_cell =  np.array([[4, 0, 0], [0, 4, 0], [0, 0, 4]])
+        distances, num_bonds_per_formula, combs_types = pa_calc.pair_analysis(formula, supcell_size, cutoff, center, basis_vectors, primitive_cell)
+
+        print('')
+        print('distances  | # of pairs per type')
+        print('           | ' + '  '.join(['%s' for _ in combs_types])%tuple(combs_types))
+        for d, n in zip(distances, num_bonds_per_formula):
+            print('%.6f  '%(d)+' | ' + ' '.join(['%.2f' for _ in n])%tuple(n))
+
+
 if __name__=='__main__':
     unittest.main()

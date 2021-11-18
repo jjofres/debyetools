@@ -1,5 +1,6 @@
 # debyetools
-A little library for the implementation of a Debye approximation tool for calculating self-consistent thermodynamic properties.
+
+A little library for the implementation of a Debye approximation tool for calculating self-consistent thermodynamic properties.The software presented here is based in the Debye approximation of the QHA using the crystal internal energetics parametrized at ground-state to project the thermodynamics properties at high temperatures. We present here how each contribution to the free energy are considered and a description of the architecture of the calculation engine and of the GUI.
 
 ### Requirements:
 - numpy
@@ -12,7 +13,6 @@ To Do's:
 
 - Add Examples to Documentation
 - Improve error handling
-- Implement GUI
 
 Made by Javier Jofre: javier.jofre@polymtl.ca
 Please cite.

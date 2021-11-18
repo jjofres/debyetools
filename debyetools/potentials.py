@@ -9,7 +9,7 @@ import debyetools.pairanalysis as pairanalysis
 
 class BM:
     """
-    Birch-Murnaghan EOS and derivatives.
+    Third order Birch-Murnaghan EOS and derivatives.
 
     :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
     """
@@ -53,21 +53,51 @@ class BM:
         return  self.E04min(V, self.pEOS)
 
     def dE0dV_T(self,V):
+        """
+        (dE0/dV)_T
+
+        :param float V: Volume.
+        """
         P0,P1,P2,P3 = EVBBp_to_BMparams(self.pEOS)
         return -2*P1/(3*V**(5/3))-4*P2/(3*V**(7/3))-2*P3/V**3
     def d2E0dV2_T(self,V):
+        """
+        (d2E0/dV2)_T
+
+        :param float V: Volume.
+        """
         P0,P1,P2,P3 = EVBBp_to_BMparams(self.pEOS)
         return 10*P1/(9*V**(8/3))+28*P2/(9*V**(10/3))+6*P3/V**4
     def d3E0dV3_T(self,V):
+        """
+        (d3E0/dV3)_T
+
+        :param float V: Volume.
+        """
         P0,P1,P2,P3 = EVBBp_to_BMparams(self.pEOS)
         return  -80*P1/(27*V**(11/3))-280*P2/(27*V**(13/3))-24*P3/V**5
     def d4E0dV4_T(self,V):
+        """
+        (d4E0/dV4)_T
+
+        :param float V: Volume.
+        """
         P0,P1,P2,P3 = EVBBp_to_BMparams(self.pEOS)
         return 880*P1/(81*V**(14/3))+3640*P2/(81*V**(16/3))+120*P3/V**6
     def d5E0dV5_T(self,V):
+        """
+        (d5E0/dV5)_T
+
+        :param float V: Volume.
+        """
         P0,P1,P2,P3 = EVBBp_to_BMparams(self.pEOS)
         return -12320*P1/(243*V**(17/3))-58240*P2/(243*V**(19/3))-720*P3/V**7
     def d6E0dV6_T(self,V):
+        """
+        (d6E0/dV6)_T
+
+        :param float V: Volume.
+        """
         P0,P1,P2,P3 = EVBBp_to_BMparams(self.pEOS)
         return 209440*P1/(729*V**(20/3))+1106560*P2/(729*V**(22/3))+5040*P3/V**8
     def error2min(self, P, Vdata,Edata):
@@ -76,13 +106,24 @@ class BM:
 
 class RV:#Rose-Vinet
     """
-    document.
+    Rose-Vinet EOS and derivatives.
+
+    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
     """
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
+        """
+        Parameters fitting.
+
+        :param list_of_floats Vdata: Intput data.
+        :param list_of_floats Edata: Target data.
+        :param list_of_floats initial_parameters: initial_parameters.
+
+        :return list_of_floats: Optimal parameters.
+        """
         pEOS = initial_parameters[:4]
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
         self.pEOS = popt
@@ -96,23 +137,60 @@ class RV:#Rose-Vinet
         return  E0-2*B0*V0*np.exp(-(1/2)*(3*(Bp0-1))*(-1+(V/V0)**(1/3)))*(3*(V/V0)**(1/3)*Bp0-3*Bp0-3*(V/V0)**(1/3)+5)/(Bp0-1)**2+(4*B0*V0)/((Bp0-1)**2)
 
     def E0(self, V):
+        """
+        Internal energy.
+
+        :param float V: Volume.
+
+        :return float: Energy.
+        """
         return  self.E04min(V, self.pEOS)
     def dE0dV_T(self,V):
+        """
+        (dE0/dV)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return -(3*(V0-V**(1/3)*V0**(2/3)))*np.exp((3*(Bp0-1))*(V0-V**(1/3)*V0**(2/3))/(2*V0))*B0/(V0**(1/3)*V**(2/3))
     def d2E0dV2_T(self,V):
+        """
+        (d2E0/dV2)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return -(3*Bp0*(V/V0)**(2/3)-3*(V/V0)**(1/3)*Bp0-3*(V/V0)**(2/3)+5*(V/V0)**(1/3)-4)*np.exp(-(1/2)*(3*(Bp0-1))*(-1+(V/V0)**(1/3)))*B0/(2*V*(V/V0)**(2/3))
     def d3E0dV3_T(self,V):
+        """
+        (d3E0/dV3)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return  3*np.exp(-(1/2)*(3*(Bp0-1))*(-1+(V/V0)**(1/3)))*(-(Bp0-1)*V0*(Bp0-11/3)*(V/V0)**(2/3)-(4*(Bp0-13/9))*V0*(V/V0)**(1/3)+Bp0**2*V-2*Bp0*V+V-40*V0*(1/9))*B0/(4*(V/V0)**(2/3)*V**2*V0)
     def d4E0dV4_T(self,V):
+        """
+        (d4E0/dV4)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return -(3*(-(8*(Bp0-23/9))*(Bp0-1)*V0*(V/V0)**(2/3)+(Bp0**3*V-3*Bp0**2*V+(3*V-208*V0*(1/9))*Bp0-V+848*V0*(1/27))*(V/V0)**(1/3)-Bp0**3*V+9*Bp0**2*V-15*Bp0*V+7*V-640*V0*(1/27)))*np.exp(-(1/2)*(3*(Bp0-1))*(-1+(V/V0)**(1/3)))*B0/(8*(V/V0)**(2/3)*V**3*V0)
     def d5E0dV5_T(self,V):
+        """
+        (d5E0/dV5)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return -5*np.exp((3*(Bp0-1))*(V0-V**(1/3)*V0**(2/3))/(2*V0))*((1/40)*(3*(Bp0-35/3))*(Bp0-1)**3*V**(4/3)*V0**(2/3)-3*V0**(1/3)*(Bp0-1)**4*V**(5/3)*(1/40)+16*V**(2/3)*(Bp0-13/6)*(Bp0-1)*V0**(4/3)*(1/3)+(1/3)*(40*(Bp0-59/45))*V**(1/3)*V0**(5/3)+V0*(Bp0**3*V-(19/3)*Bp0**2*V+(29/3)*Bp0*V-(13/3)*V+(352/27)*V0))*B0/(2*V0**(4/3)*V**(14/3))
     def d6E0dV6_T(self,V):
+        """
+        (d6E0/dV6)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return (5*(3*Bp0-3))*np.exp((3*Bp0-3)*(V0-V**(1/3)*V0**(2/3))/(2*V0))*((3*Bp0*(1/40)-7/8)*(Bp0-1)**3*V**(4/3)*V0**(2/3)-3*V0**(1/3)*(Bp0-1)**4*V**(5/3)*(1/40)+16*V**(2/3)*(Bp0-13/6)*(Bp0-1)*V0**(4/3)*(1/3)+(40*Bp0*(1/3)-472/27)*V**(1/3)*V0**(5/3)+V0*(Bp0**3*V-(19/3)*Bp0**2*V+(29/3)*Bp0*V-(13/3)*V+(352/27)*V0))*B0/(12*V**(16/3)*V0**(5/3))
     def error2min(self, P, Vdata,Edata):
@@ -121,7 +199,9 @@ class RV:#Rose-Vinet
 
 class MG:#Mie-Gruneisen
     """
-    document.
+    Mie-Gruneisen EOS and derivatives.
+
+    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
     """
 
     def __init__(self, *args, units='J/mol', parameters = ''):
@@ -129,6 +209,15 @@ class MG:#Mie-Gruneisen
             self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
+        """
+        Parameters fitting.
+
+        :param list_of_floats Vdata: Intput data.
+        :param list_of_floats Edata: Target data.
+        :param list_of_floats initial_parameters: initial_parameters.
+
+        :return list_of_floats: Optimal parameters.
+        """
         pEOS = initial_parameters[:4]
         ##print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
@@ -142,23 +231,60 @@ class MG:#Mie-Gruneisen
         return (9*((3*(B0*V0+(1/3)*Bp0*E0-(7/9)*E0))*(Bp0-8/3)*(V/V0)**(1/3)+B0*V0*((V/V0)**(8/3-Bp0)-3*Bp0+7)))/((V/V0)**(1/3)*(9*Bp0**2-45*Bp0+56))
 
     def E0(self, V):
+        """
+        Internal energy.
+
+        :param float V: Volume.
+
+        :return float: Energy.
+        """
         return  self.E04min(V, self.pEOS)
     def dE0dV_T(self,V):
+        """
+        (dE0/dV)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return -(3*(V**(8/3-Bp0)*V0**(Bp0-8/3)-1))*B0*V0**(4/3)/(V**(4/3)*(3*Bp0-8))
     def d2E0dV2_T(self,V):
+        """
+        (d2E0/dV2)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return (3*Bp0*(V/V0)**(8/3-Bp0)-4*(V/V0)**(8/3-Bp0)-4)*B0*V0/(V**2*(3*Bp0-8)*(V/V0)**(1/3))
     def d3E0dV3_T(self,V):
+        """
+        (d3E0/dV3)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return  -3*B0*(-28/9+(Bp0**2-(5/3)*Bp0+4/9)*(V/V0)**(8/3-Bp0))*V0/((V/V0)**(1/3)*V**3*(3*Bp0-8))
     def d4E0dV4_T(self,V):
+        """
+        (d4E0/dV4)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return 3*B0*(-280/27+(Bp0**3-Bp0**2-(2/3)*Bp0+8/27)*(V/V0)**(8/3-Bp0))*V0/((V/V0)**(1/3)*V**4*(3*Bp0-8))
     def d5E0dV5_T(self,V):
+        """
+        (d5E0/dV5)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return -81*V0**(4/3)*B0*(-3640/81+(1/81)*V0**(Bp0-8/3)*(81*Bp0**4+54*Bp0**3-189*Bp0**2-66*Bp0+40)*V**(8/3-Bp0))/(V**(16/3)*(-216+81*Bp0))
     def d6E0dV6_T(self,V):
+        """
+        (d6E0/dV6)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return -V0**(4/3)*B0*V0**(Bp0-8/3)*(81*Bp0**4+54*Bp0**3-189*Bp0**2-66*Bp0+40)*V**(8/3-Bp0)*(8/3-Bp0)/(V**(19/3)*(-216+81*Bp0))+432*V0**(4/3)*B0*(-3640/81+(1/81)*V0**(Bp0-8/3)*(81*Bp0**4+54*Bp0**3-189*Bp0**2-66*Bp0+40)*V**(8/3-Bp0))/(V**(19/3)*(-216+81*Bp0))
     def error2min(self, P, Vdata,Edata):
@@ -167,7 +293,9 @@ class MG:#Mie-Gruneisen
 
 class TB:#TB-SMA
     """
-    document.
+    Thight-Binding second-order-approximation EOS and derivatives.
+
+    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
     """
 
     def __init__(self, *args, units='J/mol', parameters = ''):
@@ -175,6 +303,15 @@ class TB:#TB-SMA
             self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
+        """
+        Parameters fitting.
+
+        :param list_of_floats Vdata: Intput data.
+        :param list_of_floats Edata: Target data.
+        :param list_of_floats initial_parameters: initial_parameters.
+
+        :return list_of_floats: Optimal parameters.
+        """
         pEOS = initial_parameters[:4]
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
@@ -187,23 +324,60 @@ class TB:#TB-SMA
         return p0*np.exp(-p2*V**(1./3.)) + p1*np.exp(-p3*V**(1./3.))
 
     def E0(self, V):
+        """
+        Internal energy.
+
+        :param float V: Volume.
+
+        :return float: Energy.
+        """
         return  self.E04min(V, self.pEOS)
     def dE0dV_T(self,V):
+        """
+        (dE0/dV)_T
+
+        :param float V: Volume.
+        """
         p0,p1,p2,p3 = EVBBp_to_TBparams(self.pEOS)
         return -(p0*p2*np.exp(-p2*V**(1/3))+p1*p3*np.exp(-p3*V**(1/3)))/(3*V**(2/3))
     def d2E0dV2_T(self,V):
+        """
+        (d2E0/dV2)_T
+
+        :param float V: Volume.
+        """
         p0,p1,p2,p3 = EVBBp_to_TBparams(self.pEOS)
         return 2*p0*p2*np.exp(-p2*V**(1/3))/(9*V**(5/3))+p0*p2**2*np.exp(-p2*V**(1/3))/(9*V**(4/3))+2*p1*p3*np.exp(-p3*V**(1/3))/(9*V**(5/3))+p1*p3**2*np.exp(-p3*V**(1/3))/(9*V**(4/3))
     def d3E0dV3_T(self,V):
+        """
+        (d3E0/dV3)_T
+
+        :param float V: Volume.
+        """
         p0,p1,p2,p3 = EVBBp_to_TBparams(self.pEOS)
         return -10*p0*p2*np.exp(-p2*V**(1/3))/(27*V**(8/3))-2*p0*p2**2*np.exp(-p2*V**(1/3))/(9*V**(7/3))-p0*p2**3*np.exp(-p2*V**(1/3))/(27*V**2)-10*p1*p3*np.exp(-p3*V**(1/3))/(27*V**(8/3))-2*p1*p3**2*np.exp(-p3*V**(1/3))/(9*V**(7/3))-p1*p3**3*np.exp(-p3*V**(1/3))/(27*V**2)
     def d4E0dV4_T(self,V):
+        """
+        (d4E0/dV4)_T
+
+        :param float V: Volume.
+        """
         p0,p1,p2,p3 = EVBBp_to_TBparams(self.pEOS)
         return 80*p0*p2*np.exp(-p2*V**(1/3))/(81*V**(11/3))+52*p0*p2**2*np.exp(-p2*V**(1/3))/(81*V**(10/3))+4*p0*p2**3*np.exp(-p2*V**(1/3))/(27*V**3)+p0*p2**4*np.exp(-p2*V**(1/3))/(81*V**(8/3))+80*p1*p3*np.exp(-p3*V**(1/3))/(81*V**(11/3))+52*p1*p3**2*np.exp(-p3*V**(1/3))/(81*V**(10/3))+4*p1*p3**3*np.exp(-p3*V**(1/3))/(27*V**3)+p1*p3**4*np.exp(-p3*V**(1/3))/(81*V**(8/3))
     def d5E0dV5_T(self,V):
+        """
+        (d5E0/dV5)_T
+
+        :param float V: Volume.
+        """
         p0,p1,p2,p3 = EVBBp_to_TBparams(self.pEOS)
         return -(20*(p0*p2*((1/20)*V**(4/3)*p2**4+V*p2**3+8*p2**2*V**(2/3)+30*p2*V**(1/3)+44)*np.exp(-p2*V**(1/3))+np.exp(-p3*V**(1/3))*p1*p3*((1/20)*V**(4/3)*p3**4+V*p3**3+8*p3**2*V**(2/3)+30*p3*V**(1/3)+44)))/(243*V**(14/3))
     def d6E0dV6_T(self,V):
+        """
+        (d6E0/dV6)_T
+
+        :param float V: Volume.
+        """
         p0,p1,p2,p3 = EVBBp_to_TBparams(self.pEOS)
         return (380*(p0*p2*((1/380)*V**(5/3)*p2**5+3*V**(4/3)*p2**4*(1/38)+V*p2**3+126*p2**2*V**(2/3)*(1/19)+434*p2*V**(1/3)*(1/19)+616/19)*np.exp(-p2*V**(1/3))+np.exp(-p3*V**(1/3))*p1*p3*((1/380)*V**(5/3)*p3**5+3*V**(4/3)*p3**4*(1/38)+V*p3**3+126*p3**2*V**(2/3)*(1/19)+434*p3*V**(1/3)*(1/19)+616/19)))/(729*V**(17/3))
     def error2min(self, P, Vdata,Edata):
@@ -212,9 +386,11 @@ class TB:#TB-SMA
 
 class MP:#Morse
     """
-    document.
-    """
+    Morse potential and derivatives.
 
+    :param list args: formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels.
+    :param list_of_floats parameters: Morse potential parameters.
+    """
     def __init__(self, *args, units='J/mol', parameters = ''):
         formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = args
         # formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
@@ -246,6 +422,15 @@ class MP:#Morse
         ##print('xxx',self.ndist,self.npair,self.Vstar)
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
+        """
+        Parameters fitting.
+
+        :param list_of_floats Vdata: Intput data.
+        :param list_of_floats Edata: Target data.
+        :param list_of_floats initial_parameters: initial_parameters.
+
+        :return list_of_floats: Optimal parameters.
+        """
         pEOS = initial_parameters
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata),bounds=(0,1e3))['x']
 
@@ -282,6 +467,11 @@ class MP:#Morse
                 ms.append(nij/2*Dj*((1-np.exp(-alphaj*(rstari*(V/self.Vstar)**(1/3)-r0j)))**2-1))
         return np.sum(ms)*(self.mult_E)
     def dE0dV_T(self,V):
+        """
+        (dE0/dV)_T
+
+        :param float V: Volume.
+        """
         if type(V)==np.ndarray:
             return np.array([self.dE0dV_T(Vi) for Vi in V])
         V = V/self.mult_V
@@ -294,6 +484,11 @@ class MP:#Morse
                 ms.append(-nij*Dj*(-1+np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar))*alphaj*rstari*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)/(3*self.Vstar**(1/3)*V**(2/3)))
         return np.sum(ms)*(self.mult_E)/(self.mult_V)
     def d2E0dV2_T(self,V):
+        """
+        (d2E0/dV2)_T
+
+        :param float V: Volume.
+        """
         if type(V)==np.ndarray:
             return np.array([self.d2E0dV2_T(Vi) for Vi in V])
         V = V/self.mult_V
@@ -306,6 +501,11 @@ class MP:#Morse
                 ms.append(2*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*nij*alphaj*rstari*Dj*((alphaj*rstari*V**(1/3)*self.Vstar**(2/3)+self.Vstar)*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)-(1/2)*alphaj*rstari*V**(1/3)*self.Vstar**(2/3)-self.Vstar)/(9*V**(5/3)*self.Vstar**(4/3)))
         return np.sum(ms)*(self.mult_E)/(self.mult_V)**2
     def d3E0dV3_T(self,V):
+        """
+        (d3E0/dV3)_T
+
+        :param float V: Volume.
+        """
         if type(V)==np.ndarray:
             return np.array([self.d3E0dV3_T(Vi) for Vi in V])
         V = V/self.mult_V
@@ -318,6 +518,11 @@ class MP:#Morse
                 ms.append(-nij*Dj*alphaj*rstari*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*(4*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*alphaj**2*rstari**2*V**(2/3)*self.Vstar**(1/3)-alphaj**2*rstari**2*V**(2/3)*self.Vstar**(1/3)+12*alphaj*rstari*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*V**(1/3)*self.Vstar**(2/3)-6*alphaj*rstari*V**(1/3)*self.Vstar**(2/3)+10*self.Vstar*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)-10*self.Vstar)/(27*self.Vstar**(4/3)*V**(8/3)))
         return np.sum(ms)*(self.mult_E)/(self.mult_V)**3
     def d4E0dV4_T(self,V):
+        """
+        (d4E0/dV4)_T
+
+        :param float V: Volume.
+        """
         if type(V)==np.ndarray:
             return np.array([self.d4E0dV4_T(Vi) for Vi in V])
         V = V/self.mult_V
@@ -330,6 +535,11 @@ class MP:#Morse
                 ms.append(8*nij*alphaj*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*((V*alphaj**3*rstari**3+6*alphaj**2*rstari**2*V**(2/3)*self.Vstar**(1/3)+13*alphaj*rstari*V**(1/3)*self.Vstar**(2/3)+10*self.Vstar)*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)-(1/8)*V*alphaj**3*rstari**3-3*alphaj**2*rstari**2*V**(2/3)*self.Vstar**(1/3)*(1/2)-13*alphaj*rstari*V**(1/3)*self.Vstar**(2/3)*(1/2)-10*self.Vstar)*rstari*Dj/(81*self.Vstar**(4/3)*V**(11/3)))
         return np.sum(ms)*(self.mult_E)/(self.mult_V)**4
     def d5E0dV5_T(self,V):
+        """
+        (d5E0/dV5)_T
+
+        :param float V: Volume.
+        """
         if type(V)==np.ndarray:
             return np.array([self.d5E0dV5_T(Vi) for Vi in V])
         V = V/self.mult_V
@@ -342,6 +552,11 @@ class MP:#Morse
                 ms.append(-nij*Dj*alphaj*rstari*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*(16*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*V**(4/3)*alphaj**4*rstari**4*self.Vstar**(2/3)-V**(4/3)*alphaj**4*rstari**4*self.Vstar**(2/3)+160*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*V*self.Vstar*alphaj**3*rstari**3-20*V*self.Vstar*alphaj**3*rstari**3+640*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*alphaj**2*rstari**2*V**(2/3)*self.Vstar**(4/3)-160*alphaj**2*rstari**2*V**(2/3)*self.Vstar**(4/3)+1200*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*self.Vstar**(5/3)*alphaj*rstari*V**(1/3)-600*self.Vstar**(5/3)*alphaj*rstari*V**(1/3)+880*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*self.Vstar**2-880*self.Vstar**2)/(243*V**(14/3)*self.Vstar**(7/3)))
         return np.sum(ms)*(self.mult_E)/(self.mult_V)**5
     def d6E0dV6_T(self,V):
+        """
+        (d6E0/dV6)_T
+
+        :param float V: Volume.
+        """
         if type(V)==np.ndarray:
             return np.array([self.d6E0dV6_T(Vi) for Vi in V])
         V = V/self.mult_V
@@ -359,7 +574,9 @@ class MP:#Morse
 
 class MU:#Murnaghan
     """
-    document.
+    Murnaghan EOS and derivatives.
+
+    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
     """
 
     def __init__(self, *args, units='J/mol', parameters = ''):
@@ -367,6 +584,15 @@ class MU:#Murnaghan
             self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
+        """
+        Parameters fitting.
+
+        :param list_of_floats Vdata: Intput data.
+        :param list_of_floats Edata: Target data.
+        :param list_of_floats initial_parameters: initial_parameters.
+
+        :return list_of_floats: Optimal parameters.
+        """
         pEOS = initial_parameters[:4]
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
@@ -379,23 +605,60 @@ class MU:#Murnaghan
         return  E0 + B0*V0*(1/(Bp0*(Bp0-1))*(V/V0)**(1-Bp0) + 1/Bp0*V/V0-1/(Bp0-1) )
 
     def E0(self, V):
+        """
+        Internal energy.
+
+        :param float V: Volume.
+
+        :return float: Energy.
+        """
         return  self.E04min(V, self.pEOS)
     def dE0dV_T(self,V):
+        """
+        (dE0/dV)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return -B0*(V/V0)**(-Bp0)/Bp0+B0/Bp0
     def d2E0dV2_T(self,V):
+        """
+        (d2E0/dV2)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return B0*(V/V0)**(-Bp0)/V
     def d3E0dV3_T(self,V):
+        """
+        (d3E0/dV3)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return  -B0*(V/V0)**(-Bp0)*(Bp0+1)/V**2
     def d4E0dV4_T(self,V):
+        """
+        (d4E0/dV4)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return B0*(V/V0)**(-Bp0)*(Bp0**2+3*Bp0+2)/V**3
     def d5E0dV5_T(self,V):
+        """
+        (d5E0/dV5)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return -B0*(V/V0)**(-Bp0)*(Bp0**3+6*Bp0**2+11*Bp0+6)/V**4
     def d6E0dV6_T(self,V):
+        """
+        (d6E0/dV6)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return B0*(V/V0)**(-Bp0)*(Bp0**4+10*Bp0**3+35*Bp0**2+50*Bp0+24)/V**5
     def error2min(self, P, Vdata,Edata):
@@ -404,7 +667,9 @@ class MU:#Murnaghan
 
 class BM3:#Birch-Murnaghan
     """
-    document.
+    Third order Birch-Murnaghan EOS and derivatives.
+
+    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
     """
 
     def __init__(self, *args, units='J/mol', parameters = ''):
@@ -412,6 +677,15 @@ class BM3:#Birch-Murnaghan
             self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
+        """
+        Parameters fitting.
+
+        :param list_of_floats Vdata: Intput data.
+        :param list_of_floats Edata: Target data.
+        :param list_of_floats initial_parameters: initial_parameters.
+
+        :return list_of_floats: Optimal parameters.
+        """
         pEOS = initial_parameters[:4]
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         # popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
@@ -425,23 +699,60 @@ class BM3:#Birch-Murnaghan
         P0,P1,P2,P3 = EVBBp_to_BMparams(pEOS)
         return  P0 + P1/V**(2/3) + P2/V**(4/3) + P3*V**(-6/3)
     def E0(self, V):
+        """
+        Internal energy.
+
+        :param float V: Volume.
+
+        :return float: Energy.
+        """
         return  self.E04min(V, self.pEOS)
     def dE0dV_T(self,V):
+        """
+        (dE0/dV)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return -9*V0**2*B0*(V*(Bp0-14/3)*(V0/V)**(2/3)-(1/2)*V0*(Bp0-4)*(V0/V)**(1/3)-(1/2)*V*(Bp0-16/3))/(4*(V0/V)**(1/3)*V**3)
     def d2E0dV2_T(self,V):
+        """
+        (d2E0/dV2)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return 21*V0**2*(V*(Bp0-14/3)*(V0/V)**(2/3)-9*V0*(Bp0-4)*(V0/V)**(1/3)*(1/14)-5*V*(Bp0-16/3)*(1/14))*B0/(4*(V0/V)**(1/3)*V**4)
     def d3E0dV3_T(self,V):
+        """
+        (d3E0/dV3)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return  -35*V0**2*B0*(V*(Bp0-14/3)*(V0/V)**(2/3)-27*V0*(Bp0-4)*(V0/V)**(1/3)*(1/35)-2*V*(Bp0-16/3)*(1/7))/(2*(V0/V)**(1/3)*V**5)
     def d4E0dV4_T(self,V):
+        """
+        (d4E0/dV4)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return 455*V0**2*B0*(V*(Bp0-14/3)*(V0/V)**(2/3)-81*V0*(Bp0-4)*(V0/V)**(1/3)*(1/91)-22*V*(Bp0-16/3)*(1/91))/(6*(V0/V)**(1/3)*V**6)
     def d5E0dV5_T(self,V):
+        """
+        (d5E0/dV5)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return -3640*V0**2*(V*(Bp0-14/3)*(V0/V)**(2/3)-729*V0*(Bp0-4)*(V0/V)**(1/3)*(1/728)-11*V*(Bp0-16/3)*(1/52))*B0/(9*(V0/V)**(1/3)*V**7)
     def d6E0dV6_T(self,V):
+        """
+        (d6E0/dV6)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return 69160*V0**2*B0*(V*(Bp0-14/3)*(V0/V)**(2/3)-2187*V0*(Bp0-4)*(V0/V)**(1/3)*(1/1976)-187*V*(Bp0-16/3)*(1/988))/(27*(V0/V)**(1/3)*V**8)
     def error2min(self, P, Vdata,Edata):
@@ -450,7 +761,9 @@ class BM3:#Birch-Murnaghan
 
 class PT:#Poirier-Tarantola
     """
-    document.
+    Poirier-Tarantola EOS and derivatives.
+
+    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
     """
 
     def __init__(self, *args, units='J/mol', parameters = ''):
@@ -458,6 +771,15 @@ class PT:#Poirier-Tarantola
             self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
+        """
+        Parameters fitting.
+
+        :param list_of_floats Vdata: Intput data.
+        :param list_of_floats Edata: Target data.
+        :param list_of_floats initial_parameters: initial_parameters.
+
+        :return list_of_floats: Optimal parameters.
+        """
         pEOS = initial_parameters[:4]
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
@@ -472,23 +794,60 @@ class PT:#Poirier-Tarantola
         # E0 + K/6*V0(ln(V/V0))^2 (3-(Kp-2)ln(V/V0))
         return  E0+(1/6)*B0*V0*np.log(V/V0)**2*(3-(Bp0-2)*np.log(V/V0))#(1/6)*B0*V0*(Bp0-2)*np.log(V0/V)**3-(1/2)*B0*V0*np.log(V0/V)**2+E0
     def E0(self, V):
+        """
+        Internal energy.
+
+        :param float V: Volume.
+
+        :return float: Energy.
+        """
         return  self.E04min(V, self.pEOS)
     def dE0dV_T(self,V):
+        """
+        (dE0/dV)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return -V0*(-2+(Bp0-2)*np.log(V/V0))*B0*np.log(V/V0)/(2*V)#B0*(2+(Bp0-2)*np.log(V0/V))*V0*np.log(V0/V)/(2*V)
     def d2E0dV2_T(self,V):
+        """
+        (d2E0/dV2)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return V0*B0*(2+(Bp0-2)*np.log(V/V0)**2+(-2*Bp0+2)*np.log(V/V0))/(2*V**2)#-(2+(Bp0-2)*np.log(V0/V)**2+(2*Bp0-2)*np.log(V0/V))*B0*V0/(2*V**2)
     def d3E0dV3_T(self,V):
+        """
+        (d3E0/dV3)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return  -V0*B0*((Bp0-2)*np.log(V/V0)**2+(-3*Bp0+4)*np.log(V/V0)+Bp0+1)/V**3#B0*((Bp0-2)*np.log(V0/V)**2+(3*Bp0-4)*np.log(V0/V)+Bp0+1)*V0/V**3
     def d4E0dV4_T(self,V):
+        """
+        (d4E0/dV4)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return B0*V0*(3*np.log(V/V0)**2*Bp0-11*np.log(V/V0)*Bp0-6*np.log(V/V0)**2+6*Bp0+16*np.log(V/V0)-1)/V**4#-B0*V0*(3*np.log(V0/V)**2*Bp0+11*np.log(V0/V)*Bp0-6*np.log(V0/V)**2+6*Bp0-16*np.log(V0/V)-1)/V**4
     def d5E0dV5_T(self,V):
+        """
+        (d5E0/dV5)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return -B0*V0*(12*np.log(V/V0)**2*Bp0-50*np.log(V/V0)*Bp0-24*np.log(V/V0)**2+35*Bp0+76*np.log(V/V0)-20)/V**5#B0*V0*(12*np.log(V0/V)**2*Bp0+50*np.log(V0/V)*Bp0-24*np.log(V0/V)**2+35*Bp0-76*np.log(V0/V)-20)/V**5
     def d6E0dV6_T(self,V):
+        """
+        (d6E0/dV6)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0 = self.pEOS
         return B0*V0*(60*np.log(V/V0)**2*Bp0-274*np.log(V/V0)*Bp0-120*np.log(V/V0)**2+225*Bp0+428*np.log(V/V0)-176)/V**6#-B0*V0*(60*np.log(V0/V)**2*Bp0+274*np.log(V0/V)*Bp0-120*np.log(V0/V)**2+225*Bp0-428*np.log(V0/V)-176)/V**6
     def error2min(self, P, Vdata,Edata):
@@ -497,7 +856,9 @@ class PT:#Poirier-Tarantola
 
 class BM4:#Poirier-Tarantola
     """
-    document.
+    Fourth order Birch-Murnaghan EOS and derivatives.
+
+    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0, and B''0.
     """
 
     def __init__(self, *args, units='J/mol', parameters = ''):
@@ -505,6 +866,15 @@ class BM4:#Poirier-Tarantola
             self.pEOS = parameters[:5]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
+        """
+        Parameters fitting.
+
+        :param list_of_floats Vdata: Intput data.
+        :param list_of_floats Edata: Target data.
+        :param list_of_floats initial_parameters: initial_parameters.
+
+        :return list_of_floats: Optimal parameters.
+        """
         pEOS = initial_parameters[:5]
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         # popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
@@ -519,23 +889,60 @@ class BM4:#Poirier-Tarantola
         E0,V0,B0,Bp0,Bpp0 = pEOS
         return  E0-861*V0*B0*(1/128)+261*V0*B0*Bp0*(1/128)-27*V0*B0**2*Bpp0*(1/128)-27*V0*B0*Bp0**2*(1/128)-1791*V*B0*(V0/V)**(7/3)*(1/64)-207*B0*V0**3*Bp0/(32*V**2)+675*V*B0*(V0/V)**(7/3)*Bp0*(1/64)+501*B0*V0**3/(32*V**2)-27*V*(V0/V)**(11/3)*B0**2*Bpp0*(1/128)+27*V0**3*B0**2*Bpp0/(32*V**2)-81*V*(V0/V)**(7/3)*B0**2*Bpp0*(1/64)-27*V*B0*(V0/V)**(11/3)*Bp0**2*(1/128)+27*B0*V0**3*Bp0**2/(32*V**2)-81*V*B0*(V0/V)**(7/3)*Bp0**2*(1/64)+189*V*B0*(V0/V)**(11/3)*Bp0*(1/128)-429*V*B0*(V0/V)**(11/3)*(1/128)+717*V*B0*(V0/V)**(5/3)*(1/32)-243*V*B0*(V0/V)**(5/3)*Bp0*(1/32)+27*V*(V0/V)**(5/3)*B0**2*Bpp0*(1/32)+27*V*B0*(V0/V)**(5/3)*Bp0**2*(1/32)
     def E0(self, V):
+        """
+        Internal energy.
+
+        :param float V: Volume.
+
+        :return float: Energy.
+        """
         return  self.E04min(V, self.pEOS)
     def dE0dV_T(self,V):
+        """
+        (dE0/dV)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0,Bpp0 = self.pEOS
         return -81*(V0/V)**(7/3)*B0**2*Bpp0*(1/64)-27*B0*(V0/V)**(11/3)*Bp0**2*(1/128)-81*B0*(V0/V)**(7/3)*Bp0**2*(1/64)-27*(V0/V)**(11/3)*B0**2*Bpp0*(1/128)+675*B0*(V0/V)**(7/3)*Bp0*(1/64)-45*(V0/V)**(2/3)*B0**2*Bpp0*V0/(32*V)-45*B0*(V0/V)**(2/3)*Bp0**2*V0/(32*V)+189*B0*(V0/V)**(4/3)*Bp0**2*V0/(64*V)-693*B0*(V0/V)**(8/3)*Bp0*V0/(128*V)+405*B0*(V0/V)**(2/3)*Bp0*V0/(32*V)+99*(V0/V)**(8/3)*B0**2*Bpp0*V0/(128*V)+189*(V0/V)**(4/3)*B0**2*Bpp0*V0/(64*V)+99*B0*(V0/V)**(8/3)*Bp0**2*V0/(128*V)-1575*B0*(V0/V)**(4/3)*Bp0*V0/(64*V)-501*B0*V0**3/(16*V**3)+1573*B0*(V0/V)**(8/3)*V0/(128*V)-1195*B0*(V0/V)**(2/3)*V0/(32*V)-27*V0**3*B0**2*Bpp0/(16*V**3)-27*B0*V0**3*Bp0**2/(16*V**3)+4179*B0*(V0/V)**(4/3)*V0/(64*V)+207*B0*V0**3*Bp0/(16*V**3)+717*B0*(V0/V)**(5/3)*(1/32)-429*B0*(V0/V)**(11/3)*(1/128)-1791*B0*(V0/V)**(7/3)*(1/64)+27*B0*(V0/V)**(5/3)*Bp0**2*(1/32)+27*(V0/V)**(5/3)*B0**2*Bpp0*(1/32)-243*B0*(V0/V)**(5/3)*Bp0*(1/32)+189*B0*(V0/V)**(11/3)*Bp0*(1/128)
     def d2E0dV2_T(self,V):
+        """
+        (d2E0/dV2)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0,Bpp0 = self.pEOS
         return -1393*B0*(V0/V)**(1/3)*V0**2/(16*V**3)-621*B0*V0**3*Bp0/(16*V**4)+81*V0**3*B0**2*Bpp0/(16*V**4)+81*B0*V0**3*Bp0**2/(16*V**4)-1573*B0*(V0/V)**(5/3)*V0**2/(48*V**3)+1195*B0*V0**2/(48*V**3*(V0/V)**(1/3))+1503*B0*V0**3/(16*V**4)-135*B0*Bp0*V0**2/(16*V**3*(V0/V)**(1/3))+15*B0**2*Bpp0*V0**2/(16*V**3*(V0/V)**(1/3))+15*B0*Bp0**2*V0**2/(16*V**3*(V0/V)**(1/3))+525*B0*(V0/V)**(1/3)*Bp0*V0**2/(16*V**3)-33*(V0/V)**(5/3)*B0**2*Bpp0*V0**2/(16*V**3)-63*(V0/V)**(1/3)*B0**2*Bpp0*V0**2/(16*V**3)-33*B0*(V0/V)**(5/3)*Bp0**2*V0**2/(16*V**3)-63*B0*(V0/V)**(1/3)*Bp0**2*V0**2/(16*V**3)+231*B0*(V0/V)**(5/3)*Bp0*V0**2/(16*V**3)
     def d3E0dV3_T(self,V):
+        """
+        (d3E0/dV3)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0,Bpp0 = self.pEOS
         return 55*(V0/V)**(2/3)*B0**2*Bpp0*V0**3/(16*V**5)+55*B0*(V0/V)**(2/3)*Bp0**2*V0**3/(16*V**5)-385*B0*(V0/V)**(2/3)*Bp0*V0**3/(16*V**5)+189*(V0/V)**(1/3)*B0**2*Bpp0*V0**2/(16*V**4)+99*B0*(V0/V)**(5/3)*Bp0**2*V0**2/(16*V**4)+189*B0*(V0/V)**(1/3)*Bp0**2*V0**2/(16*V**4)+405*B0*Bp0*V0**2/(16*V**4*(V0/V)**(1/3))-45*B0**2*Bpp0*V0**2/(16*V**4*(V0/V)**(1/3))-45*B0*Bp0**2*V0**2/(16*V**4*(V0/V)**(1/3))+1195*B0*V0**3/(144*V**5*(V0/V)**(4/3))-1195*B0*V0**2/(16*V**4*(V0/V)**(1/3))-1503*B0*V0**3/(4*V**5)+1393*B0*V0**3/(48*V**5*(V0/V)**(2/3))-693*B0*(V0/V)**(5/3)*Bp0*V0**2/(16*V**4)-1575*B0*(V0/V)**(1/3)*Bp0*V0**2/(16*V**4)+621*B0*V0**3*Bp0/(4*V**5)-81*V0**3*B0**2*Bpp0/(4*V**5)-81*B0*V0**3*Bp0**2/(4*V**5)+7865*B0*(V0/V)**(2/3)*V0**3/(144*V**5)-45*B0*Bp0*V0**3/(16*V**5*(V0/V)**(4/3))+5*B0**2*Bpp0*V0**3/(16*V**5*(V0/V)**(4/3))+5*B0*Bp0**2*V0**3/(16*V**5*(V0/V)**(4/3))-175*B0*Bp0*V0**3/(16*V**5*(V0/V)**(2/3))+21*B0**2*Bpp0*V0**3/(16*V**5*(V0/V)**(2/3))+21*B0*Bp0**2*V0**3/(16*V**5*(V0/V)**(2/3))+4179*B0*(V0/V)**(1/3)*V0**2/(16*V**4)+1573*B0*(V0/V)**(5/3)*V0**2/(16*V**4)+99*(V0/V)**(5/3)*B0**2*Bpp0*V0**2/(16*V**4)
     def d4E0dV4_T(self,V):
+        """
+        (d4E0/dV4)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0,Bpp0 = self.pEOS
         return -15*B0*Bp0*V0**4/(4*V**7*(V0/V)**(7/3))+5*B0**2*Bpp0*V0**4/(12*V**7*(V0/V)**(7/3))-7865*B0*(V0/V)**(2/3)*V0**3/(18*V**6)-4179*B0*(V0/V)**(1/3)*V0**2/(4*V**5)-1573*B0*(V0/V)**(5/3)*V0**2/(4*V**5)+385*B0*Bp0*V0**4/(24*V**7*(V0/V)**(1/3))-55*B0*Bp0**2*V0**4/(24*V**7*(V0/V)**(1/3))+7*B0*Bp0**2*V0**4/(8*V**7*(V0/V)**(5/3))-55*B0**2*Bpp0*V0**4/(24*V**7*(V0/V)**(1/3))+7*B0**2*Bpp0*V0**4/(8*V**7*(V0/V)**(5/3))+5*B0*Bp0**2*V0**4/(12*V**7*(V0/V)**(7/3))-175*B0*Bp0*V0**4/(24*V**7*(V0/V)**(5/3))+45*B0*Bp0*V0**3/(2*V**6*(V0/V)**(4/3))-5*B0**2*Bpp0*V0**3/(2*V**6*(V0/V)**(4/3))-5*B0*Bp0**2*V0**3/(2*V**6*(V0/V)**(4/3))+1393*B0*V0**4/(72*V**7*(V0/V)**(5/3))-7865*B0*V0**4/(216*V**7*(V0/V)**(1/3))+1195*B0*V0**4/(108*V**7*(V0/V)**(7/3))+7515*B0*V0**3/(4*V**6)-3105*B0*V0**3*Bp0/(4*V**6)+405*V0**3*B0**2*Bpp0/(4*V**6)+405*B0*V0**3*Bp0**2/(4*V**6)-21*B0**2*Bpp0*V0**3/(2*V**6*(V0/V)**(2/3))-21*B0*Bp0**2*V0**3/(2*V**6*(V0/V)**(2/3))+175*B0*Bp0*V0**3/(2*V**6*(V0/V)**(2/3))-405*B0*Bp0*V0**2/(4*V**5*(V0/V)**(1/3))+45*B0**2*Bpp0*V0**2/(4*V**5*(V0/V)**(1/3))+45*B0*Bp0**2*V0**2/(4*V**5*(V0/V)**(1/3))+693*B0*(V0/V)**(5/3)*Bp0*V0**2/(4*V**5)-99*B0*(V0/V)**(5/3)*Bp0**2*V0**2/(4*V**5)-189*B0*(V0/V)**(1/3)*Bp0**2*V0**2/(4*V**5)+385*B0*(V0/V)**(2/3)*Bp0*V0**3/(2*V**6)-189*(V0/V)**(1/3)*B0**2*Bpp0*V0**2/(4*V**5)-55*B0*(V0/V)**(2/3)*Bp0**2*V0**3/(2*V**6)-99*(V0/V)**(5/3)*B0**2*Bpp0*V0**2/(4*V**5)-55*(V0/V)**(2/3)*B0**2*Bpp0*V0**3/(2*V**6)+1575*B0*(V0/V)**(1/3)*Bp0*V0**2/(4*V**5)+1195*B0*V0**2/(4*V**5*(V0/V)**(1/3))-1393*B0*V0**3/(6*V**6*(V0/V)**(2/3))-1195*B0*V0**3/(18*V**6*(V0/V)**(4/3))
     def d5E0dV5_T(self,V):
+        """
+        (d5E0/dV5)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0,Bpp0 = self.pEOS
         return -675*B0*Bp0*V0**3/(4*V**7*(V0/V)**(4/3))+75*B0**2*Bpp0*V0**3/(4*V**7*(V0/V)**(4/3))+75*B0*Bp0**2*V0**3/(4*V**7*(V0/V)**(4/3))+8365*B0*V0**5/(324*V**9*(V0/V)**(10/3))-22545*B0*V0**3/(2*V**7)+6965*B0*V0**5/(216*V**9*(V0/V)**(8/3))-7865*B0*V0**5/(648*V**9*(V0/V)**(4/3))+825*(V0/V)**(2/3)*B0**2*Bpp0*V0**3/(4*V**7)-105*B0*Bp0**2*V0**4/(8*V**8*(V0/V)**(5/3))+35*B0*Bp0**2*V0**5/(24*V**9*(V0/V)**(8/3))-55*B0*Bp0**2*V0**5/(72*V**9*(V0/V)**(4/3))+35*B0**2*Bpp0*V0**5/(24*V**9*(V0/V)**(8/3))-875*B0*Bp0*V0**5/(72*V**9*(V0/V)**(8/3))-55*B0**2*Bpp0*V0**5/(72*V**9*(V0/V)**(4/3))+275*B0**2*Bpp0*V0**4/(8*V**8*(V0/V)**(1/3))+875*B0*Bp0*V0**4/(8*V**8*(V0/V)**(5/3))-2625*B0*Bp0*V0**3/(4*V**7*(V0/V)**(2/3))+35*B0*Bp0**2*V0**5/(36*V**9*(V0/V)**(10/3))-25*B0**2*Bpp0*V0**4/(4*V**8*(V0/V)**(7/3))-25*B0*Bp0**2*V0**4/(4*V**8*(V0/V)**(7/3))-105*B0**2*Bpp0*V0**4/(8*V**8*(V0/V)**(5/3))+275*B0*Bp0**2*V0**4/(8*V**8*(V0/V)**(1/3))+315*B0*Bp0**2*V0**3/(4*V**7*(V0/V)**(2/3))+9315*B0*V0**3*Bp0/(2*V**7)-1215*V0**3*B0**2*Bpp0/(2*V**7)-1215*B0*V0**3*Bp0**2/(2*V**7)+39325*B0*(V0/V)**(2/3)*V0**3/(12*V**7)+2025*B0*Bp0*V0**2/(4*V**6*(V0/V)**(1/3))-225*B0**2*Bpp0*V0**2/(4*V**6*(V0/V)**(1/3))-225*B0*Bp0**2*V0**2/(4*V**6*(V0/V)**(1/3))+315*B0**2*Bpp0*V0**3/(4*V**7*(V0/V)**(2/3))+385*B0*Bp0*V0**5/(72*V**9*(V0/V)**(4/3))+20895*B0*(V0/V)**(1/3)*V0**2/(4*V**6)+7865*B0*(V0/V)**(5/3)*V0**2/(4*V**6)+225*B0*Bp0*V0**4/(4*V**8*(V0/V)**(7/3))+35*B0**2*Bpp0*V0**5/(36*V**9*(V0/V)**(10/3))-1925*B0*Bp0*V0**4/(8*V**8*(V0/V)**(1/3))+825*B0*(V0/V)**(2/3)*Bp0**2*V0**3/(4*V**7)-7875*B0*(V0/V)**(1/3)*Bp0*V0**2/(4*V**6)+495*(V0/V)**(5/3)*B0**2*Bpp0*V0**2/(4*V**6)-35*B0*Bp0*V0**5/(4*V**9*(V0/V)**(10/3))+945*B0*(V0/V)**(1/3)*Bp0**2*V0**2/(4*V**6)-3465*B0*(V0/V)**(5/3)*Bp0*V0**2/(4*V**6)-5775*B0*(V0/V)**(2/3)*Bp0*V0**3/(4*V**7)+945*(V0/V)**(1/3)*B0**2*Bpp0*V0**2/(4*V**6)+495*B0*(V0/V)**(5/3)*Bp0**2*V0**2/(4*V**6)-5975*B0*V0**4/(36*V**8*(V0/V)**(7/3))+39325*B0*V0**4/(72*V**8*(V0/V)**(1/3))-6965*B0*V0**4/(24*V**8*(V0/V)**(5/3))-5975*B0*V0**2/(4*V**6*(V0/V)**(1/3))+5975*B0*V0**3/(12*V**7*(V0/V)**(4/3))+6965*B0*V0**3/(4*V**7*(V0/V)**(2/3))
     def d6E0dV6_T(self,V):
+        """
+        (d6E0/dV6)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0,Bpp0 = self.pEOS
         return -2835*B0*(V0/V)**(1/3)*Bp0**2*V0**2/(2*V**7)+10395*B0*(V0/V)**(5/3)*Bp0*V0**2/(2*V**7)+175*B0*Bp0**2*V0**6/(54*V**11*(V0/V)**(13/3))-875*B0*Bp0*V0**6/(27*V**11*(V0/V)**(11/3))-55*B0**2*Bpp0*V0**6/(54*V**11*(V0/V)**(7/3))+35*B0**2*Bpp0*V0**6/(9*V**11*(V0/V)**(11/3))-55*B0*Bp0**2*V0**6/(54*V**11*(V0/V)**(7/3))+35*B0*Bp0**2*V0**6/(9*V**11*(V0/V)**(11/3))-78650*B0*(V0/V)**(2/3)*V0**3/(3*V**8)+315*B0**2*Bpp0*V0**4/(2*V**9*(V0/V)**(5/3))-825*B0*Bp0**2*V0**4/(2*V**9*(V0/V)**(1/3))+75*B0*Bp0**2*V0**4/(V**9*(V0/V)**(7/3))-35*B0**2*Bpp0*V0**5/(V**10*(V0/V)**(8/3))-35*B0*Bp0**2*V0**5/(V**10*(V0/V)**(8/3))-1485*B0*(V0/V)**(5/3)*Bp0**2*V0**2/(2*V**7)-2835*(V0/V)**(1/3)*B0**2*Bpp0*V0**2/(2*V**7)+8505*B0*V0**3*Bp0**2/(2*V**8)-13930*B0*V0**3/(V**8*(V0/V)**(2/3))+1350*B0*Bp0*V0**3/(V**8*(V0/V)**(4/3))-150*B0**2*Bpp0*V0**3/(V**8*(V0/V)**(4/3))-150*B0*Bp0**2*V0**3/(V**8*(V0/V)**(4/3))+5250*B0*Bp0*V0**3/(V**8*(V0/V)**(2/3))-1650*(V0/V)**(2/3)*B0**2*Bpp0*V0**3/V**8-630*B0**2*Bpp0*V0**3/(V**8*(V0/V)**(2/3))-1650*B0*(V0/V)**(2/3)*Bp0**2*V0**3/V**8+210*B0*Bp0*V0**5/(V**10*(V0/V)**(10/3))-675*B0*Bp0*V0**4/(V**9*(V0/V)**(7/3))+75*B0**2*Bpp0*V0**4/(V**9*(V0/V)**(7/3))-630*B0*Bp0**2*V0**3/(V**8*(V0/V)**(2/3))+11550*B0*(V0/V)**(2/3)*Bp0*V0**3/V**8-16730*B0*V0**5/(27*V**10*(V0/V)**(10/3))-6965*B0*V0**5/(9*V**10*(V0/V)**(8/3))+315*B0*Bp0**2*V0**4/(2*V**9*(V0/V)**(5/3))+5775*B0*Bp0*V0**4/(2*V**9*(V0/V)**(1/3))-62685*B0*(V0/V)**(1/3)*V0**2/(2*V**7)-23595*B0*(V0/V)**(5/3)*V0**2/(2*V**7)+385*B0*Bp0*V0**6/(54*V**11*(V0/V)**(7/3))-385*B0*Bp0*V0**5/(3*V**10*(V0/V)**(4/3))-70*B0**2*Bpp0*V0**5/(3*V**10*(V0/V)**(10/3))-6075*B0*Bp0*V0**2/(2*V**7*(V0/V)**(1/3))-1485*(V0/V)**(5/3)*B0**2*Bpp0*V0**2/(2*V**7)+157815*B0*V0**3/(2*V**8)+7865*B0*V0**5/(27*V**10*(V0/V)**(4/3))+23625*B0*(V0/V)**(1/3)*Bp0*V0**2/(2*V**7)-2625*B0*Bp0*V0**4/(2*V**9*(V0/V)**(5/3))-825*B0**2*Bpp0*V0**4/(2*V**9*(V0/V)**(1/3))-175*B0*Bp0*V0**6/(6*V**11*(V0/V)**(13/3))+175*B0**2*Bpp0*V0**6/(54*V**11*(V0/V)**(13/3))-70*B0*Bp0**2*V0**5/(3*V**10*(V0/V)**(10/3))+875*B0*Bp0*V0**5/(3*V**10*(V0/V)**(8/3))+55*B0**2*Bpp0*V0**5/(3*V**10*(V0/V)**(4/3))+55*B0*Bp0**2*V0**5/(3*V**10*(V0/V)**(4/3))+6965*B0*V0**6/(81*V**11*(V0/V)**(11/3))+8505*V0**3*B0**2*Bpp0/(2*V**8)-65205*B0*V0**3*Bp0/(2*V**8)+17925*B0*V0**2/(2*V**7*(V0/V)**(1/3))-11950*B0*V0**3/(3*V**8*(V0/V)**(4/3))+675*B0**2*Bpp0*V0**2/(2*V**7*(V0/V)**(1/3))+675*B0*Bp0**2*V0**2/(2*V**7*(V0/V)**(1/3))-39325*B0*V0**4/(6*V**9*(V0/V)**(1/3))+6965*B0*V0**4/(2*V**9*(V0/V)**(5/3))-7865*B0*V0**6/(486*V**11*(V0/V)**(7/3))+5975*B0*V0**4/(3*V**9*(V0/V)**(7/3))+41825*B0*V0**6/(486*V**11*(V0/V)**(13/3))
     def error2min(self, P, Vdata,Edata):
@@ -544,7 +951,9 @@ class BM4:#Poirier-Tarantola
 
 class MU2:#Poirier-Tarantola
     """
-    document.
+    Second order Murnaghan EOS and derivatives.
+
+    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0, and B''0.
     """
 
     def __init__(self, *args, units='J/mol', parameters = ''):
@@ -552,6 +961,15 @@ class MU2:#Poirier-Tarantola
             self.pEOS = parameters[:5]
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
+        """
+        Parameters fitting.
+
+        :param list_of_floats Vdata: Intput data.
+        :param list_of_floats Edata: Target data.
+        :param list_of_floats initial_parameters: initial_parameters.
+
+        :return list_of_floats: Optimal parameters.
+        """
         pEOS = initial_parameters[:5]
         #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
@@ -563,29 +981,66 @@ class MU2:#Poirier-Tarantola
         E0,V0,B0,Bp0,Bpp0 = pEOS
         return  E0-861*V0*B0*(1/128)+261*V0*B0*Bp0*(1/128)-27*V0*B0**2*Bpp0*(1/128)-27*V0*B0*Bp0**2*(1/128)-1791*V*B0*(V0/V)**(7/3)*(1/64)-207*B0*V0**3*Bp0/(32*V**2)+675*V*B0*(V0/V)**(7/3)*Bp0*(1/64)+501*B0*V0**3/(32*V**2)-27*V*(V0/V)**(11/3)*B0**2*Bpp0*(1/128)+27*V0**3*B0**2*Bpp0/(32*V**2)-81*V*(V0/V)**(7/3)*B0**2*Bpp0*(1/64)-27*V*B0*(V0/V)**(11/3)*Bp0**2*(1/128)+27*B0*V0**3*Bp0**2/(32*V**2)-81*V*B0*(V0/V)**(7/3)*Bp0**2*(1/64)+189*V*B0*(V0/V)**(11/3)*Bp0*(1/128)-429*V*B0*(V0/V)**(11/3)*(1/128)+717*V*B0*(V0/V)**(5/3)*(1/32)-243*V*B0*(V0/V)**(5/3)*Bp0*(1/32)+27*V*(V0/V)**(5/3)*B0**2*Bpp0*(1/32)+27*V*B0*(V0/V)**(5/3)*Bp0**2*(1/32)
     def E0(self, V):
+        """
+        Internal energy.
+
+        :param float V: Volume.
+
+        :return float: Energy.
+        """
         return  self.E04min(V, self.pEOS)
 
     def dE0dV_T(self,V):
+        """
+        (dE0/dV)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0,Bpp0 = self.pEOS
         K,Kp,Kpp = -B0,Bp0,Bpp0
         return (1)*(-2*K/(Kp*(np.sqrt(-2*K*Kpp+Kp**2)*((V0/V)**np.sqrt(-2*K*Kpp+Kp**2)+1)/(Kp*((V0/V)**np.sqrt(-2*K*Kpp+Kp**2)-1))-1)))
     def d2E0dV2_T(self,V):
+        """
+        (d2E0/dV2)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0,Bpp0 = self.pEOS
         K,Kp,Kpp = -B0,Bp0,Bpp0
         return (1)*(-8*K*(V0/V)**np.sqrt(-2*K*Kpp+Kp**2)*(Kpp*K-(1/2)*Kp**2)/(((Kp-np.sqrt(-2*K*Kpp+Kp**2))*(V0/V)**np.sqrt(-2*K*Kpp+Kp**2)-Kp-np.sqrt(-2*K*Kpp+Kp**2))**2*V))
     def d3E0dV3_T(self,V):
+        """
+        (d3E0/dV3)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0,Bpp0 = self.pEOS
         K,Kp,Kpp = -B0,Bp0,Bpp0
         return (1)*((16*(((-(1/2)*Kp-1/2)*np.sqrt(-2*K*Kpp+Kp**2)-Kpp*K+(1/2)*Kp**2+(1/2)*Kp)*(V0/V)**(2*np.sqrt(-2*K*Kpp+Kp**2))+(V0/V)**np.sqrt(-2*K*Kpp+Kp**2)*((-(1/2)*Kp-1/2)*np.sqrt(-2*K*Kpp+Kp**2)+Kpp*K-(1/2)*Kp**2-(1/2)*Kp)))*K*(Kpp*K-(1/2)*Kp**2)/(((Kp-np.sqrt(-2*K*Kpp+Kp**2))*(V0/V)**np.sqrt(-2*K*Kpp+Kp**2)-Kp-np.sqrt(-2*K*Kpp+Kp**2))**3*V**2))
     def d4E0dV4_T(self,V):
+        """
+        (d4E0/dV4)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0,Bpp0 = self.pEOS
         K,Kp,Kpp = -B0,Bp0,Bpp0
         return (1)*(-32*K*(((-(1/2)*Kp**3-3*Kp**2*(1/2)+(K*Kpp-1)*Kp+3*Kpp*K*(1/2))*np.sqrt(-2*K*Kpp+Kp**2)+(1/2)*Kp**4+3*Kp**3*(1/2)+(1-3*Kpp*K*(1/2))*Kp**2-3*K*Kp*Kpp+K**2*Kpp**2-Kpp*K)*(V0/V)**(3*np.sqrt(-2*K*Kpp+Kp**2))-(4*(Kpp*K-(1/2)*Kp**2+1/2))*Kpp*K*(V0/V)**(2*np.sqrt(-2*K*Kpp+Kp**2))+(V0/V)**np.sqrt(-2*K*Kpp+Kp**2)*(((1/2)*Kp**3+3*Kp**2*(1/2)+(-K*Kpp+1)*Kp-3*Kpp*K*(1/2))*np.sqrt(-2*K*Kpp+Kp**2)+(1/2)*Kp**4+3*Kp**3*(1/2)+(1-3*Kpp*K*(1/2))*Kp**2-3*K*Kp*Kpp+K**2*Kpp**2-Kpp*K))*(Kpp*K-(1/2)*Kp**2)/(((Kp-np.sqrt(-2*K*Kpp+Kp**2))*(V0/V)**np.sqrt(-2*K*Kpp+Kp**2)-Kp-np.sqrt(-2*K*Kpp+Kp**2))**4*V**3))
     def d5E0dV5_T(self,V):
+        """
+        (d5E0/dV5)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0,Bpp0 = self.pEOS
         K,Kp,Kpp = -B0,Bp0,Bpp0
         return (1)*(-(64*((11*(Kpp*K-(1/2)*Kp**2+1/2))*Kpp*((-(1/2)*Kp-9/11)*np.sqrt(-2*K*Kpp+Kp**2)+Kpp*K-(1/2)*Kp**2-9*Kp*(1/11))*K*(V0/V)**(2*np.sqrt(-2*K*Kpp+Kp**2))-(11*(Kpp*K-(1/2)*Kp**2+1/2))*Kpp*(((1/2)*Kp+9/11)*np.sqrt(-2*K*Kpp+Kp**2)+Kpp*K-(1/2)*Kp**2-9*Kp*(1/11))*K*(V0/V)**(3*np.sqrt(-2*K*Kpp+Kp**2))+((3*Kpp**2*(Kp+2)*K**2*(1/2)-(1/4)*(7*(Kp**3+(30/7)*Kp**2+(33/7)*Kp+6/7))*Kpp*K+(1/2)*Kp**5+11*Kp**3*(1/2)+3*Kp**4+3*Kp**2)*np.sqrt(-2*K*Kpp+Kp**2)-K**3*Kpp**3+3*Kpp**2*(Kp**2+3*Kp+11/6)*K**2-9*Kpp*(Kp**3+(14/3)*Kp**2+(55/9)*Kp+2)*Kp*K*(1/4)+11*Kp**4*(1/2)+3*Kp**3+(1/2)*Kp**6+3*Kp**5)*(V0/V)**np.sqrt(-2*K*Kpp+Kp**2)+(V0/V)**(4*np.sqrt(-2*K*Kpp+Kp**2))*((3*Kpp**2*(Kp+2)*K**2*(1/2)-(1/4)*(7*(Kp**3+(30/7)*Kp**2+(33/7)*Kp+6/7))*Kpp*K+(1/2)*Kp**5+11*Kp**3*(1/2)+3*Kp**4+3*Kp**2)*np.sqrt(-2*K*Kpp+Kp**2)+K**3*Kpp**3-3*Kpp**2*(Kp**2+3*Kp+11/6)*K**2+9*Kpp*(Kp**3+(14/3)*Kp**2+(55/9)*Kp+2)*Kp*K*(1/4)-(1/2)*Kp**6-11*Kp**4*(1/2)-3*Kp**5-3*Kp**3)))*K*(Kpp*K-(1/2)*Kp**2)/(((Kp-np.sqrt(-2*K*Kpp+Kp**2))*(V0/V)**np.sqrt(-2*K*Kpp+Kp**2)-Kp-np.sqrt(-2*K*Kpp+Kp**2))**5*V**4))
     def d6E0dV6_T(self,V):
+        """
+        (d6E0/dV6)_T
+
+        :param float V: Volume.
+        """
         E0,V0,B0,Bp0,Bpp0 = self.pEOS
         K,Kp,Kpp = -B0,Bp0,Bpp0
         return (1)*(-(128*(-(26*(Kpp*K-(1/2)*Kp**2+1/2))*Kpp*K*((-(Kp+25/13)*Kpp*K+(1/2)*Kp**3+25*Kp**2*(1/13)+24*Kp*(1/13))*np.sqrt(-2*K*Kpp+Kp**2)+K**2*Kpp**2-(1/2)*(3*(Kp**2+(100/39)*Kp+16/13))*Kpp*K+(1/2)*(Kp+2)*Kp**2*(Kp+24/13))*(V0/V)**(2*np.sqrt(-2*K*Kpp+Kp**2))-(26*(Kpp*K-(1/2)*Kp**2+1/2))*Kpp*K*(((Kp+25/13)*Kpp*K-(1/2)*Kp**3-25*Kp**2*(1/13)-24*Kp*(1/13))*np.sqrt(-2*K*Kpp+Kp**2)+K**2*Kpp**2-(1/2)*(3*(Kp**2+(100/39)*Kp+16/13))*Kpp*K+(1/2)*(Kp+2)*Kp**2*(Kp+24/13))*(V0/V)**(4*np.sqrt(-2*K*Kpp+Kp**2))+(66*(Kpp*K-(1/2)*Kp**2+1/2))*(Kpp*K-(1/2)*Kp**2+12/11)*Kpp**2*K**2*(V0/V)**(3*np.sqrt(-2*K*Kpp+Kp**2))+((-(2*(Kp+5/2))*Kpp**3*K**3+(4*(Kp**3+(45/8)*Kp**2+(35/4)*Kp+25/8))*Kpp**2*K**2-5*Kpp*Kp*(Kp**4+8*Kp**3+21*Kp**2+20*Kp+24/5)*K*(1/2)+5*Kp**6+(1/2)*Kp**7+35*Kp**5*(1/2)+25*Kp**4+12*Kp**3)*np.sqrt(-2*K*Kpp+Kp**2)+K**4*Kpp**4-5*Kpp**3*(Kp**2+4*Kp+7/2)*K**3+(1/4)*(25*(Kp**4+(32/5)*Kp**3+(63/5)*Kp**2+8*Kp+24/25))*Kpp**2*K**2-(3*(Kp**4+(25/3)*Kp**3+(70/3)*Kp**2+25*Kp+8))*Kpp*Kp**2*K+(1/2)*Kp**8+5*Kp**7+35*Kp**6*(1/2)+25*Kp**5+12*Kp**4)*(V0/V)**np.sqrt(-2*K*Kpp+Kp**2)+(((2*(Kp+5/2))*Kpp**3*K**3-(4*(Kp**3+(45/8)*Kp**2+(35/4)*Kp+25/8))*Kpp**2*K**2+5*Kpp*Kp*(Kp**4+8*Kp**3+21*Kp**2+20*Kp+24/5)*K*(1/2)-5*Kp**6-(1/2)*Kp**7-35*Kp**5*(1/2)-25*Kp**4-12*Kp**3)*np.sqrt(-2*K*Kpp+Kp**2)+K**4*Kpp**4-5*Kpp**3*(Kp**2+4*Kp+7/2)*K**3+(1/4)*(25*(Kp**4+(32/5)*Kp**3+(63/5)*Kp**2+8*Kp+24/25))*Kpp**2*K**2-(3*(Kp**4+(25/3)*Kp**3+(70/3)*Kp**2+25*Kp+8))*Kpp*Kp**2*K+(1/2)*Kp**8+5*Kp**7+35*Kp**6*(1/2)+25*Kp**5+12*Kp**4)*(V0/V)**(5*np.sqrt(-2*K*Kpp+Kp**2))))*K*(Kpp*K-(1/2)*Kp**2)/(((Kp-np.sqrt(-2*K*Kpp+Kp**2))*(V0/V)**np.sqrt(-2*K*Kpp+Kp**2)-Kp-np.sqrt(-2*K*Kpp+Kp**2))**6*V**5))
@@ -596,7 +1051,10 @@ class MU2:#Poirier-Tarantola
 Chr_fix = ['Aa','Ba','Ca','Da','Ea','Fa','Ga','Ha','Ia','Ja','Ka','La','Ma','Na','Oa','Pa','Qa','Ra','Sa','Ta','Ua','Va','Wa','Xa','Ya','Za','Ab','Bb','Cb','Db','Eb','Fb','Gb','Hb','Ib','Jb','Kb','Lb','Mb','Nb','Ob','Pb','Qb','Rb','Sb','Tb','Ub','Vb','Wb','Xb','Yb','Zb']
 class EAM:#Morse
     """
-    document.
+    EAM potential and derivatives.
+
+    :param list args: formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels.
+    :param list_of_floats parameters: EAM potential parameters.
     """
 
     def __init__(self, *args, units='J/mol', parameters = ''):
@@ -615,7 +1073,6 @@ class EAM:#Morse
         neigbor_distances_at_Vstar, number_of_pairs_per_distance, comb_types = pairanalysis.pair_analysis(atom_types, size, cutoff, center, basis_vectors, primitive_cell)
         neigbor_distances_at_Vstar, number_of_pairs_per_distance = neigbor_distances_at_Vstar[:number_of_neighbor_levels], number_of_pairs_per_distance[:number_of_neighbor_levels,:]
 
-        #neigbor_distances_at_Vstar, number_of_pairs_per_distance, comb_types = pair_analysis.CalculateSRO(formula_ABCD, cutoff, basis_vectors, primitive_cell, number_of_neighbor_levels)
         self.comb_type_ABCD=comb_types
         Vstar = np.linalg.det(primitive_cell)/len(basis_vectors)
 
@@ -643,6 +1100,15 @@ class EAM:#Morse
 
 
     def fitEOS(self, Vdata,Edata,initial_parameters=''):
+        """
+        Parameters fitting.
+
+        :param list_of_floats Vdata: Intput data.
+        :param list_of_floats Edata: Target data.
+        :param list_of_floats initial_parameters: initial_parameters.
+
+        :return list_of_floats: Optimal parameters.
+        """
         pEOS = initial_parameters
         popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata),bounds=(0,1e3))['x']
 
@@ -763,7 +1229,13 @@ class EAM:#Morse
         self.pEOS_pt_ABCD = np.array(p2).T
 
     def E0(self, V):
+        """
+        Internal energy.
 
+        :param float V: Volume.
+
+        :return float: Energy.
+        """
         if type(V)==np.ndarray:
             return np.array([self.E0(Vi) for Vi in V])
         V = V/self.mult_V
@@ -816,6 +1288,11 @@ class EAM:#Morse
 
 
     def dE0dV_T(self,V):
+        """
+        (dE0/dV)_T
+
+        :param float V: Volume.
+        """
         if type(V)==np.ndarray:
             return np.array([self.dE0dV_T(Vi) for Vi in V])
         V = V/self.mult_V
@@ -853,6 +1330,11 @@ class EAM:#Morse
 
 
     def d2E0dV2_T(self,V):
+        """
+        (d2E0/dV2)_T
+
+        :param float V: Volume.
+        """
         if type(V)==np.ndarray:
             return np.array([self.d2E0dV2_T(Vi) for Vi in V])
         V = V/self.mult_V
@@ -894,6 +1376,11 @@ class EAM:#Morse
         return (d2FdV2 + d2PhidV2)*(self.mult_E)/(self.mult_V)**2
 
     def d3E0dV3_T(self,V):
+        """
+        (d3E0/dV3)_T
+
+        :param float V: Volume.
+        """
         if type(V)==np.ndarray:
             return np.array([self.d3E0dV3_T(Vi) for Vi in V])
         V = V/self.mult_V
@@ -939,6 +1426,11 @@ class EAM:#Morse
         return (d3FdV3 + d3PhidV3)*(self.mult_E)/(self.mult_V)**3
 
     def d4E0dV4_T(self,V):
+        """
+        (d4E0/dV4)_T
+
+        :param float V: Volume.
+        """
         if type(V)==np.ndarray:
             return np.array([self.d4E0dV4_T(Vi) for Vi in V])
         V = V/self.mult_V
@@ -989,6 +1481,11 @@ class EAM:#Morse
         return (d4FdV4 + d4PhidV4)*(self.mult_E)/(self.mult_V)**4
 
     def d5E0dV5_T(self,V):
+        """
+        (d5E0/dV5)_T
+
+        :param float V: Volume.
+        """
         if type(V)==np.ndarray:
             return np.array([self.d5E0dV5_T(Vi) for Vi in V])
         V = V/self.mult_V
@@ -1046,6 +1543,11 @@ class EAM:#Morse
         return (d5FdV5 + d5PhidV5)*(self.mult_E)/(self.mult_V)**5
 
     def d6E0dV6_T(self,V):
+        """
+        (d6E0/dV6)_T
+
+        :param float V: Volume.
+        """
         if type(V)==np.ndarray:
             return np.array([self.d6E0dV6_T(Vi) for Vi in V])
         V = V/self.mult_V

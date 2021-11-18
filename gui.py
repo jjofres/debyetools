@@ -19,12 +19,9 @@ contcar_str = '/CONTCAR.5'
 opened_EOS_dict = {str_i:False for str_i in EOS_str_lst}#{'MP':False,'BM':False,'RV':False,'MG':False,'TB':False,'MU':False,'BM3':False}
 checked_EOS_dict = {str_i:True for str_i in EOS_str_lst}
 EOS2plot_dict = {str_i:'' for str_i in EOS_str_lst}
-# doscar_str = '/DOSCAR.EvV.'
-# eps_str = '/OUTCAR.eps'
 mws_dict = tbox.MWs('./tests/inpt_files/table_MW')
 #
-# #print(tms_dict)
-# params_dict = {}
+
 
 #### Window layout
 layout = layout(EOS_str_lst)
@@ -52,12 +49,7 @@ while True:
             # opened_EOS_dict = events.fbrowser_resets(window, opened_EOS_dict)
         str_folderbrowser = events.fbrowser_fill_browser(window, event)
         events.fbrowser_update_fields(window, contcar_str, mws_dict, str_folderbrowser)
-    #     except Exception as e:
-    #         sg.popup_ok(str(e))
-    # # #EOS Checkbox
-    # if '--LBx_EOS_listbox' in event:#'--Chk_eos_' in event:
-    #     print(window[event].get())
-    #     #
+
     if event == '||B_add_EOS':
         for k in opened_EOS_dict.keys():
             opened_EOS_dict[k]=False
@@ -244,41 +236,4 @@ while True:
         events.plot_fsprops(window,event,FS_db_params, float(window['--I_fs_Tfrom'].get()),float(window['--I_fs_Tto'].get()), tprops_dict_all)
 
 
-    #     try:
-    #         fs_params_Cp_dict,fs_params_alpha_dict,fs_params_Ksinv_dict,fs_params_Ksp_dict,T_data,ix_Tfrom,ix_Tto,fs_params_H298_dict,fs_params_S298_dict = events.fs_params(window,minF_header,TPs_calculated_dict)
-    #         for K in EOS_str_lst:
-    #             try:
-    #                 print(K,'%.10e' % tuple([fs_params_H298_dict[K]]),
-    #                         '%.10e' % tuple([fs_params_S298_dict[K]]),
-    #                         ' '.join(['%.10e' for _ in fs_params_Cp_dict[K]]) % tuple(fs_params_Cp_dict[K]),
-    #                         ' '.join(['%.10e' for _ in fs_params_alpha_dict[K]]) % tuple(fs_params_alpha_dict[K]),
-    #                         ' '.join(['%.10e' for _ in fs_params_Ksinv_dict[K]]) % tuple(fs_params_Ksinv_dict[K]),
-    #                         ' '.join(['%.10e' for _ in fs_params_Ksp_dict[K]]) % tuple(fs_params_Ksp_dict[K]))
-    #             except:
-    #                 print(K,';;;')
-    #     except Exception as e:
-    #         sg.popup_ok(str(e))
-    #
-    # #plot V(T)
-    #
-    # #plot TProps
-    #
-    # #plot FS TProps1
-    # if '||B_plotter_fsprop2plt' in event:
-    #     events.plot_fsprops(window,event,fs_params_Cp_dict,fs_params_alpha_dict,fs_params_Ksinv_dict,fs_params_Ksp_dict,T_data,ix_Tfrom,ix_Tto,TPs_calculated_dict)
-    #
-    # #open fittingToolEOS button
-    #     initial_compound_path = window['--I_compound'].get()
-    #     if initial_compound_path == '':
-    #         sg.popup_ok('Please select a compound/element.')
-    #         continue
-    #     events.open_fittin_tool(window, opened_EOS_dict, initial_compound_path, contcar_str)
-    #
-    # if event == 'details...::nu':
-    #     if nu_bool==False:
-    #         sg.popup('First, calculate nu.')
-    #     else:
-    #         sg.popup(txt_out,title='details...',font=('Courier',8))
-    #
-    # #update enabled/disabled boxes and buttons
     checked_EOS_dict = events.update_diabled(window,opened_EOS_dict,EOS_str_lst,checked_EOS_dict)

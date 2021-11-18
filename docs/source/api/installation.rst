@@ -2,6 +2,11 @@
 Installation
 ============
 
+Source Code
+===========
+
+All the code is in my repository on GitHub_.
+
 Requirements
 ============
 
@@ -29,10 +34,5 @@ the source code from PyPI_::
 .. _PIP: https://pip.pypa.io/en/stable/
 .. _Matplotlib: https://matplotlib.org/
 .. _PySimpleGUI: https://pysimplegui.readthedocs.io/en/latest/
-
-Source Code
-===========
-
-All the code is in my repository on GitHub_.
 
 .. _GitHub: https://github.com/jjofres/debyetools

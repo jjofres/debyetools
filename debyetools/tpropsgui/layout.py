@@ -38,7 +38,6 @@ def layout(EOS_str_lst):
                      [elmt.T('EAM params.:','params_EAM'),elmt.dI('0, 0, 0','params_EAM',15),elmt.dChk('fit','calc_params_EAM',True)]]
 
     lo_EOS = [[elmt.listbox(['Morse','EAM','Rose-Vinet','TB-SMA','Birch-Murnaghan (3)','Mie-Gruneisen','Murnaghan (1)','Poirier-Tarantola','Birch-Murnaghan (4)','Murnaghan (2)',
-                             #'*Morse','*Rose-Vinet','*TB-SMA','*Birch-Murnaghan (3)','*Mie-Gruneisen','*Murnaghan (1)','*Poirier-Tarantola','*Birch-Murnaghan (4)','*Murnaghan (2)','*EAM'
                              ],'EOS_listbox')],
               [elmt.Be('Add','add_EOS',('white', 'green'))]]
 
@@ -53,16 +52,6 @@ def layout(EOS_str_lst):
               [elmt.collapse(lo_options['PT'],'options_'+'PT')],
               [elmt.collapse(lo_options['BM4'],'options_'+'BM4')],
               [elmt.collapse(lo_options['MU2'],'options_'+'MU2')],
-                #   [elmt.collapse(lo_options['*MP'],'options_'+'*MP')],
-                # [elmt.collapse(lo_options['*RV'],'options_'+'*RV')],
-                # [elmt.collapse(lo_options['*TB'],'options_'+'*TB')],
-                # [elmt.collapse(lo_options['*BM'],'options_'+'*BM')],
-                # [elmt.collapse(lo_options['*MG'],'options_'+'*MG')],
-                # [elmt.collapse(lo_options['*MU'],'options_'+'*MU')],
-                # [elmt.collapse(lo_options['*PT'],'options_'+'*PT')],
-                # [elmt.collapse(lo_options['*BM4'],'options_'+'*BM4')],
-                # [elmt.collapse(lo_options['*MU2'],'options_'+'*MU2')],
-                # [elmt.collapse(lo_options['*EAM'],'options_'+'*EAM')],
 
               ]
     lo_EOS = lo_EOS+lo_EOS_collapes

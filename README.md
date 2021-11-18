@@ -3,7 +3,10 @@ A little library for the implementation of a Debye approximation tool for calcul
 
 ### Requirements:
 - numpy
+- numpy
 - scipy
+- PySimpleGUI
+- matplotlib
 
 To Do's:
 

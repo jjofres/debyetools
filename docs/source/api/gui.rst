@@ -13,6 +13,7 @@ Note that in this version, most input files must be in VASP_ format, i.e., CONTC
 How to launch it:
 -----------------
 
+To start getting fimiliar with the interface you can download our `examples input files`_.
 The GUI can be launched by executing the interface script from the debyetools repository main folder::
 
 $ python gui.py
@@ -79,3 +80,4 @@ The calculated thermodynamic properties for each EOS selected are used to fit th
    FactSage compound database parameters.
 
 .. _VASP: https://www.vasp.at/
+.. _`examples input files`: https://github.com/jjofres/debyetools/tree/main/tests/inpt_files

@@ -19,7 +19,7 @@ Example
 >>> print('distances  | # of pairs per type')
 >>> print('           | ' + '  '.join(['%s' for _ in combs_types])%tuple(combs_types))
 >>> for d, n in zip(distances, num_bonds_per_formula):
-        print('%.6f  '%(d)+' | ' + ' '.join(['%.2f' for _ in n])%tuple(n))
+        print('%.6f  '%(d)+' | ' + ' '.join(['%.2f' for _ in n])%tuple(n)) 
 distances  | # of pairs per type
            | A-A  A-B  B-B
 2.828427   | 6.00 6.00 0.00

@@ -51,13 +51,13 @@ class nDeb:
         r=1
         self.xDcte = hbar*6**(1/3.)*(np.pi**2*NAv*r)**(1/3.)
 
-    def G(self,T,V, P=0):
+    def G(self,T,V, P):
         """
         Helmholtz free energy.
 
         :param float T: Temperature.
         :param float V: Volume.
-        :param float P: Pressure. default value = 0.
+        :param float P: Pressure.
 
         :return float: Free energy.
         """

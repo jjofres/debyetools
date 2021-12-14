@@ -41,7 +41,7 @@ def gui():
                     5.3071034596e-04, -7.0100707467e-06]
     FS_db_params = {}
 
-    Pressure = 0
+
     while True:
         event, values = window.read()
         print(event)
@@ -153,7 +153,7 @@ def gui():
                 for k in opened_EOS_dict.keys():
                     if opened_EOS_dict[k]:
                         nDebs_dict[k] = {'ndeb':'','T':'','V':'','tprops':''}
-                T_initial, T_final, number_Temps = float(window['--I_Ti'].get()), float(window['--I_Tf'].get()), float(window['--I_ntemps'].get())
+                Pressure, T_initial, T_final, number_Temps = float(window['--I_Pi'].get()), float(window['--I_Ti'].get()), float(window['--I_Tf'].get()), float(window['--I_ntemps'].get())
                 T = gen_Ts(T_initial, T_final, number_Temps)
 
                 for k in opened_EOS_dict.keys():

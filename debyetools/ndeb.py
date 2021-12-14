@@ -69,6 +69,7 @@ class nDeb:
         Fdef = self.deff.F(T,V)
         Fel = self.el.F(T,V)
         _F = E_0 + Fvib + Fel + Fdef + Fa
+        print('PV',P*V,_F)
         return _F + P*V
 
     def min_G(self,T, initial_V, P):

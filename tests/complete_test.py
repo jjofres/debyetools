@@ -8,6 +8,7 @@ from debyetools.electronic import fit_electronic
 from debyetools.poisson import poisson_ratio
 from debyetools.aux_functions import load_doscar, load_V_E, load_EM, load_cell
 
+Pressure = 0
 class CpTestCase(unittest.TestCase):
     def setUp(self):
         #self.NL = PairAnalysisCalculator()
@@ -58,12 +59,12 @@ class CpTestCase(unittest.TestCase):
         T_initial, T_final, number_Temps = 0.1, 1000, 10
         T = gen_Ts(T_initial, T_final, number_Temps)
 
-        T, V = ndeb_BM4.min_G(T,p_EOS[1],P=0)
+        T, V = ndeb_BM4.min_G(T,p_EOS[1],P=Pressure)
         #=========================
 
         # Evaluations
         #=========================
-        tprops_dict = ndeb_BM4.eval_props(T,V,P=0)
+        tprops_dict = ndeb_BM4.eval_props(T,V,P=Pressure)
 
         T_from = 298.15
         T_to = 1000
@@ -128,12 +129,12 @@ class CpTestCase(unittest.TestCase):
         T_initial, T_final, number_Temps = 0.1, 1000, 10
         T = gen_Ts(T_initial, T_final, number_Temps)
 
-        T, V = ndeb_Morse.min_G(T,ndeb_Morse.EOS.V0,P=0)
+        T, V = ndeb_Morse.min_G(T,ndeb_Morse.EOS.V0,P=Pressure)
         #=========================
 
         # Evaluations
         #=========================
-        tprops_dict = ndeb_Morse.eval_props(T, V,P=0)
+        tprops_dict = ndeb_Morse.eval_props(T, V,P=Pressure)
         #=========================
 
         # FS comp db parameters

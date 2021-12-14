@@ -81,7 +81,7 @@ def layout(EOS_str_lst):
                [elmt.F('Intrinsic Anharmonicity',lo_intanh, 'intanh', right_click_menu=['','Not Implemented...::Intanh',])],
                ]
 
-    lo_minF = [[elmt.T('initial T:','Ti'),elmt.dI('','Ti',4),elmt.T('final T:','Tf'),elmt.dI('','Tf',4),elmt.T('No. steps:','ntemps'),elmt.dI('','ntemps',4)],
+    lo_minF = [[elmt.T('P (Pa):','Pi'),elmt.dI('','Pi',4),elmt.T('initial T (K):','Ti'),elmt.dI('','Ti',4),elmt.T('final T (K):','Tf'),elmt.dI('','Tf',4),elmt.T('No. steps:','ntemps'),elmt.dI('','ntemps',4)],
                [elmt.Bc('run minimization','run_minF',('gray','gray'))],
                [elmt.sCol([[elmt.M('','minF_output',100,7)]], 'minF_output', 480, 80)],
                [elmt.Bc('Open plotter','plotter',('gray','gray'))],]

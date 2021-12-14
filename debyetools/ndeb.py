@@ -51,12 +51,13 @@ class nDeb:
         r=1
         self.xDcte = hbar*6**(1/3.)*(np.pi**2*NAv*r)**(1/3.)
 
-    def F(self,T,V):
+    def G(self,T,V, P=0):
         """
         Helmholtz free energy.
 
         :param float T: Temperature.
         :param float V: Volume.
+        :param float P: Pressure. default value = 0.
 
         :return float: Free energy.
         """
@@ -68,21 +69,22 @@ class nDeb:
         Fdef = self.deff.F(T,V)
         Fel = self.el.F(T,V)
         _F = E_0 + Fvib + Fel + Fdef + Fa
-        return _F
+        return _F + P*V
 
-    def min_F(self,T, initial_V):
+    def min_G(self,T, initial_V, P):
         """
         Procedure for the calculation of the volume as function of temperature.
 
         :param list_of_floats T: Temperature.
+        :param float initial_V: initial guess.
 
         :return list_of_floats: Temperature.
-        :return list_of_floats: Equilibrium Volume.
+        :return list_of_floats: Equilibrium Volume as function of the temperature.
         """
         V0i=initial_V
         V=[]
         for Ti in T:
-            f2min = lambda Vi: self.F(Ti,Vi)
+            f2min = lambda Vi: self.G(Ti,Vi,P=P)
             V0i = fmin(f2min,x0=V0i,disp=False)[0]
             V.append(V0i)
 
@@ -95,7 +97,7 @@ class nDeb:
 
         return T,V
 
-    def eval_props(self, T, V):
+    def eval_props(self, T, V, P):
         """
         Evaluates the thermodynamic properties of a given compound/element at (T,V).
 
@@ -187,7 +189,7 @@ class nDeb:
 
         dKsdP_T = dKsdV_T/dPdV_T
         Ksp = dKsdP_T
-        F = self.F(T, V)
+        G = self.G(T, V, P=P)
 
         Evib = self.vib.E(T,V)
         Eel = self.el.E(T,V)
@@ -211,5 +213,5 @@ class nDeb:
         Pcold = -dE0dV_T
         return {'T':T,'V':V,'tD':tD,'g':g,'Kt':Kt,'Ktp':Ktp,'Ktpp':Ktpp,
                 'Cv':Cv,'a':a,'Cp':Cp,'Ks':Ks,'Ksp':Ksp,
-                'F':F,'E':E,'S':S,'E0':E0,'Fvib':Fvib,'Evib':Evib,'Svib':Svib,
+                'G':G,'E':E,'S':S,'E0':E0,'Fvib':Fvib,'Evib':Evib,'Svib':Svib,
                 'Cvvib':Cvvib,'Pcold':Pcold,'dPdT_V':dPdT_V,'G^2':Ktp**2-2*Kt*Ktpp}

@@ -16,7 +16,7 @@ class CpTestCase(unittest.TestCase):
     def test_Complete_Al_fcc_BM4(self):
         """ Test complete algorithm to calculate TP for Al fcc using the 4th order Birch-Murnaghan EOS."""
 
-        folder_name = './tests/inpt_files/Al_fcc'
+        folder_name = '../tests/inpt_files/Al_fcc'
         # EOS parametrization
         #=========================
         V_DFT, E_DFT = load_V_E(folder_name, folder_name+'/CONTCAR.5', units='J/mol')
@@ -58,12 +58,12 @@ class CpTestCase(unittest.TestCase):
         T_initial, T_final, number_Temps = 0.1, 1000, 10
         T = gen_Ts(T_initial, T_final, number_Temps)
 
-        T, V = ndeb_BM4.min_F(T,p_EOS[1])
+        T, V = ndeb_BM4.min_G(T,p_EOS[1],P=0)
         #=========================
 
         # Evaluations
         #=========================
-        tprops_dict = ndeb_BM4.eval_props(T,V)
+        tprops_dict = ndeb_BM4.eval_props(T,V,P=0)
 
         T_from = 298.15
         T_to = 1000
@@ -80,7 +80,7 @@ class CpTestCase(unittest.TestCase):
     def test_Complete_Al_fcc_Morse(self):
         """ Test complete algorithm to calculate TP for Al fcc using the 4th order Birch-Murnaghan EOS."""
 
-        folder_name = './tests/inpt_files/Al_fcc'
+        folder_name = '../tests/inpt_files/Al_fcc'
         # EOS parametrization
         #=========================
         V_DFT, E_DFT = load_V_E(folder_name, folder_name + '/CONTCAR.5', units='J/mol')
@@ -128,12 +128,12 @@ class CpTestCase(unittest.TestCase):
         T_initial, T_final, number_Temps = 0.1, 1000, 10
         T = gen_Ts(T_initial, T_final, number_Temps)
 
-        T, V = ndeb_Morse.min_F(T,ndeb_Morse.EOS.V0)
+        T, V = ndeb_Morse.min_G(T,ndeb_Morse.EOS.V0,P=0)
         #=========================
 
         # Evaluations
         #=========================
-        tprops_dict = ndeb_Morse.eval_props(T, V)
+        tprops_dict = ndeb_Morse.eval_props(T, V,P=0)
         #=========================
 
         # FS comp db parameters

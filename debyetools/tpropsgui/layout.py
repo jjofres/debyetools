@@ -21,13 +21,13 @@ lo_fs_Kp = lambda i:[[elmt.T('dK/dP','fs_Kp'+str(i),pad=(3,0))],
                      [elmt.Ipad('','fsKp_P0'+str(i),10, pad=(0,0))],
                      [elmt.Ipad('','fsKp_P1'+str(i),10, pad=(0,0))]]
 def lo_fsparams(i):
-    return [[elmt.T('F+TS (T=298K) = ', 'H298'+str(i), pad=((5,0),0)),elmt.Ipad('','H298'+str(i),10, pad=((0,0),0)),elmt.T('S(T=298K) = ', 'S298'+str(i), pad=((5,0),0)),elmt.Ipad('','S298'+str(i),10, pad=((0,0),0))],
+    return [[elmt.T('G+TS (T=298K) = ', 'H298'+str(i), pad=((5,0),0)),elmt.Ipad('','H298'+str(i),10, pad=((0,0),0)),elmt.T('S(T=298K) = ', 'S298'+str(i), pad=((5,0),0)),elmt.Ipad('','S298'+str(i),10, pad=((0,0),0))],
             [elmt.C(lo=lo_fs_Cp(i), key='fc_Cp'+str(i)),
                elmt.C(lo=lo_fs_alpha(i), key='fc_alpha'+str(i)),
                elmt.C(lo=lo_fs_K(i), key='fc_K'+str(i)),
                elmt.C(lo=lo_fs_Kp(i), key='fc_Kp'+str(i))],
               [elmt.T('select property to plot:','fsprop2plt'+str(i)),
-               elmt.ICombo(['','Cp','alpha','1/K','dK/dP'],'fsprop2plt'+str(i),10,1),
+               elmt.ICombo(['       ','Cp','alpha','1/K','dK/dP'],'fsprop2plt'+str(i),10,1),
                elmt.Bc('Open plotter','plotter_fsprop2plt'+str(i),('white',elmt.theme_background_color()))]]
 
 def layout(EOS_str_lst):
@@ -90,7 +90,7 @@ def layout(EOS_str_lst):
 
     lo_tprops = [[elmt.Bc('evaluate','eval_tprops',('gray','gray'))],
              [elmt.TG(lo_tabs_tprops,'tabs_tprops')],
-             [elmt.T('select property to plot:','prop2plt'),elmt.ICombo(['','','',''],'prop2plt',10,1),elmt.Bc('Open plotter','plotter_tprops',('white',elmt.theme_background_color()))]]
+             [elmt.T('select property to plot:','prop2plt'),elmt.ICombo(['       ','       ','       ','       '],'prop2plt',10,1),elmt.Bc('Open plotter','plotter_tprops',('white',elmt.theme_background_color()))]]
 
     lo_tabs_fsparams = [[elmt.Tab(k,lo_fsparams(k),'fs_'+k,False) for k in ['','MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']]]
 

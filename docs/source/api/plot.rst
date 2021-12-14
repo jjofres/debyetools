@@ -15,7 +15,7 @@ By right-clicking over the 'fit EOS' button is it possible to trigger the pop up
 Free energy minimization
 ------------------------
 
-After runing the free energy minimization to find the equilibrium volumes the calues can be plotted  as function of temperature.
+After runing the free energy minimization to find the equilibrium volumes the calues can be plotted  as function of temperature. 
 
 .. _tProps_VvT:
 .. figure::  ./images/V(T)_plot.jpeg

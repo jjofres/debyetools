@@ -32,7 +32,7 @@ def gui():
     layout = layout(EOS_str_lst)
 
     #### Window creation
-    window = sg.Window('ThermoProps V0.0', layout=layout)
+    window = sg.Window('ThermoProps V1.0', layout=layout)
 
     #### loop to wait for user action
     all_props={}
@@ -40,6 +40,8 @@ def gui():
     p_el_inittial = [3.8027342892e-01, -1.8875015171e-02,
                     5.3071034596e-04, -7.0100707467e-06]
     FS_db_params = {}
+
+
     while True:
         event, values = window.read()
         print(event)
@@ -151,14 +153,14 @@ def gui():
                 for k in opened_EOS_dict.keys():
                     if opened_EOS_dict[k]:
                         nDebs_dict[k] = {'ndeb':'','T':'','V':'','tprops':''}
-                T_initial, T_final, number_Temps = float(window['--I_Ti'].get()), float(window['--I_Tf'].get()), float(window['--I_ntemps'].get())
+                Pressure, T_initial, T_final, number_Temps = float(window['--I_Pi'].get()), float(window['--I_Ti'].get()), float(window['--I_Tf'].get()), float(window['--I_ntemps'].get())
                 T = gen_Ts(T_initial, T_final, number_Temps)
 
                 for k in opened_EOS_dict.keys():
                     if opened_EOS_dict[k]:
                         nDebs_dict[k]['ndeb'] = nDeb(nu, m, p_intanh, EOS2plot_dict[k], p_electronic,
                                              p_defects, p_anh)
-                        Tmin, Vmin = nDebs_dict[k]['ndeb'].min_F(T,nDebs_dict[k]['ndeb'].EOS.V0)
+                        Tmin, Vmin = nDebs_dict[k]['ndeb'].min_G(T,nDebs_dict[k]['ndeb'].EOS.V0,P=Pressure)
                         nDebs_dict[k]['T'] = np.array(Tmin)
                         nDebs_dict[k]['V'] = Vmin
                 txt2VT = '#T'
@@ -191,7 +193,7 @@ def gui():
                 for o in opened_EOS_dict:
                     if opened_EOS_dict[o]:
                         print('Results for:',o)
-                        tprops_dict_all[o] = nDebs_dict[o]['ndeb'].eval_props(nDebs_dict[o]['T'],nDebs_dict[o]['V'])
+                        tprops_dict_all[o] = nDebs_dict[o]['ndeb'].eval_props(nDebs_dict[o]['T'],nDebs_dict[o]['V'],P=Pressure)
 
                         window['--Tab_'+o].update(visible=True)
                         #window['--Tab_'+o].select()
@@ -250,7 +252,7 @@ def gui():
                         FS_db_params[o] = fit_FS(tprops_dict_all[o],float(window['--I_fs_Tfrom'].get()), float(window['--I_fs_Tto'].get()))
 
                         ix_T0 = np.where(np.round(tprops_dict_all[o]['T'],2) == np.round(298.15,2))[0][0]
-                        H298 = tprops_dict_all[o]['F'][ix_T0]+tprops_dict_all[o]['T'][ix_T0]*tprops_dict_all[o]['S'][ix_T0]
+                        H298 = tprops_dict_all[o]['G'][ix_T0]+tprops_dict_all[o]['T'][ix_T0]*tprops_dict_all[o]['S'][ix_T0]
                         S298 = tprops_dict_all[o]['S'][ix_T0]
 
                         window['--Tab_fs_'+o].update(visible=True)

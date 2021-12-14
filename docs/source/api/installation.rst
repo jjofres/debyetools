@@ -12,7 +12,7 @@ Requirements
 
 * Python_ 3.6 or newer
 * NumPy_ (base N-dimensional array package)
-* SciPy_ (fundamental algorithms for scientific computing in Python)
+* SciPy_ (fundamental algorithms for scientific computing in Python) 
 
 Other recommended packages:
 

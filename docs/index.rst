@@ -8,7 +8,7 @@ Welcome to Debye Tools's documentation!
 
 Debye tools is a set of tools written in Python_
 for the calculation of thermodynamic properties.
-The software presented here is based in the Debye approximation of the QHA using the crystal internal energetics parametrized at ground-state to project the :ref:`thermodynamics properties <thermoprops>` at high temperatures.
+The software presented here is based in the Debye approximation of the QHA using the crystal internal energetics parametrized at ground-state, (go to :ref:`input file formats <fileformats>` to see how DFT calculations results can be used as inputs) to project the :ref:`thermodynamics properties <thermoprops>` at high temperatures.
 We present here how each contribution to the free energy are considered and a description of the architecture of the calculation engine and of the :ref:`GUI`.
 
 The code_ is freely available under the GNU Affero General Public License.
@@ -100,6 +100,7 @@ FS compound database parameters:
    source/api/fsdb
    source/api/gui
    source/api/plot
+   source/api/fileformats
 
 Indices
 =======

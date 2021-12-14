@@ -26,9 +26,9 @@ class FminTestCase(unittest.TestCase):
         ndeb_BM = nDeb(self.nu, self.m, self.p_intanh, EOS_BM, self.p_electronic, self.p_defects, self.p_anh, EOS_name)
 
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
-        T, V = ndeb_BM.min_F(T,self.p_EOS[1])
+        T, V = ndeb_BM.min_G(T,self.p_EOS[1],P=0)
 
-        self.assertAlmostEqual(35.166117790049896, ndeb_BM.eval_props(T[-1],V[-1])['Cp'])
+        self.assertAlmostEqual(35.166117790049896, ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'])
 
     def test_Free_energy_minimization_Al_fcc_RV(self):
         """ Test V(T) calculation by free energy minimization. RV."""
@@ -40,9 +40,9 @@ class FminTestCase(unittest.TestCase):
         ndeb_BM = nDeb(self.nu, self.m, self.p_intanh, EOS_BM, self.p_electronic, self.p_defects, self.p_anh, EOS_name)
 
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
-        T, V = ndeb_BM.min_F(T,self.p_EOS[1])
+        T, V = ndeb_BM.min_G(T,self.p_EOS[1],P=0)
 
-        self.assertAlmostEqual(37.96026289773106, ndeb_BM.eval_props(T[-1],V[-1])['Cp'])
+        self.assertAlmostEqual(37.96026289773106, ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'])
 
     def test_Free_energy_minimization_Al_fcc_Morse(self):
         """ Test V(T) calculation by free energy minimization. Morse."""
@@ -63,9 +63,9 @@ class FminTestCase(unittest.TestCase):
                         self.p_electronic, self.p_defects, self.p_anh, EOS_name, formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
 
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
-        T, V = ndeb_Morse.min_F(T, self.p_EOS[1])
+        T, V = ndeb_Morse.min_G(T, self.p_EOS[1],P=0)
 
-        self.assertAlmostEqual(32.15669813382092, ndeb_Morse.eval_props(T[-1],V[-1])['Cp'])
+        self.assertAlmostEqual(32.15669813382092, ndeb_Morse.eval_props(T[-1],V[-1],P=0)['Cp'])
 
     def test_Free_energy_minimization_Al_fcc_EAM(self):
         """ Test V(T) calculation by free energy minimization. EAM."""
@@ -84,9 +84,9 @@ class FminTestCase(unittest.TestCase):
                           self.p_electronic, self.p_defects, self.p_anh, EOS_name, formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
 
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
-        T, V = ndeb_Morse.min_F(T,self.p_EOS[1])
+        T, V = ndeb_Morse.min_G(T,self.p_EOS[1],P=0)
 
-        self.assertAlmostEqual(36.127494489465, ndeb_Morse.eval_props(T[-1], V[-1])['Cp'])
+        self.assertAlmostEqual(36.127494489465, ndeb_Morse.eval_props(T[-1], V[-1],P=0)['Cp'])
 
 
 if __name__=='__main__':

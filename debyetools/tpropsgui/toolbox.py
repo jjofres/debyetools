@@ -4,6 +4,8 @@ def compute_gcd(X):
         return X
     elif len(X)==2:
         x,y=X
+    else:
+        return compute_gcd([compute_gcd(X[0:2]),compute_gcd(X[2:])])
     while(y):
         x, y = y, x % y
     return x

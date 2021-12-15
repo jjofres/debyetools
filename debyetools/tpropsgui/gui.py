@@ -107,6 +107,7 @@ def gui():
                         else:
                             print(k, 'not fitted')
                             EOS2params.pEOS = [float(pi) for pi in window['--I_params_'+k].get().split(', ')]
+                            EOS2params.V0=1e-5
 
                         print(EOS2params.pEOS)
                         events.eos_write_params(window,k,EOS2params.pEOS)

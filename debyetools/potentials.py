@@ -17,7 +17,7 @@ class BM:
         if parameters != '':
             self.pEOS = parameters[:4]
 
-    def fitEOS(self, Vdata,Edata,initial_parameters=''):
+    def fitEOS(self, Vdata,Edata,initial_parameters='', fit=True):
         """
         Parameters fitting.
 
@@ -27,15 +27,18 @@ class BM:
 
         :return list_of_floats: Optimal parameters.
         """
-        pEOS = initial_parameters[:4]
-        popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
-        self.pEOS = popt
-
+        if fit:
+            pEOS = initial_parameters[:4]
+            popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
+            self.pEOS = popt
+        if not fit:
+            self.pEOS = initial_parameters[:4]
 
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
+
         self.V0 = mV['x'][0]
 
-        return popt
+        return self.pEOS
 
 
     def E04min(self, V, pEOS):
@@ -114,7 +117,7 @@ class RV:#Rose-Vinet
         if parameters != '':
             self.pEOS = parameters[:4]
 
-    def fitEOS(self, Vdata,Edata,initial_parameters=''):
+    def fitEOS(self, Vdata,Edata,initial_parameters='',fit=True):
         """
         Parameters fitting.
 
@@ -124,13 +127,17 @@ class RV:#Rose-Vinet
 
         :return list_of_floats: Optimal parameters.
         """
-        pEOS = initial_parameters[:4]
-        popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
-        self.pEOS = popt
+        if fit:
+            pEOS = initial_parameters[:4]
+            popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
+            self.pEOS = popt
+        if not fit:
+            self.pEOS = initial_parameters[:4]
+
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]
 
-        return popt
+        return self.pEOS
 
     def E04min(self, V, pEOS):
         E0,V0,B0,Bp0 = pEOS
@@ -208,7 +215,7 @@ class MG:#Mie-Gruneisen
         if parameters != '':
             self.pEOS = parameters[:4]
 
-    def fitEOS(self, Vdata,Edata,initial_parameters=''):
+    def fitEOS(self, Vdata,Edata,initial_parameters='',fit=True):
         """
         Parameters fitting.
 
@@ -218,12 +225,17 @@ class MG:#Mie-Gruneisen
 
         :return list_of_floats: Optimal parameters.
         """
-        pEOS = initial_parameters[:4]
-        ##print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
-        popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
-        self.pEOS = popt
+        if fit:
+            pEOS = initial_parameters[:4]
+            popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
+            self.pEOS = popt
+        if not fit:
+            self.pEOS = initial_parameters[:4]
+
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]
+
+        return self.pEOS
 
 
     def E04min(self, V, pEOS):
@@ -302,7 +314,7 @@ class TB:#TB-SMA
         if parameters != '':
             self.pEOS = parameters[:4]
 
-    def fitEOS(self, Vdata,Edata,initial_parameters=''):
+    def fitEOS(self, Vdata,Edata,initial_parameters='',fit=True):
         """
         Parameters fitting.
 
@@ -312,12 +324,17 @@ class TB:#TB-SMA
 
         :return list_of_floats: Optimal parameters.
         """
-        pEOS = initial_parameters[:4]
-        #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
-        popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
-        self.pEOS = popt
+        if fit:
+            pEOS = initial_parameters[:4]
+            popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
+            self.pEOS = popt
+        if not fit:
+            self.pEOS = initial_parameters[:4]
+
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]
+
+        return self.pEOS
 
     def E04min(self, V, pEOS):
         p0,p1,p2,p3 = EVBBp_to_TBparams(pEOS)
@@ -421,7 +438,7 @@ class MP:#Morse
             self.pEOS = parameters
         ##print('xxx',self.ndist,self.npair,self.Vstar)
 
-    def fitEOS(self, Vdata,Edata,initial_parameters=''):
+    def fitEOS(self, Vdata,Edata,initial_parameters='',fit=True):
         """
         Parameters fitting.
 
@@ -431,13 +448,17 @@ class MP:#Morse
 
         :return list_of_floats: Optimal parameters.
         """
-        pEOS = initial_parameters
-        popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata),bounds=(0,1e3))['x']
+        if fit:
+            pEOS = initial_parameters
+            popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
+            self.pEOS = popt
+        if not fit:
+            self.pEOS = initial_parameters
 
-        self.pEOS = popt
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]
-        return popt
+
+        return self.pEOS
 
     def E04min(self, V, pEOS):
         if type(V)==np.ndarray:
@@ -583,7 +604,7 @@ class MU:#Murnaghan
         if parameters != '':
             self.pEOS = parameters[:4]
 
-    def fitEOS(self, Vdata,Edata,initial_parameters=''):
+    def fitEOS(self, Vdata,Edata,initial_parameters='',fit=True):
         """
         Parameters fitting.
 
@@ -593,12 +614,17 @@ class MU:#Murnaghan
 
         :return list_of_floats: Optimal parameters.
         """
-        pEOS = initial_parameters[:4]
-        #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
-        popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
-        self.pEOS = popt
+        if fit:
+            pEOS = initial_parameters[:4]
+            popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
+            self.pEOS = popt
+        if not fit:
+            self.pEOS = initial_parameters[:4]
+
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]
+
+        return self.pEOS
 
     def E04min(self, V, pEOS):
         E0,V0,B0,Bp0 = pEOS
@@ -676,7 +702,7 @@ class BM3:#Birch-Murnaghan
         if parameters != '':
             self.pEOS = parameters[:4]
 
-    def fitEOS(self, Vdata,Edata,initial_parameters=''):
+    def fitEOS(self, Vdata,Edata,initial_parameters='',fit=True):
         """
         Parameters fitting.
 
@@ -686,14 +712,17 @@ class BM3:#Birch-Murnaghan
 
         :return list_of_floats: Optimal parameters.
         """
-        pEOS = initial_parameters[:4]
-        #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
-        # popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
-        popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
-        self.pEOS = popt
+        if fit:
+            pEOS = initial_parameters[:4]
+            popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
+            self.pEOS = popt
+        if not fit:
+            self.pEOS = initial_parameters[:4]
+
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]
-        return popt
+
+        return self.pEOS
 
     def E04min(self, V, pEOS):
         P0,P1,P2,P3 = EVBBp_to_BMparams(pEOS)
@@ -770,7 +799,7 @@ class PT:#Poirier-Tarantola
         if parameters != '':
             self.pEOS = parameters[:4]
 
-    def fitEOS(self, Vdata,Edata,initial_parameters=''):
+    def fitEOS(self, Vdata,Edata,initial_parameters='',fit=True):
         """
         Parameters fitting.
 
@@ -780,13 +809,17 @@ class PT:#Poirier-Tarantola
 
         :return list_of_floats: Optimal parameters.
         """
-        pEOS = initial_parameters[:4]
-        #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
-        popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
-        self.pEOS = popt
+        if fit:
+            pEOS = initial_parameters[:4]
+            popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
+            self.pEOS = popt
+        if not fit:
+            self.pEOS = initial_parameters[:4]
+
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]
-        return popt
+
+        return self.pEOS
 
     def E04min(self, V, pEOS):
         E0,V0,B0,Bp0 = pEOS
@@ -865,7 +898,7 @@ class BM4:#Poirier-Tarantola
         if parameters != '':
             self.pEOS = parameters[:5]
 
-    def fitEOS(self, Vdata,Edata,initial_parameters=''):
+    def fitEOS(self, Vdata,Edata,initial_parameters='',fit=True):
         """
         Parameters fitting.
 
@@ -875,15 +908,17 @@ class BM4:#Poirier-Tarantola
 
         :return list_of_floats: Optimal parameters.
         """
-        pEOS = initial_parameters[:5]
-        #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
-        # popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
-        popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
-        self.pEOS = popt
+        if fit:
+            pEOS = initial_parameters[:5]
+            popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
+            self.pEOS = popt
+        if not fit:
+            self.pEOS = initial_parameters[:5]
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))])
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]
-        return popt
+
+        return self.pEOS
 
     def E04min(self, V, pEOS):
         E0,V0,B0,Bp0,Bpp0 = pEOS
@@ -960,7 +995,7 @@ class MU2:#Poirier-Tarantola
         if parameters != '':
             self.pEOS = parameters[:5]
 
-    def fitEOS(self, Vdata,Edata,initial_parameters=''):
+    def fitEOS(self, Vdata,Edata,initial_parameters='',fit=True):
         """
         Parameters fitting.
 
@@ -970,12 +1005,17 @@ class MU2:#Poirier-Tarantola
 
         :return list_of_floats: Optimal parameters.
         """
-        pEOS = initial_parameters[:5]
-        #print('Fitting EOS. Potential: ',self.__class__.__name__, end=' ... \n')
-        popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
-        self.pEOS = popt
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))])
+        if fit:
+            pEOS = initial_parameters[:5]
+            popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
+            self.pEOS = popt
+        if not fit:
+            self.pEOS = initial_parameters[:5]
+
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]
+
+        return self.pEOS
 
     def E04min(self, V, pEOS):
         E0,V0,B0,Bp0,Bpp0 = pEOS
@@ -1099,7 +1139,7 @@ class EAM:#Morse
             self.params_elmt_type(pEOS_et)
 
 
-    def fitEOS(self, Vdata,Edata,initial_parameters=''):
+    def fitEOS(self, Vdata,Edata,initial_parameters='',fit=True):
         """
         Parameters fitting.
 
@@ -1109,10 +1149,12 @@ class EAM:#Morse
 
         :return list_of_floats: Optimal parameters.
         """
-        pEOS = initial_parameters
-        popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata),bounds=(0,1e3))['x']
-
-        self.pEOS = popt
+        if fit:
+            pEOS = initial_parameters
+            popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata),bounds=(0,1e3))['x']
+            self.pEOS = popt
+        if not fit:
+            self.pEOS = initial_parameters
 
         pEOS_pt , pEOS_et = self.paramos_raw_2_pt_et(self.pEOS)
 
@@ -1121,7 +1163,7 @@ class EAM:#Morse
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))])
         self.V0 = mV['x'][0]
 
-        return popt
+        return self.pEOS
 
     def phiii(self,r,alpha,beta,r_alpha):
         return -alpha*(1+beta*(r/r_alpha-1))*np.exp(-beta*(r/r_alpha-1))

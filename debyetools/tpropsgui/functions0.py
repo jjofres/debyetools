@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 #
 import numpy as np
+import addcopyfighandler
 #
 legend_loc_list = ['best','upper right','upper left','lower left','lower right','right','center left','center right','lower center','upper center','center']
 line_styles_list = ['-','--','-.',':','None']
@@ -106,7 +107,8 @@ def popup_layout(tabs):
     return [[sg.TabGroup([tab_lst_layout],key='--TabGroup_xy')],
              [sg.Button('Add a tab',key='--B_addtab_w2'),sg.Button('OK',key='--B_ok_w2')]]
 #
-def plot_fig(saved_ins,lines):
+def plot_fig(saved_ins,lines,show=False):
+    print('plt_fig show',show)
 
     fig = plt.figure()
 
@@ -138,6 +140,8 @@ def plot_fig(saved_ins,lines):
         ax.grid()
     fig.subplots_adjust(left=float(saved_ins['lmargin']), bottom=float(saved_ins['bmargin']), right=float(saved_ins['rmargin']), top=float(saved_ins['tmargin']), wspace=0, hspace=0)
 
+    if show:
+        plt.show()
     return fig
 #
 def draw_figure(canvas, figure):

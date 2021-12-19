@@ -17,7 +17,7 @@ class CpTestCase(unittest.TestCase):
     def test_Complete_Al_fcc_BM4(self):
         """ Test complete algorithm to calculate TP for Al fcc using the 4th order Birch-Murnaghan EOS."""
 
-        folder_name = '../tests/inpt_files/Al_fcc'
+        folder_name = './tests/inpt_files/Al_fcc'
         # EOS parametrization
         #=========================
         V_DFT, E_DFT = load_V_E(folder_name, folder_name+'/CONTCAR.5', units='J/mol')
@@ -82,7 +82,7 @@ class CpTestCase(unittest.TestCase):
     def test_Complete_Al_fcc_Morse(self):
         """ Test complete algorithm to calculate TP for Al fcc using the 4th order Birch-Murnaghan EOS."""
 
-        folder_name = '../tests/inpt_files/Al_fcc'
+        folder_name = './tests/inpt_files/Al_fcc'
         # EOS parametrization
         #=========================
         V_DFT, E_DFT = load_V_E(folder_name, folder_name + '/CONTCAR.5', units='J/mol')

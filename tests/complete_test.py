@@ -148,7 +148,7 @@ class CpTestCase(unittest.TestCase):
         print('xxx',FS_db_params['Cp'])
         np.testing.assert_array_almost_equal(FS_db_params['Cp'],
                                              [1.11898388e+02,-8.11994829e-02,7.22118438e+05,4.29282248e-05,
-                                              -1.31482439e+03,1.00000000e+00], decimal=2)
+                                              -1.31482439e+03,1.00000000e+00], decimal=1)
 
 if __name__=='__main__':
     unittest.main()

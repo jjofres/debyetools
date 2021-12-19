@@ -49,7 +49,7 @@ class PoissonsRatioTestCase(unittest.TestCase):
     def test_nu_Al2O3_R3c_read(self):
         """ Test the calculation of poisson ratio for Al2O3 R3c."""
 
-        EM = load_EM('../tests/inpt_files/Al2O3_R3c/OUTCAR.eps')
+        EM = load_EM('./tests/inpt_files/Al2O3_R3c/OUTCAR.eps')
 
         err = np.abs (poisson_ratio(EM) - 0.236)/0.236
         self.assertTrue(err<0.01)

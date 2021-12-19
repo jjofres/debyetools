@@ -92,7 +92,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
     def test_EOS_Morse_Al_fcc_fitting_reading_from_file(self):
         """ Test fitting of Morse potential using Al fcc DFT data."""
-        folder_name = '../tests/inpt_files/Al_fcc'
+        folder_name = './tests/inpt_files/Al_fcc'
         V_DFT, E_DFT = load_V_E(folder_name, folder_name + '/CONTCAR.5', units='J/mol')
 
         formula, primitive_cell, sbasis_vectors = load_cell(folder_name+'/CONTCAR.5')

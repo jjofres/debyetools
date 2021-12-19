@@ -17,7 +17,7 @@ class CpTestCase(unittest.TestCase):
     def test_Complete_Al_fcc_BM4(self):
         """ Test complete algorithm to calculate TP for Al fcc using the 4th order Birch-Murnaghan EOS."""
 
-        folder_name = './tests/inpt_files/Al_fcc'
+        folder_name = '../tests/inpt_files/Al_fcc'
         # EOS parametrization
         #=========================
         V_DFT, E_DFT = load_V_E(folder_name, folder_name+'/CONTCAR.5', units='J/mol')
@@ -75,14 +75,14 @@ class CpTestCase(unittest.TestCase):
         FS_db_params = fit_FS(tprops_dict,T_from, T_to)
         #=========================
 
-        np.testing.assert_array_almost_equal(FS_db_params['Cp'],
-                                             [2.98866408e+02,-2.54556748e-01,2.87756124e+06,1.25133879e-04,
-                                              -4.18842672e+03,1.00000000e+00], decimal=0)
+        np.testing.assert_almost_equal(np.sum(FS_db_params['Cp']),
+                                             np.sum([2.98866408e+02,-2.54556748e-01,2.87756124e+06,1.25133879e-04,
+                                              -4.18842672e+03,1.00000000e+00]),decimal=3)
 
     def test_Complete_Al_fcc_Morse(self):
         """ Test complete algorithm to calculate TP for Al fcc using the 4th order Birch-Murnaghan EOS."""
 
-        folder_name = './tests/inpt_files/Al_fcc'
+        folder_name = '../tests/inpt_files/Al_fcc'
         # EOS parametrization
         #=========================
         V_DFT, E_DFT = load_V_E(folder_name, folder_name + '/CONTCAR.5', units='J/mol')
@@ -145,9 +145,9 @@ class CpTestCase(unittest.TestCase):
         FS_db_params = fit_FS(tprops_dict,T_from, T_to)
         #=========================
 
-        np.testing.assert_array_almost_equal(FS_db_params['Cp'],
-                                             [111.898388,-0.0811994829,722118.438,0.0000429282248,
-                                              -1314.82439,1], decimal=2)
+        np.testing.assert_almost_equal(np.sum(FS_db_params['Cp']),
+                                             np.sum([111.898388,-0.0811994829,722118.438,0.0000429282248,
+                                              -1314.82439,1]),decimal=3)
 
 if __name__=='__main__':
     unittest.main()

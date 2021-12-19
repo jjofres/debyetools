@@ -149,7 +149,11 @@ def gui():
                 p_intanh = [float(stri) for stri in window['--I_p_intanh'].get().replace(' ','').split(',')]
                 p_anh = [float(stri) for stri in window['--I_p_anhxc'].get().replace(' ','').split(',')]
 
-                p_defects = float(window['--I_p_evac'].get()),float(window['--I_p_svac'].get()), float(window['--I_Tm'].get()), 0.1
+                if window['--Chk_def'].get():
+                    p_defects = float(window['--I_p_evac'].get()),float(window['--I_p_svac'].get()), float(window['--I_Tm'].get()), 0.1
+                else:
+                    p_defects = 1e10, 0, float(window['--I_Tm'].get()), 0.1
+                print('p_defects',p_defects)
                 nDebs_dict = {}
                 for k in opened_EOS_dict.keys():
                     if opened_EOS_dict[k]:

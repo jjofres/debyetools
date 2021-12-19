@@ -59,17 +59,21 @@ class dataplot:
         for k in fig_settings.keys():
             self.window[k].update(fig_settings[k])
 
-    def create_canvas(self):
-        self.fig = fn.plot_fig(self.fig_settings,self.lines)
+    def create_canvas(self,show=False):
+        print('create_canvas show',show)
+
+        self.fig = fn.plot_fig(self.fig_settings,self.lines,show=show)
         self.figure_canvas_agg = fn.draw_figure(self.window['--CANVAS2-'].TKCanvas, self.fig)
 
     def delete_fig_agg(self):
         self.figure_canvas_agg.get_tk_widget().forget()
         plt.close('all')
 
-    def update_canvas(self):
+    def update_canvas(self,show=False):
+        print('update_canvas show',show)
+
         self.delete_fig_agg()
-        self.create_canvas()
+        self.create_canvas(show=show)
 
     def increment_b_updn(self,event, values, incr, rdval):
         udstr = '_'+event.replace('_',' ').split()[-1]

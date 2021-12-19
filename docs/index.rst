@@ -17,6 +17,13 @@ The code_ is freely available under the GNU Affero General Public License.
 .. _Python: https://www.python.org/
 .. _code: https://github.com/jjofres/debyetools
 
+- Calculate quality thermodynamic properties in a flexible and fast manner:
+
+.. figure:: ./source/api/images/Cp_LiFePO4.jpeg
+   :align: center
+
+   Heat capacity of LiFePO4 calculated with ``debyetools`` and compared to other methods as shown in :ref:`examples <examples>`.
+
 - Using ``debyetools`` through the GUI ``tProps``:
 
 .. _tProps2:
@@ -101,6 +108,7 @@ FS compound database parameters:
    source/api/gui
    source/api/plot
    source/api/fileformats
+   source/api/examples
 
 Indices
 =======

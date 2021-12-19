@@ -17,7 +17,8 @@ def find_rec_in_str(all_lines,pattrn):
 
     return ns
 
-def pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings):
+def pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,show=False):
+    print('pop_window show',show)
     tabs = plotter.tabs(initial_tabs_multilinetxt)
     data4plot = plotter.dataplot()
     data4plot.load_tab_data(tabs)
@@ -25,7 +26,7 @@ def pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_sett
 
     data4plot.create_window()
     data4plot.update_window(initial_fig_settings)
-    data4plot.create_canvas()
+    data4plot.create_canvas(show=show)
     while True:
         event, values = data4plot.window.read()
         print('plot_event:',event)
@@ -35,33 +36,33 @@ def pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_sett
         elif event in ['--B_figwidth_UP','--B_figheight_UP','--B_figwidth_DN','--B_figheight_DN']:
             data4plot.increment_b_updn(event, values,0.1,1)
             data4plot.update_formats()
-            data4plot.update_canvas()
+            data4plot.update_canvas(show=show)
         elif event in ['--B_titlesize_UP','--B_labelxsize_UP','--B_labelysize_UP','--B_titlesize_DN','--B_labelxsize_DN','--B_labelysize_DN','--B_legendncol_UP','--B_legendncol_DN','--B_legendfontsize_UP','--B_legendfontsize_DN']:
             data4plot.increment_b_updn(event, values,1,None)
             data4plot.update_formats()
-            data4plot.update_canvas()
+            data4plot.update_canvas(show=show)
         elif event in ['--B_lmargin_UP','--B_rmargin_UP','--B_bmargin_UP','--B_tmargin_UP','--B_lmargin_DN','--B_rmargin_DN','--B_bmargin_DN','--B_tmargin_DN','--B_titlexpos_UP','--B_titlexpos_DN','--B_titleypos_UP','--B_titleypos_DN']:
             data4plot.increment_b_updn(event, values,0.01,2)
             data4plot.update_formats()
-            data4plot.update_canvas()
+            data4plot.update_canvas(show=show)
         elif event in ['--B_limxmax_UP','--B_limxmin_UP','--B_limxmax_DN','--B_limxmin_DN','--B_limymax_UP','--B_limymin_UP','--B_limymax_DN','--B_limymin_DN']:
             data4plot.increment_b_updn(event, values,.1,2)
             data4plot.update_formats()
-            data4plot.update_canvas()
+            data4plot.update_canvas(show=show)
         elif event in ['use_grid','use_legend','use_xlabel','use_ylabel','use_title','auto_xlim','auto_ylim']:
             data4plot.update_formats()
-            data4plot.update_canvas()
+            data4plot.update_canvas(show=show)
 
         elif ('++plot++' in event or '--B_refresh' in event):
             data4plot.update_lines_settings()
             data4plot.update_formats()
-            data4plot.update_canvas()
+            data4plot.update_canvas(show=show)
 
         elif ('++linewidth++'in event or '++markersize++'in event) :
             data4plot.increment_b_updn(event, values,1,None)
             data4plot.update_lines_settings()
             data4plot.update_formats()
-            data4plot.update_canvas()
+            data4plot.update_canvas(show=show)
         elif event == '--B_loaddata':
             filename = plotter.sg.popup_get_file('Load Figure...')
             print(filename)
@@ -112,7 +113,7 @@ def pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_sett
             data4plot.create_window()
             data4plot.fig_settings=setting_dict['figure_settings']
             data4plot.update_window(setting_dict['figure_settings'])
-            data4plot.create_canvas()
+            data4plot.create_canvas(show=show)
 
         elif event == '--B_savefig':
 
@@ -172,11 +173,12 @@ def pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_sett
             data4plot.window.close()
             data4plot.create_window()
             data4plot.update_window(data4plot.fig_settings)
-            data4plot.create_canvas()
+            data4plot.create_canvas(show=show)
 
             data4plot.popup_window.close()
 
-def pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings):
+def pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,show=False):
+    print('pop_window_simple show',show)
     tabs = plotter.tabs(initial_tabs_multilinetxt)
     data4plot = plotter.dataplot()
     data4plot.load_tab_data(tabs)
@@ -184,11 +186,47 @@ def pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_f
 
     data4plot.create_window(simple=True)
     data4plot.fig_settings=initial_fig_settings
-    data4plot.create_canvas()
+    data4plot.create_canvas(show=show)
     while True:
         event, values = data4plot.window.read()
         print('plotssimple:',event)
         if event in (plotter.sg.WIN_CLOSED, '--B_close'):
             break
         elif event == '--B_edit_fig':
-            pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)
+            pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,show=show)
+
+class fig:
+    def __init__(self,xlabel, ylabel):
+        self.colors = ['mediumpurple','gray','deepskyblue', 'purple','orchid','pink','aqua','cornflowerblue', 'C0']
+        self.markers = ['s','+','x','o','^','>','1','<','2']
+        self.initial_lines_settings = {}
+        self.initial_fig_settings = {'figwidth':6,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
+                                'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':xlabel,'ylabel':ylabel,'labelxsize':12,
+                                'labelysize':12,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
+                                'legendncol':1,'legendfontsize':10,'use_grid':True,'lmargin':0.11,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12}
+
+        self.tabs = []
+        self.types = []
+        self.len = 0
+    def add_set(self, X, Y, label='Y', type='line'):
+        tab3_str = '#T '+label+'\n'
+        for Ti, Ci in zip(X, Y):
+            tab3_str = tab3_str + '%.10e   %.10e  '%(Ti,Ci)+'\n'
+        self.types.append(type)
+        self.tabs.append(tab3_str)
+        if type == 'line':
+            linestyle = '-'
+            marker = 'None'
+        elif type == 'dash':
+            linestyle = '--'
+            marker = 'None'
+
+        else:
+            linestyle = 'None'
+            marker = self.markers[self.len]
+        self.initial_lines_settings['l'+str(self.len)] = {'plot':True,'label':0,'linestyle':linestyle,'color':self.colors[self.len],        'marker':marker,   'markerfacecolor':'None', 'markeredgecolor':self.colors[self.len],'linewidth':2,'markersize':10}
+        self.len+=1
+    def plot(self,show=False):
+        print('plot show',show)
+        self.initial_tabs_multilinetxt = {'t'+str(i):{'multiline':self.tabs[i]} for i in range(len(self.tabs))}
+        pop_window_simple(self.initial_tabs_multilinetxt,self.initial_lines_settings,self.initial_fig_settings,show=show)

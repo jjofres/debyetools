@@ -53,7 +53,7 @@ The parameters of all contributions are entered and/or calculated in this module
 V(T)
 ====
 
-The calculation of the temperature dependent volume is carried out by minimizing the free energy at fixed temperatures from T=0.1 to melting temperature. The temperature are chozen from a equi-spaced list. The resulting volume and temperatures are returned and printed to the GUI accordingly.
+The calculation of the temperature dependent volume is carried out by minimizing the free energy at fixed temperatures from T=0.1 to melting temperature. The temperature are chosen from a equi-spaced list. The resulting volume and temperatures are returned and printed to the GUI accordingly.
 
 .. _tProps_F_min:
 .. figure::  ./images/tprops_F_min.jpeg

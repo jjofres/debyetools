@@ -10,9 +10,9 @@ Example
 >>> import numpy as np
 >>> from debyetools.pairanalysis import pair_analysis
 >>> formula = 'AABA'
->>> supcell_size = np.array([1,1,1])
+>>> supcell_size = np.array([1, 1, 1])
 >>> cutoff = 5
->>> center = np.array([0,0,0])
+>>> center = np.array([0, 0, 0])
 >>> basis_vectors = np.array([[0,0,0],[.5,.5,0],[.5,0,.5],[0,.5,.5]])
 >>> primitive_cell =  np.array([[4, 0, 0], [0, 4, 0], [0, 0, 4]])
 >>> distances, num_bonds_per_formula, combs_types = pair_analysis(formula, supcell_size, cutoff, center, basis_vectors, primitive_cell)

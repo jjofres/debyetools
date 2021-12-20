@@ -316,4 +316,3 @@ The resulting figure is:
    :align:   center
 
    LiFePO4 heat capacity.
-

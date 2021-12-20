@@ -34,5 +34,4 @@ the source code from PyPI_::
 .. _PIP: https://pip.pypa.io/en/stable/
 .. _Matplotlib: https://matplotlib.org/
 .. _PySimpleGUI: https://pysimplegui.readthedocs.io/en/latest/
-
 .. _GitHub: https://github.com/jjofres/debyetools

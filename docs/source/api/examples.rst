@@ -4,6 +4,11 @@
 More examples
 =============
 
+.. contents:: Table of contents
+   :local:
+   :backlinks: none
+   :depth: 3
+
 Face centered cubic Aluminum thermodynamic properties
 =====================================================
 
@@ -161,10 +166,8 @@ Then we run a genetic algorithm to fit the heat capacity to the experimental dat
     from debyetools.ndeb import nDeb
     ix = 0
     max_iter = 500
-    print('initial err:', evaluate(Cp_LiFePO4,T,[V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef],C_exp))
     mvar=[(V0,V0*0.01), (K0,K0*0.05), (K0p,K0p*0.01), (nu,nu*0.01), (a0,5e-6), (m0,5e-3), (s0,5e-5), (s1,5e-5), (s2,5e-5), (edef,0.5), (sdef, 0.1)]
     parents_params = mutate(params = [V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef], n_chidren = 2, mrate=0.7, mvar=mvar)
-    print('parents_params:', parents_params)
 
     counter_change = 0
     errs_old = 1
@@ -178,7 +181,6 @@ Then we run a genetic algorithm to fit the heat capacity to the experimental dat
             counter_change+=1
         else:
             counter_change=0
-        print(ix, counter_change, errs_new, parents_params, )
         ix+=1
         errs_old = errs_new[0]
         if counter_change>=20: break
@@ -186,10 +188,7 @@ Then we run a genetic algorithm to fit the heat capacity to the experimental dat
     T = np.arange(0.1,800.1,20)
     Cp1 = Cp_LiFePO4(T, parents_params[0])
 
-    for Ti, Cp1i in zip(T, Cp1):
-        print(Ti, Cp1i)
-
-    print('best parameters:',parents_params[0])
+    best_params = parents_params[0]
 
 The algorithm consists in first generating the `parent` set of parameters by running ``mutate`` function with the option ``n_children = 2`` to generate two variation of the initial set.
 Then the iterations goes by (1) `mating` the parents using the function ``mate``, (2) evaluating and (3) selecting the best 2 sets that will be the new `parents`. This will go until stop conditions are met.
@@ -288,7 +287,30 @@ The function to evaluate, the heat capacity, is as follows:
 
         return tprops_dict['Cp']
 
-The result of this fitting is:
+The result of this fitting can be plotted usinf the ``plotter`` module:
+
+.. code-block:: python
+
+    import debyetools.tpropsgui.plotter as plot
+
+    T_exp = np.array([126.9565217,147.826087,167.826087,186.9565217,207.826087,226.9565217,248.6956522,267.826087,288.6956522,306.9565217,326.9565217,349.5652174,366.9565217,391.3043478,408.6956522,428.6956522,449.5652174,467.826087,488.6956522,510.4347826,530.4347826,548.6956522,571.3043478,590.4347826,608.6956522,633.0434783,649.5652174,670.4347826,689.5652174,711.3043478,730.4347826,750.4347826,772.173913])
+    Cp_exp = np.array([9.049180328,10.14519906,11.29742389,12.05620609,12.92740047,13.82669789,14.61358314,15.45667447,16.07494145,16.55269321,17.00234192,17.73302108,18.21077283,18.60421546,19.25058548,19.53161593,19.78454333,20.12177986,20.4028103,20.90866511,21.18969555,21.52693208,21.89227166,22.4824356,22.96018735,23.40983607,23.69086651,23.88758782,23.71896956,23.7470726,23.85948478,23.83138173,24.19672131])
+    T_ph = [1.967263911, 24.08773869, 40.16838464, 51.99817063, 62.61346532, 71.62728127, 82.14182721, 95.16347545, 108.6874128, 123.7174904, 140.2528445, 158.7958422, 179.3467704, 202.4077519, 226.4743683, 250.5441451, 274.6162229, 299.1922033, 323.2681948, 347.8476048, 371.9269543, 396.0073777, 420.0891204, 444.171937, 468.7572464, 492.8416261, 516.9264916, 541.5140562, 565.6001558, 589.6869304, 613.7740731, 638.3634207, 662.4510066, 686.0373117, 711.1294163, 734.2134743, 764.3270346]
+    Cp_ph =[-0.375850956, -0.178378686, 1.227397939, 2.313383473, 3.431619848, 4.344789455, 5.478898585, 6.723965937, 7.953256737, 9.166990283, 10.40292814, 11.64187702, 12.87129914, 14.08268875, 15.21632722, 16.2118242, 17.10673273, 17.9153379, 18.63917154, 19.29786266, 19.87491167, 20.4050194, 20.87745642, 21.30295216, 21.70376428, 22.06093438, 22.39686914, 22.69910457, 22.98109412, 23.23357771, 23.46996716, 23.69426517, 23.91128202, 24.1000059, 24.28807125, 24.49073617, 24.58375529]
+
+    T_JJ = [1.00000E-01,1.64245E+01,3.27490E+01,4.90735E+01,6.53980E+01,8.17224E+01,9.80469E+01,1.14371E+02,1.30696E+02,1.47020E+02,1.63345E+02,1.79669E+02,1.95994E+02,2.12318E+02,2.28643E+02,2.44967E+02,2.61292E+02,2.77616E+02,2.93941E+02,2.98150E+02,3.10265E+02,3.26590E+02,3.42914E+02,3.59239E+02,3.75563E+02,3.91888E+02,4.08212E+02,4.24537E+02,4.40861E+02,4.57186E+02,4.73510E+02,4.89835E+02,5.06159E+02,5.22484E+02,5.38808E+02,5.55133E+02,5.71457E+02,5.87782E+02,6.04106E+02,6.20431E+02,6.36755E+02,6.53080E+02,6.69404E+02,6.85729E+02,7.02053E+02,7.18378E+02,7.34702E+02,7.51027E+02,7.67351E+02,7.83676E+02,8.00000E+02]
+    Cp_JJ = [Cp_LiFePO4(T, params_Murnaghan) fir T in T_JJ]
+    Cp_JJ_fitted = [Cp_LiFePO4(T, best_params) fir T in T_JJ]
+
+    fig = plot.fig(r'Temperature$~\left[K\right]$', r'$C_P~\left[J/K-mol-at\right]$')
+
+    fig.add_set(T_exp, Cp_exp, label = 'exp', type='dots')
+    fig.add_set(T_ph, Cp_ph, label = 'phonon', type='dash')
+    fig.add_set(T_JJ, Cp_JJ, label = 'Murnaghan', type='line')
+    fig.add_set(T_JJ_fit, Cp_JJ_fit, label = 'Murnaghan+fitted', type='line')
+    fig.plot(show=True)
+
+The resulting figure is:
 
 .. figure::  ./images/Cp_LiFePO4.jpeg
    :align:   center

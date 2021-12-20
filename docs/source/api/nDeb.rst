@@ -4,6 +4,11 @@
 Thermodynamic Properties
 ========================
 
+.. contents:: Table of contents
+   :local:
+   :backlinks: none
+   :depth: 3
+
 EOS parametrization
 ===================
 

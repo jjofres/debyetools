@@ -13,7 +13,7 @@ Plotting using the GUI
 EOS fittings
 ------------
 
-By right-clicking over the 'fit EOS' button is it possible to trigger the pop up of the plot of the EOS fittings.
+By right-clicking over the `fit EOS` button is it possible to trigger the pop up of the plot of the EOS fittings.
 
 .. _tProps_EvV:
 .. figure::  ./images/E(V)_plot.jpeg
@@ -24,7 +24,7 @@ By right-clicking over the 'fit EOS' button is it possible to trigger the pop up
 Free energy minimization
 ------------------------
 
-After runing the free energy minimization to find the equilibrium volumes the calues can be plotted  as function of temperature. 
+After running the free energy minimization to find the equilibrium volumes the values can be plotted as function of temperature.
 
 .. _tProps_VvT:
 .. figure::  ./images/V(T)_plot.jpeg

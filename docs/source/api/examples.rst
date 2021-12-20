@@ -37,7 +37,7 @@ This will print:
     [-3.61704789e+05  9.92993115e-06  7.61861944e+10  4.59192465e+00]
 
 To fit the electronic contribution to eDOS data we can load them as `VASP` format `DOSCAR` files using the function ``load_doscar``.
-Then, at each ``V_DFT`` volume, the parameters of the electronic contribution will be fitted with the ``fit_electronic`` function from the ``electronic`` module, using ``p_el_inital`` as inital parameters.
+Then, at each ``V_DFT`` volume, the parameters of the electronic contribution will be fitted with the ``fit_electronic`` function from the ``electronic`` module, using ``p_el_initial`` as initial parameters.
 
 .. code-block:: python
 
@@ -287,7 +287,7 @@ The function to evaluate, the heat capacity, is as follows:
 
         return tprops_dict['Cp']
 
-The result of this fitting can be plotted usinf the ``plotter`` module:
+The result of this fitting can be plotted using the ``plotter`` module:
 
 .. code-block:: python
 

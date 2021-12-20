@@ -11,7 +11,7 @@ Anharmonicity
 =============
 
 The anharmonicity can be included in the calculations as an excess contribution which is called just 'anharmonicity'.
-The temperature dependence of phonon frequencies con be introduced usin what its called 'intrinsic anharmonicity'. 
+The temperature dependence of phonon frequencies con be introduced using what its called 'intrinsic anharmonicity'.
 
 Source code
 -----------

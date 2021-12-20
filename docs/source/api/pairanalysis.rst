@@ -5,7 +5,7 @@ Pair Analysis Calculation
 A pair analysis calculator was build where the atom position can be read from a POSCAR file or eneterd manually. The neighbor list and binning are calculated to build up the pairs list.
 
 Example
--------
+=======
 
 >>> import numpy as np
 >>> from debyetools.pairanalysis import pair_analysis
@@ -27,7 +27,7 @@ distances  | # of pairs per type
 4.898979   | 12.00 12.00 0.00
 
 Source code
------------
+===========
 .. currentmodule:: debyetools.pairanalysis
 
 .. automodule:: debyetools.pairanalysis

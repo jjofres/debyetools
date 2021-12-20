@@ -1,5 +1,14 @@
+==============
 Plotting stuff
 ==============
+
+.. contents:: Table of contents
+   :local:
+   :backlinks: none
+   :depth: 3
+
+Plotting using the GUI
+======================
 
 EOS fittings
 ------------
@@ -55,3 +64,30 @@ There is a figure editor implemented to help edit the figures.
    :align:   center
 
    Figure editor.
+
+Plotting using the ``plotter`` module
+=====================================
+
+Data can also be plotted using code. A ``fig`` object must be intantiated first with the axes labels as arguments:
+
+.. code-block:: python
+
+    import debyetools.tpropsgui.plotter as plot
+
+    fig = plot.fig(r'Temperature$~\left[K\right]$', r'$C_P~\left[J/K-mol-at\right]$')
+
+The data is then added indicidually defining the labels that will go in the legend and if the set will be plotted as `line`, `dash` or `dots`.
+The method ``fig.plot`` will launch an interface showing the figure.
+
+.. code-block:: python
+
+    fig.add_set(T_exp, Cp_exp, label = 'exp', type='dots')
+    fig.add_set(T_JJ_fit, Cp_JJ_fit, label = 'Murnaghan+fitted', type='line')
+    fig.plot()
+
+This will open the following window with the figure:
+
+.. figure::  ./images/Cp_LiFePO4_plotter.jpeg
+   :align:   center
+
+   LiFePO4 heat capacity.

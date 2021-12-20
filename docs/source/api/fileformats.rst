@@ -4,6 +4,11 @@
 Input file formats
 ==================
 
+.. contents:: Table of contents
+   :local:
+   :backlinks: none
+   :depth: 3
+
 Folder structure
 ----------------
 

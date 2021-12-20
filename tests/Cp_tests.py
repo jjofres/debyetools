@@ -28,7 +28,7 @@ class CpTestCase(unittest.TestCase):
 
         Tx, Vx = 9.3300000000000E+02, 1.07790131286e-05
 
-        np.testing.assert_almost_equal(ndeb_BM.eval_props(Tx,Vx)['Cp'], 3.32496610718e+01, decimal=3)
+        np.testing.assert_almost_equal(ndeb_BM.eval_props(Tx,Vx,P=0)['Cp'], 3.32496610718e+01, decimal=3)
 
 if __name__=='__main__':
     unittest.main()

@@ -3,6 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+=======================================
 Welcome to Debye Tools's documentation!
 =======================================
 
@@ -95,7 +96,6 @@ FS compound database parameters:
 [ 1.11898466e+02 -8.11995443e-02  7.22119591e+05  4.29282477e-05
  -1.31482568e+03  1.00000000e+00]
 
-
 .. toctree::
    :maxdepth: 2
    :caption: Documentation:
@@ -110,6 +110,7 @@ FS compound database parameters:
    source/api/fileformats
    source/api/examples
 
+=======
 Indices
 =======
 

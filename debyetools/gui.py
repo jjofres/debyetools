@@ -1,2 +1,3 @@
 from debyetools.tpropsgui.gui import gui
-gui()
+def gui():
+    return gui

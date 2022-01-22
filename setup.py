@@ -34,7 +34,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Operating System :: OS Independent"
     ],
-    packages=["debyetools"],
+    packages=["debyetools","debyetools.tpropsgui"],
     include_package_data=True,
     install_requires=["numpy", "pysimplegui", "scipy", "matplotlib"]
 )

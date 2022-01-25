@@ -128,15 +128,22 @@ def plot_EvV(window, eosobj_dict, opened_EOS_dict):
     print(tab3_str)
     initial_tabs_multilinetxt = {'t0':{'multiline':tab3_str}}
     initial_lines_settings = {
-                              'l0':{'plot':True,'label':0,'linestyle':'None','color':'mediumpurple','marker':'o',   'markerfacecolor':'black', 'markeredgecolor':'mediumpurple','linewidth':2,'markersize':10},
-                              'l1':{'plot':True,'label':0,'linestyle':'None','color':'purple', 'marker':'+',   'markerfacecolor':'None', 'markeredgecolor':'deepskyblue','linewidth':2,'markersize':10},
-                              'l2':{'plot':True,'label':0,'linestyle':'None','color':'gray',        'marker':'x',   'markerfacecolor':'None', 'markeredgecolor':'aqua','linewidth':2,'markersize':10},
-                              'l3':{'plot':True,'label':0,'linestyle':'None','color':'orchid',        'marker':'s',   'markerfacecolor':'None', 'markeredgecolor':'gray','linewidth':2,'markersize':10},
-                              'l4':{'plot':True,'label':0,'linestyle':'None','color':'deepskyblue',          'marker':'^',   'markerfacecolor':'None', 'markeredgecolor':'C0','linewidth':2,'markersize':10},
-                              'l5':{'plot':True,'label':0,'linestyle':'None','color':'pink',          'marker':'>',   'markerfacecolor':'None', 'markeredgecolor':'C3','linewidth':2,'markersize':10},
-                              'l6':{'plot':True,'label':0,'linestyle':'None','color':'aqua',      'marker':'1',   'markerfacecolor':'None', 'markeredgecolor':'orange','linewidth':2,'markersize':10},
-                              'l7':{'plot':True,'label':0,'linestyle':'None','color':'cornflowerblue',        'marker':'<','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
-                              'l8':{'plot':True,'label':0,'linestyle':'None','color':'C0',        'marker':'2','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
+                              'l0': {'plot':True,'label':0,'linestyle':'None','color':'mediumpurple',  'marker':'o',   'markerfacecolor':'black', 'markeredgecolor':'mediumpurple',  'linewidth':2,'markersize':10},
+                              'l1': {'plot':True,'label':0,'linestyle':'None','color':'purple',        'marker':'+',   'markerfacecolor':'None', 'markeredgecolor':'purple',         'linewidth':2,'markersize':10},
+                              'l2': {'plot':True,'label':0,'linestyle':'None','color':'gray',          'marker':'x',   'markerfacecolor':'None', 'markeredgecolor':'gray',           'linewidth':2,'markersize':10},
+                              'l3': {'plot':True,'label':0,'linestyle':'None','color':'orchid',        'marker':'s',   'markerfacecolor':'None', 'markeredgecolor':'orchid',         'linewidth':2,'markersize':10},
+                              'l4': {'plot':True,'label':0,'linestyle':'None','color':'deepskyblue',   'marker':'^',   'markerfacecolor':'None', 'markeredgecolor':'deepskyblue',    'linewidth':2,'markersize':10},
+                              'l5': {'plot':True,'label':0,'linestyle':'None','color':'pink',          'marker':'>',   'markerfacecolor':'None', 'markeredgecolor':'pink',           'linewidth':2,'markersize':10},
+                              'l6': {'plot':True,'label':0,'linestyle':'None','color':'aqua',          'marker':'1',   'markerfacecolor':'None', 'markeredgecolor':'aqua',           'linewidth':2,'markersize':10},
+                              'l7': {'plot':True,'label':0,'linestyle':'None','color':'cornflowerblue','marker':'<',   'markerfacecolor':'None', 'markeredgecolor':'cornflowerblue', 'linewidth':2,'markersize':10},
+                              'l8': {'plot':True,'label':0,'linestyle':'None','color':'C0',            'marker':'2',   'markerfacecolor':'None', 'markeredgecolor':'C0',             'linewidth':2,'markersize':10},
+                              'l9': {'plot':True,'label':0,'linestyle':'None','color':'mediumpurple',  'marker':'.',   'markerfacecolor':'None', 'markeredgecolor':'mediumpurple',             'linewidth':2,'markersize':10},
+                              'l11':{'plot':True,'label':0,'linestyle':'None','color':'purple',        'marker':'p',   'markerfacecolor':'None', 'markeredgecolor':'purple',             'linewidth':2,'markersize':10},
+                              'l10':{'plot':True,'label':0,'linestyle':'None','color':'gray',          'marker':'4',   'markerfacecolor':'None', 'markeredgecolor':'gray',             'linewidth':2,'markersize':10},
+                              'l12':{'plot':True,'label':0,'linestyle':'None','color':'orchid',        'marker':'d',   'markerfacecolor':'None', 'markeredgecolor':'orchid',             'linewidth':2,'markersize':10},
+                              'l13':{'plot':True,'label':0,'linestyle':'None','color':'deepskyblue',   'marker':'+',   'markerfacecolor':'None', 'markeredgecolor':'deepskyblue',             'linewidth':2,'markersize':10},
+                              'l14':{'plot':True,'label':0,'linestyle':'None','color':'pink',          'marker':'x',   'markerfacecolor':'None', 'markeredgecolor':'pink',             'linewidth':2,'markersize':10},
+                              'l15':{'plot':True,'label':0,'linestyle':'None','color':'aqua',          'marker':'+',   'markerfacecolor':'None', 'markeredgecolor':'aqua',             'linewidth':2,'markersize':10},
                               }
     initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
                             'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'Volume $\left[m^3/mol-at\\right]$','ylabel':'$E~\left[J/mol-at\\right]$','labelxsize':13,
@@ -158,6 +165,7 @@ def plot_VvT(window):
                               'l6':{'plot':True,'label':0,'linestyle':'-','color':'aqua',      'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'orange','linewidth':2,'markersize':10},
                               'l7':{'plot':True,'label':0,'linestyle':'-','color':'cornflowerblue',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
                               'l8':{'plot':True,'label':0,'linestyle':'-','color':'C0',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
+                              'l9':{'plot':True,'label':0,'linestyle':'-','color':'C1',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
                               }
 
     initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
@@ -187,6 +195,7 @@ def plot_tprops(window,minF_header):
                               'l6':{'plot':True,'label':0,'linestyle':'-','color':'aqua',      'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'orange','linewidth':2,'markersize':10},
                               'l7':{'plot':True,'label':0,'linestyle':'-','color':'cornflowerblue',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
                               'l8':{'plot':True,'label':0,'linestyle':'-','color':'C0',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
+                              'l9':{'plot':True,'label':0,'linestyle':'-','color':'C1',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
                               }
     initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
                             'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':window['--IC_prop2plt'].get(),'labelxsize':13,
@@ -242,6 +251,7 @@ def plot_fsprops(window,event,fs_params,Tfrom,Tto,TPs_calculated_dict):
                               'l6':{'plot':True,'label':0,'linestyle':'-','color':'aqua',      'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'orange','linewidth':2,'markersize':10},
                               'l7':{'plot':True,'label':0,'linestyle':'-','color':'cornflowerblue',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
                               'l8':{'plot':True,'label':0,'linestyle':'-','color':'C0',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
+                              'l9':{'plot':True,'label':0,'linestyle':'-','color':'C1',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
                               }
     initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
                             'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':window['--IC_prop2plt'].get(),'labelxsize':13,

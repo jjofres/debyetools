@@ -13,6 +13,15 @@ def gui():
     from debyetools.aux_functions import gen_Ts
     from debyetools.fs_compound_db import fit_FS
     import numpy as np
+    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+
+    sg.set_options(element_padding=(0, 0))
+
+    from matplotlib import pyplot as plt
+    plt.rcParams["font.family"] = "serif"
+    plt.rcParams["mathtext.fontset"] = "dejavuserif"
+
 
     EOS_long_lst = {'Morse':'MP','Birch-Murnaghan (3)':'BM','Rose-Vinet':'RV','Mie-Gruneisen':'MG','TB-SMA':'TB','Murnaghan (1)':'MU','Poirier-Tarantola':'PT','Birch-Murnaghan (4)':'BM4','Murnaghan (2)':'MU2','EAM':'EAM',
                     }#'*Morse':'MP','*Birch-Murnaghan (3)':'*BM','*Rose-Vinet':'*RV','*Mie-Gruneisen':'*MG','*TB-SMA':'*TB','*Murnaghan (1)':'*MU','*Poirier-Tarantola':'*PT','*Birch-Murnaghan (4)':'*BM4','*Murnaghan (2)':'*MU2','*EAM':'*EAM'}
@@ -32,7 +41,7 @@ def gui():
     layout = layout(EOS_str_lst)
 
     #### Window creation
-    window = sg.Window('ThermoProps V1.0', layout=layout)
+    window = sg.Window('ThermoProps V1.1', layout=layout)
 
     #### loop to wait for user action
     all_props={}
@@ -44,7 +53,7 @@ def gui():
 
     while True:
         event, values = window.read()
-        print(event)
+        # print(event)
 
         # #close window
         if event in (sg.WIN_CLOSED, '--B_close'):
@@ -64,7 +73,7 @@ def gui():
                     opened_EOS_dict[k]=False
                 for k in window['--LBx_EOS_listbox'].get():
                     opened_EOS_dict[EOS_long_lst[k]]=True
-                print(opened_EOS_dict)
+                # print(opened_EOS_dict)
 
                 events.chk_eos(window,opened_EOS_dict)
             except Exception as e:
@@ -99,7 +108,11 @@ def gui():
                         else:
                             E0 = min(E_DFT)
                             V0 = V_DFT[np.where(E_DFT==E0)]
-                            initial_parameters =  [E0, V0, 7.618619745e+10, 4.591924487e+00,1e-10]
+                            initial_parameters = [float(pi) for pi in window['--I_params_BM'].get().split(', ')]+[0]
+                            if np.sum(initial_parameters)==0:
+                                initial_parameters =  [E0, V0, 7.618619745e+10, 4.591924487e+00,1e-10]+[0]
+                            else:
+                                pass
 
                         if checked_EOS_dict[k]:
                             print(k, 'fitted')
@@ -109,7 +122,7 @@ def gui():
                             EOS2params.pEOS = [float(pi) for pi in window['--I_params_'+k].get().split(', ')]
                             EOS2params.V0=1e-5
 
-                        print(EOS2params.pEOS)
+                        # print(EOS2params.pEOS)
                         events.eos_write_params(window,k,EOS2params.pEOS)
 
                         EOS2plot_dict[k] = EOS2params
@@ -128,7 +141,7 @@ def gui():
             try:
                 EM = EM = load_EM(str_folderbrowser+'/OUTCAR.eps')
                 nu = poisson_ratio(EM)
-                print(nu)
+                # print(nu)
                 window['--I_nu'].update('%.3f' % (nu))
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
@@ -153,7 +166,7 @@ def gui():
                     p_defects = float(window['--I_p_evac'].get()),float(window['--I_p_svac'].get()), float(window['--I_Tm'].get()), 0.1
                 else:
                     p_defects = 1e10, 0, float(window['--I_Tm'].get()), 0.1
-                print('p_defects',p_defects)
+                # print('p_defects',p_defects)
                 nDebs_dict = {}
                 for k in opened_EOS_dict.keys():
                     if opened_EOS_dict[k]:

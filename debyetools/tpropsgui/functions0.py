@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 #
 import numpy as np
-import addcopyfighandler
+# import addcopyfighandler
 #
 legend_loc_list = ['best','upper right','upper left','lower left','lower right','right','center left','center right','lower center','upper center','center']
 line_styles_list = ['-','--','-.',':','None']

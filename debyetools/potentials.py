@@ -897,6 +897,7 @@ class BM4:#Poirier-Tarantola
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters[:5]
+            self.pEOS[2] = -self.pEOS[2]
 
     def fitEOS(self, Vdata,Edata,initial_parameters='',fit=True):
         """
@@ -910,14 +911,18 @@ class BM4:#Poirier-Tarantola
         """
         if fit:
             pEOS = initial_parameters[:5]
+            pEOS[2] = -pEOS[2]
+
             popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
             self.pEOS = popt
         if not fit:
             self.pEOS = initial_parameters[:5]
+            self.pEOS[2] = -self.pEOS[2]
+
 
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]
-
+        print(initial_parameters, self.pEOS)
         return self.pEOS
 
     def E04min(self, V, pEOS):
@@ -994,6 +999,7 @@ class MU2:#Poirier-Tarantola
     def __init__(self, *args, units='J/mol', parameters = ''):
         if parameters != '':
             self.pEOS = parameters[:5]
+            self.pEOS[2] = - self.pEOS[2]
 
     def fitEOS(self, Vdata,Edata,initial_parameters='',fit=True):
         """
@@ -1007,10 +1013,12 @@ class MU2:#Poirier-Tarantola
         """
         if fit:
             pEOS = initial_parameters[:5]
+            pEOS[2] = - pEOS[2]
             popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata))['x']
             self.pEOS = popt
         if not fit:
             self.pEOS = initial_parameters[:5]
+            self.pEOS[2] = - self.pEOS[2]
 
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]

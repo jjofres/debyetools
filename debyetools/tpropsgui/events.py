@@ -74,6 +74,7 @@ def update_diabled(window,opened_dict,eos_available,bool_dict_params_EOS):
     for str_eos in eos_available:
         window['||B_plotter_fsprop2plt'+str_eos].update(disabled=True if window['--IC_fsprop2plt'+str_eos].get()== '' else False)
 
+    window['||B_add_EOS'].update(disabled=True if window['--I_compound'].get()=='' else False)
     window['--Chk_def'].update(disabled=True if window['--I_compound'].get()=='' else False)
     window['--Chk_intanh'].update(disabled=True if window['--I_compound'].get()=='' else False)
     window['--Chk_anhxc'].update(disabled=True if window['--I_compound'].get()=='' else False)

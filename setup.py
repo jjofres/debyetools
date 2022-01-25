@@ -15,8 +15,8 @@ with open(path.join(HERE, 'README.md'), encoding='utf-8') as f:
 # This call to setup() does all the work
 setup(
     name="debyetools",
-    version="1.1.0",
-    description="Demo library",
+    version="1.1.1",
+    description="Debye approximation implementation for the calculation of thermodynamic properties from ground-state atomistic simulations.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://debyetools.readthedocs.io/",

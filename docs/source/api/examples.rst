@@ -15,7 +15,7 @@ Face centered cubic Aluminum thermodynamic properties
 In order to calculate the thermodynamic properties of an element or compound, we need first to parametrize the function that will describe the internal energy of the system.
 In this case we have chosen the Birch-Murnaghan equation of state and fitted it against DFT data loaded using the ``load_V_E`` function.
 The ``BM`` object instantiates the representation og the EOS and its derivatives. In the module ``potentials`` there are all the implemented EOS.
-The method ``fitEOS`` with the option ``fit=True`` will fit the EOS parameters to (Volume,Energy) data using ``initial_parameters`` as initial guess.
+The method ``fitEOS`` with the option ``fit=True`` will fit the EOS parameters to (Volume, Energy) data using ``initial_parameters`` as initial guess.
 The following is an example for `Al fcc`.
 
 .. code-block:: python

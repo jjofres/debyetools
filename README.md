@@ -14,7 +14,7 @@ Please cite.
 
 ### Installation
 ```
-pip install --update debyetools
+pip install --upgrade debyetools
 ```
 
 ### Get started

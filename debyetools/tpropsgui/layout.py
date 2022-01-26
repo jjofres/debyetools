@@ -39,7 +39,7 @@ def layout(EOS_str_lst):
 
     lo_EOS = [[elmt.listbox(['Morse','EAM','Rose-Vinet','TB-SMA','Birch-Murnaghan (3)','Mie-Gruneisen','Murnaghan (1)','Poirier-Tarantola','Birch-Murnaghan (4)','Murnaghan (2)',
                              ],'EOS_listbox')],
-              [elmt.Be('Add','add_EOS',('white', 'green'))]]
+              [elmt.Bc('Add','add_EOS',('white', 'green'))]]
 
     lo_EOS_collapes = [
                 [elmt.collapse(lo_options['MP'],'options_'+'MP')],

@@ -53,7 +53,7 @@ def gui():
 
     while True:
         event, values = window.read()
-        # print(event)
+        print(event)
 
         # #close window
         if event in (sg.WIN_CLOSED, '--B_close'):

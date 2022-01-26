@@ -12,7 +12,7 @@ Requirements
 
 * Python_ 3.6 or newer
 * NumPy_ (base N-dimensional array package)
-* SciPy_ (fundamental algorithms for scientific computing in Python) 
+* SciPy_ (fundamental algorithms for scientific computing in Python)
 
 Other recommended packages:
 
@@ -28,7 +28,7 @@ The simplest way to install Debye Tools is to use pip_ which will automatically 
 
 .. _Python: https://www.python.org/
 .. _NumPy: https://docs.scipy.org/doc/numpy/reference/
-.. _PyPI: https://pypi.org/project/ase
+.. _PyPI: https://pypi.org/project/debyetools/
 .. _SciPy: https://scipy.org
 .. _PIP: https://pip.pypa.io/en/stable/
 .. _Matplotlib: https://matplotlib.org/

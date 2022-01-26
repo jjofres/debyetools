@@ -1110,14 +1110,15 @@ class EAM:#Morse
         formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = [ai for ai in args]
 
         #formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
-
+        self.stat=0
         self.nats=len(basis_vectors)
         formula_ABCD = ''.join([Chr_fix[i] for i in range(len(re.findall('[A-Z][**A-Z]*', formula)))])
         self.formula_ABCD=formula_ABCD
+        # print(formula_ABCD)
 
         size=np.array([1, 1, 1])
         center=np.array([0, 0, 0])
-        atom_types = formula*np.prod(size)
+        atom_types = self.formula_ABCD*np.prod(size)
         neigbor_distances_at_Vstar, number_of_pairs_per_distance, comb_types = pairanalysis.pair_analysis(atom_types, size, cutoff, center, basis_vectors, primitive_cell)
         neigbor_distances_at_Vstar, number_of_pairs_per_distance = neigbor_distances_at_Vstar[:number_of_neighbor_levels], number_of_pairs_per_distance[:number_of_neighbor_levels,:]
 
@@ -1137,6 +1138,7 @@ class EAM:#Morse
             self.mult_V = 1
             self.mult_E = 1
         self.formula=formula
+        # print('#####',formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
         self.ntypes_A()
 
         if parameters != '':
@@ -1159,6 +1161,7 @@ class EAM:#Morse
         """
         if fit:
             pEOS = initial_parameters
+            # print('XXXXXXXX',pEOS)
             popt = least_squares(self.error2min, pEOS,args=(Vdata, Edata),bounds=(0,1e3))['x']
             self.pEOS = popt
         if not fit:
@@ -1218,7 +1221,9 @@ class EAM:#Morse
     def d6F_i(self, rho_i, F0, F1, rho_e, n):
         return n*F0*(rho_i/rho_e)**n*((n**5-15*n**4+85*n**3-225*n**2+274*n-120)*np.log((rho_i/rho_e)**n)+5*n**5-60*n**4+255*n**3-450*n**2+274*n)/rho_i**6
 
-    def ab(self,a,b):return a*b
+    def ab(self,a,b):
+        # print(a*b)
+        return a*b
 
     def params_elmt_type(self, pEOS):
         self.pEOS_et=pEOS
@@ -1264,6 +1269,7 @@ class EAM:#Morse
 
         A_dict = {}
         for A in types_dict.keys():
+            # print('JJJJJJJJJJJJ',self.npair, self.new_pairs)
             A_dict[A] = 1*self.ab(np.array([B_dict[A] for _ in self.npair]),self.npair)
 
         self.A = [A_dict[A] for A in types_ABCD]
@@ -1308,10 +1314,15 @@ class EAM:#Morse
         F_is = []
         for i, rho_i in zip(self.types_new, self.rho_is):
             F0, F1, rho_e, n = self.pEOS_et[:,int(i)]
+            print('F0, F1, rho_e, n',F0, F1, rho_e, n)
             F_is.append(self.F_i(rho_i,F0,F1,rho_e,n))
         self.F_is=F_is
         self.Fs = np.sum(F_is)
         self.Phis = np.sum(self.ab(phi_arr,self.npair))*self.nats/2
+
+        print('Fs:', self.Fs, 'Phis:', self.Phis)
+        print('F_is:', self.F_is)
+        print('PHI_ARR',phi_arr)
         return (self.Fs +  self.Phis)*(self.mult_E)
 
 
@@ -1319,9 +1330,11 @@ class EAM:#Morse
         nparams_F = 4
         nparams_rhophi = 6
 
-        pEOS_pt = np.reshape(params_raw[:-self.ntypes*nparams_F], (nparams_rhophi,-1) )
-        pEOS_et = np.reshape(params_raw[-self.ntypes*nparams_F:], (nparams_F,-1))
+        pEOS_pt = np.reshape(params_raw[:-self.ntypes*nparams_F], (-1,nparams_rhophi) ).T
+        pEOS_et = np.reshape(params_raw[-self.ntypes*nparams_F:], (-1,nparams_F)).T
 
+
+        print('pEOS_pt, pEOS_et',pEOS_pt, pEOS_et)
         return pEOS_pt, pEOS_et
 
     def E04min(self, V, pEOS):

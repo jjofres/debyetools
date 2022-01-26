@@ -922,7 +922,7 @@ class BM4:#Poirier-Tarantola
 
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata),max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]
-        print(initial_parameters, self.pEOS)
+        #print(initial_parameters, self.pEOS)
         return self.pEOS
 
     def E04min(self, V, pEOS):
@@ -1314,15 +1314,15 @@ class EAM:#Morse
         F_is = []
         for i, rho_i in zip(self.types_new, self.rho_is):
             F0, F1, rho_e, n = self.pEOS_et[:,int(i)]
-            print('F0, F1, rho_e, n',F0, F1, rho_e, n)
+            # print('F0, F1, rho_e, n',F0, F1, rho_e, n)
             F_is.append(self.F_i(rho_i,F0,F1,rho_e,n))
         self.F_is=F_is
         self.Fs = np.sum(F_is)
         self.Phis = np.sum(self.ab(phi_arr,self.npair))*self.nats/2
 
-        print('Fs:', self.Fs, 'Phis:', self.Phis)
-        print('F_is:', self.F_is)
-        print('PHI_ARR',phi_arr)
+        # print('Fs:', self.Fs, 'Phis:', self.Phis)
+        # print('F_is:', self.F_is)
+        # print('PHI_ARR',phi_arr)
         return (self.Fs +  self.Phis)*(self.mult_E)
 
 
@@ -1334,7 +1334,7 @@ class EAM:#Morse
         pEOS_et = np.reshape(params_raw[-self.ntypes*nparams_F:], (-1,nparams_F)).T
 
 
-        print('pEOS_pt, pEOS_et',pEOS_pt, pEOS_et)
+        # print('pEOS_pt, pEOS_et',pEOS_pt, pEOS_et)
         return pEOS_pt, pEOS_et
 
     def E04min(self, V, pEOS):

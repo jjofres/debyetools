@@ -135,13 +135,16 @@ def load_cell(filename_contcar):
     cell = cell*mult
 
     ix_nats=6
+    re.findall('[A-Z][^A-Z]*', 'ABC')
     ats_types = re.findall('[A-Z][^A-Z]*', poscar_lines[ix_nats-1].replace('  ','').replace(' ','').replace('\n',''))
+    ats_types = [ai+'x' for ai in ats_types]
+
     nats = np.fromstring(poscar_lines[ix_nats], dtype=int,sep=' ')
 
     formula_lst=[]
     for at_i, na_i in zip(ats_types,nats):
         formula_lst.append(at_i*na_i)
-    formula=''.join(formula_lst)
+    formula='x'.join(formula_lst)
     tots_nats=sum(nats)
 
     basis = np.array([np.fromstring(line_i, dtype=float,sep=' ') for line_i in poscar_lines[8:8+tots_nats]])

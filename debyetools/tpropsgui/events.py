@@ -60,7 +60,7 @@ def bool_chks(window,opened_dict):
 #
 def update_diabled(window,opened_dict,eos_available,bool_dict_params_EOS):
     bool_run_eos_fitting, bool_dict_params_EOS = bool_chks(window,opened_dict)
-    window['||B_run_eos_fitting'].update(disabled=not bool_run_eos_fitting)
+    # window['||B_run_eos_fitting'].update(disabled=not bool_run_eos_fitting)
 
     bool_minF = bool_run_eos_fitting and (True if window['--I_nu'].get()!='' else False)
 

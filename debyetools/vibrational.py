@@ -90,7 +90,7 @@ class Vibrational:
     def S(self, T, V):
         x = self.tD/T
         D3 = D_3(x)
-        
+
         return -3*kB*(np.log(1-np.exp(-self.tD/T))*self.tD+(self.dtDdT_V*T-4*self.tD*(1/3))*D3+3*self.dtDdT_V*self.tD*(1/8))*r*NAv/self.tD
     def F(self, T, V):
         """
@@ -117,7 +117,41 @@ class Vibrational:
 
         x = tD/T
         D3 = D_3(x)
+        # print(tD/T, tD, T)
+        if type(V) is not np.ndarray:
+            if x<0.07:return 1
         return 3*r*NAv*kB*(tD*3/8 + T*np.log(1-np.exp(-x))  - D3*T/3)
+
+    def dFdV_T(self,T,V):
+        d2E0dV2_T = self.EOS.d2E0dV2_T(V)
+        if type(V) == np.ndarray:
+            if min(d2E0dV2_T)<0:return 1
+        kv = self.kv
+        m = self.m
+
+        d3E0dV3_T = self.EOS.d3E0dV3_T(V)
+
+        dP0dV   = - d2E0dV2_T
+        d2P0dV2 = - d3E0dV3_T
+
+        Anh      = self.intanh.Anh(T,V)
+        dAnhdV_T = self.intanh.dAnhdV_T(T,V)
+        xDcte = self.xDcte
+        xD      = xDcte*(1/V)**(1/3.)/kB
+        dxDdV   = - self.xDcte/(3*kB*V**(4/3.))
+        vDPrm  = - dP0dV/(r*m)
+        vDsqrt = np.sqrt( vDPrm)
+        vD      = kv*V*vDsqrt
+        dvDdV   = kv*vDsqrt-kv*V*d2P0dV2/(2*vDsqrt*r*m)
+        tD        = xD*vD*Anh
+        dtDdV_T = dxDdV*vD*Anh + xD*dvDdV*Anh + xD*vD*dAnhdV_T
+
+        x = tD/T
+        D3 = D_3(x)
+        dD3dx   = dD_3dx(x,D3)
+
+        return 3*r*NAv*kB*(3*dtDdV_T*(1/8)+dtDdV_T*np.exp(-x)/(1-np.exp(-x))-(1/3)*dD3dx*dtDdV_T)
+
     def d2FdT2_V(self,T,V):
         """
         (d2F(T,V)/dT2)_V

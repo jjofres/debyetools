@@ -41,7 +41,7 @@ def gui():
     layout = layout(EOS_str_lst)
 
     #### Window creation
-    window = sg.Window('ThermoProps V1.1', layout=layout)
+    window = sg.Window('ThermoProps V1.0', layout=layout)
 
     #### loop to wait for user action
     all_props={}
@@ -53,7 +53,7 @@ def gui():
 
     while True:
         event, values = window.read()
-        print(event)
+        #print(event)
 
         # #close window
         if event in (sg.WIN_CLOSED, '--B_close'):
@@ -102,9 +102,13 @@ def gui():
                             args = ''
                         EOS2params = getattr(potentials,k)(*args)
                         if k == 'MP':
-                            initial_parameters =  [0.35, 1, 3.2]*len(EOS2params.comb_types)
+                            initial_parameters = [float(pi) for pi in window['--I_params_MP'].get().split(', ')]
+                            if np.sum(initial_parameters)==0:
+                                initial_parameters =  [0.35, 1, 3.2]*len(EOS2params.comb_types)
                         elif k =='EAM':
-                            initial_parameters = [1,1,1,1,1,1]*len(EOS2params.comb_types)+[1,1,1,1]*EOS2params.ntypes
+                            initial_parameters = [float(pi) for pi in window['--I_params_EAM'].get().split(', ')]
+                            if np.sum(initial_parameters)==0:
+                                initial_parameters = [3.647649855e-03, 1.240435594e-02, 2.680203750e-04, 1.031741230e-02, 1.486608160e-01, 5.221433411e-02]*len(EOS2params.comb_types)+[2.254792255e+00, 6.613537850e-02, 3.011790966e-01, 5.312117043e-05]*EOS2params.ntypes
                         else:
                             E0 = min(E_DFT)
                             V0 = V_DFT[np.where(E_DFT==E0)]

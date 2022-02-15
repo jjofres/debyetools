@@ -71,6 +71,26 @@ class nDeb:
         _F = E_0 + Fvib + Fel + Fdef + Fa
         return _F + P*V
 
+    def dGdV_T(self, T, V, P):
+        self.vib.set_int_anh(T, V)
+        self.vib.set_theta(T, V)
+
+        dE0dV = self.EOS.dE0dV_T(V)
+        dFvibdV_T = self.vib.dFdV_T(T, V)
+        dFeldV_T = self.el.dFdV_T(T, V)
+        dFadV_T = self.anh.dFdV_T(T, V)
+        dFdefdV_T = self.deff.dFdV_T(T, V)
+        dFdV_T = dE0dV + dFvibdV_T + dFeldV_T + dFdefdV_T + dFadV_T
+
+        # d2E0dV2_T = self.EOS.d2E0dV2_T(V)
+        # d2FvibdV2_T = self.vib.d2FdV2_T(T, V)
+        # d2FeldV2_T  = self.el.d2FdV2_T(T,V)
+        # d2FdefdV2_T = self.deff.d2FdV2_T(T,V)
+        # d2FadV2_T   = self.anh.d2FdV2_T(T,V)
+        # d2FdV2_T = d2E0dV2_T + d2FvibdV2_T + d2FeldV2_T + d2FdefdV2_T + d2FadV2_T
+        # dPdV_T = - d2FdV2_T
+        return dFdV_T# + P + dPdV_T*V
+
     def min_G(self,T, initial_V, P):
         """
         Procedure for the calculation of the volume as function of temperature.
@@ -85,15 +105,18 @@ class nDeb:
         V=[]
         for Ti in T:
             f2min = lambda Vi: self.G(Ti,Vi,P=P)
+            # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
             V0i = fmin(f2min,x0=V0i,disp=False)[0]
             V.append(V0i)
 
-        newV = np.array(V)
+        newV = np.array(V) # V[0]*np.exp(self.integrl())
         del V
 
         ixs = np.where(newV<=1.5*newV[0])
         Tmax = T[-1]
         T,V = T[ixs],newV[ixs]
+
+        tps = self.eval_props(T, V, P)
 
         return T,V
 
@@ -195,7 +218,7 @@ class nDeb:
         Eel = self.el.E(T,V)
         Edef = self.deff.E(T,V)
         Ea = self.anh.E(T,V)
-        E0 = d2E0dV2_T = self.EOS.E0(V)
+        E0 = self.EOS.E0(V)
         E = E0 + Evib + Eel + Edef + Ea
 
         Svib = self.vib.S(T,V)
@@ -211,7 +234,15 @@ class nDeb:
         Cvvib = -T*d2FvibdT2_V
         dE0dV_T = self.EOS.dE0dV_T(V)
         Pcold = -dE0dV_T
+
+        dSdV_T = - d2FdVdT
+        dSdP_T = dSdV_T/dPdV_T
+
+        #  _dKtdT_P = _dKtdT_V + _dKtdV_T*_dVdT_P
+        d2PdVdT = - d3FdV2dT
+        dKtdT_V = - V*d2PdVdT
+        dKtdT_P = dKtdT_V + dKtdV_T*dVdT_P
         return {'T':T,'V':V,'tD':tD,'g':g,'Kt':Kt,'Ktp':Ktp,'Ktpp':Ktpp,
                 'Cv':Cv,'a':a,'Cp':Cp,'Ks':Ks,'Ksp':Ksp,
                 'G':G,'E':E,'S':S,'E0':E0,'Fvib':Fvib,'Evib':Evib,'Svib':Svib,
-                'Cvvib':Cvvib,'Pcold':Pcold,'dPdT_V':dPdT_V,'G^2':Ktp**2-2*Kt*Ktpp}
+                'Cvvib':Cvvib,'Pcold':Pcold,'dPdT_V':dPdT_V,'G^2':Ktp**2-2*Kt*Ktpp,'dSdP_T':dSdP_T, 'dKtdT_P':dKtdT_P}

@@ -1,14 +1,14 @@
 import numpy as np
-
-A03 = (np.pi**4)/5
-A10 = (8*np.pi**4)/15 -49
-A11 = (8*np.pi**4)/5 - 219/2 - 12*A10
-A12 = (16*np.pi**4)/5 - 117 - 36*A10 - 8*A11
-A13 = (16*np.pi**4)/5 - 39 - 24*A10 - 12*A11 - 4*A12
-A20 = (4*np.pi**4)/15 - 1 - A10 - A11 - 1/2*A12 - 1/6*A13
-A21 = (2*np.pi**4)/5 - A11 - A12 - 1/2*A13
-A22 = (2*np.pi**4)/5 - A12 - A13
-A23 = (np.pi**4)/5 - A13
+import mpmath as mp
+# A03 = (np.pi**4)/5
+# A10 = (8*np.pi**4)/15 -49
+# A11 = (8*np.pi**4)/5 - 219/2 - 12*A10
+# A12 = (16*np.pi**4)/5 - 117 - 36*A10 - 8*A11
+# A13 = (16*np.pi**4)/5 - 39 - 24*A10 - 12*A11 - 4*A12
+# A20 = (4*np.pi**4)/15 - 1 - A10 - A11 - 1/2*A12 - 1/6*A13
+# A21 = (2*np.pi**4)/5 - A11 - A12 - 1/2*A13
+# A22 = (2*np.pi**4)/5 - A12 - A13
+# A23 = (np.pi**4)/5 - A13
 
 def lncomplex(z):
     """
@@ -19,20 +19,22 @@ def lncomplex(z):
     _r=np.abs(z)
     return complex(np.log(_r),np.arctan2(_y, x))
 
-def K_24(x):
-    return A03*x**(-3) - (A10 + A11*x**(-1) + A12*x**(-2) + A13*x**(-3))*np.exp(-1*x) - (A20 + A21*x**(-1) + A22*x**(-2) + A23*x**(-3))*np.exp(-2*x)
-
-def dK_24(x):
-    return -3*A03/x**4-(-A11/x**2-2*A12/x**3-3*A13/x**4)*np.exp(-x)+(A10+A11/x+A12/x**2+A13/x**3)*np.exp(-x)-(-A21/x**2-2*A22/x**3-3*A23/x**4)*np.exp(-2*x)+(2*(A20+A21/x+A22/x**2+A23/x**3))*np.exp(-2*x)
+# def K_24(x):
+#     return A03*x**(-3) - (A10 + A11*x**(-1) + A12*x**(-2) + A13*x**(-3))*np.exp(-1*x) - (A20 + A21*x**(-1) + A22*x**(-2) + A23*x**(-3))*np.exp(-2*x)
+#
+# def dK_24(x):
+#     return -3*A03/x**4-(-A11/x**2-2*A12/x**3-3*A13/x**4)*np.exp(-x)+(A10+A11/x+A12/x**2+A13/x**3)*np.exp(-x)-(-A21/x**2-2*A22/x**3-3*A23/x**4)*np.exp(-2*x)+(2*(A20+A21/x+A22/x**2+A23/x**3))*np.exp(-2*x)
 
 def D_3(x):
     """
     Debye function with n=3.
     """
+
     if type(x)==np.ndarray:
         return np.array([D_3(xi) for xi in x])
-    return K_24(x)
+    # return K_24(x)
     # # if x<=1:
+    x=x#x**1.5/((1/3)*x+1)+(1/3)*x
     if x >=499.99999999999966:
         return 1.5585456848144562e-07
     elif x>=1.579779e+01:
@@ -46,11 +48,11 @@ def D_3(x):
 def dD_3dx(x, D3):
     if type(x)==np.ndarray:
         return np.array([dD_3dx(xi,D3i) for xi,D3i in zip(x,D3)])
-    return dK_24(x)
+    # return dK_24(x)
 
     if x >= 709.782712893384:
         return -2.3027630998995085e-10
-    return np.real(3./(np.exp(x)-1.)-3.*D3/x)
+    return np.real(3/x * (x/(np.exp(x)-1) - D_3(x)) )
 
 def d2D_3dx2(x, D3, dD3dx):
     if type(x)==np.ndarray:

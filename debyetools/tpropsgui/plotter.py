@@ -197,8 +197,8 @@ def pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_f
 
 class fig:
     def __init__(self,xlabel, ylabel):
-        self.colors = ['mediumpurple','gray','deepskyblue', 'purple','orchid','pink','aqua','cornflowerblue', 'C0']
-        self.markers = ['s','+','x','o','^','>','1','<','2']
+        self.colors = 100*['mediumpurple','gray','deepskyblue', 'purple','orchid','pink','aqua','cornflowerblue', 'C0','mediumpurple','gray','deepskyblue', 'purple','orchid','pink','aqua','cornflowerblue', 'C0','mediumpurple','gray','deepskyblue', 'purple','orchid','pink','aqua','cornflowerblue', 'C0','mediumpurple','gray','deepskyblue', 'purple','orchid','pink','aqua','cornflowerblue', 'C0']
+        self.markers = 100*['s','+','x','o','^','>','1','<','2','s','+','x','o','^','>','1','<','2','s','+','x','o','^','>','1','<','2','s','+','x','o','^','>','1','<','2']
         self.initial_lines_settings = {}
         self.initial_fig_settings = {'figwidth':6,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
                                 'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':xlabel,'ylabel':ylabel,'labelxsize':12,
@@ -208,7 +208,7 @@ class fig:
         self.tabs = []
         self.types = []
         self.len = 0
-    def add_set(self, X, Y, label='Y', type='line'):
+    def add_set(self, X, Y, label='Y', type='line',lcolor=False, mcolor=False, mtype=False):
         tab3_str = '#T '+label+'\n'
         for Ti, Ci in zip(X, Y):
             tab3_str = tab3_str + '%.10e   %.10e  '%(Ti,Ci)+'\n'
@@ -216,15 +216,20 @@ class fig:
         self.tabs.append(tab3_str)
         if type == 'line':
             linestyle = '-'
-            marker = 'None'
+            mtype = 'None'
         elif type == 'dash':
             linestyle = '--'
-            marker = 'None'
+            mtype = 'None'
 
         else:
             linestyle = 'None'
-            marker = self.markers[self.len]
-        self.initial_lines_settings['l'+str(self.len)] = {'plot':True,'label':0,'linestyle':linestyle,'color':self.colors[self.len],        'marker':marker,   'markerfacecolor':'None', 'markeredgecolor':self.colors[self.len],'linewidth':2,'markersize':10}
+            if not mtype:
+                mmtype = self.markers[self.len]
+        if not lcolor:
+            lcolor = self.colors[self.len]
+        if not mcolor:
+            mcolor = self.colors[self.len]
+        self.initial_lines_settings['l'+str(self.len)] = {'plot':True,'label':0,'linestyle':linestyle,'color':lcolor,        'marker':mtype,   'markerfacecolor':'None', 'markeredgecolor':mcolor,'linewidth':2,'markersize':10}
         self.len+=1
     def plot(self,show=False):
         print('plot show',show)

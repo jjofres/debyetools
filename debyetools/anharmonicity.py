@@ -45,6 +45,8 @@ class Anharmonicity:
         :param float V: Volume.
         """
         return -1/2*self.A(V)*T**2
+    def dFdV_T(self, T, V):
+        return -1/2*self.dAdV_T(V)*T**2
     def d2FdT2_V(self,T,V):
         return -self.A(V)
     def d2FdV2_T(self,T,V):

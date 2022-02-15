@@ -241,8 +241,19 @@ class nDeb:
         #  _dKtdT_P = _dKtdT_V + _dKtdV_T*_dVdT_P
         d2PdVdT = - d3FdV2dT
         dKtdT_V = - V*d2PdVdT
+        ddVdT_PdV_T = - d2PdVdT/dPdV_T + dPdT_V/(dPdV_T)**2*d2PdV2_T
         dKtdT_P = dKtdT_V + dKtdV_T*dVdT_P
+        dadV_T = -1/V**2*dVdT_P + 1/V*ddVdT_PdV_T
+        dadP_T = dadV_T/dPdV_T
+
+        dCpdP_T = dCpdV_T/dPdV_T
+
+        #dSdV_T = dSvibdV_T + dSdefdV_T + dSeldV_T + dSadV_T
+        d2SdTdV = - d3FdVdT2#d2SvibdVdT + d2SeldVdT + d2SdefdVdT + d2SadVdT
+        d2SdV2_T = - d3FdV2dT#_d2SvibdV2_T + d2SeldV2_T + d2SdefdV2_T + d2SadV2_T
+        ddSdT_PdP_T = (d2SdTdV + d2SdV2_T*dVdT_P + dSdV_T*ddVdT_PdV_T)/dPdV_T
         return {'T':T,'V':V,'tD':tD,'g':g,'Kt':Kt,'Ktp':Ktp,'Ktpp':Ktpp,
                 'Cv':Cv,'a':a,'Cp':Cp,'Ks':Ks,'Ksp':Ksp,
                 'G':G,'E':E,'S':S,'E0':E0,'Fvib':Fvib,'Evib':Evib,'Svib':Svib,
-                'Cvvib':Cvvib,'Pcold':Pcold,'dPdT_V':dPdT_V,'G^2':Ktp**2-2*Kt*Ktpp,'dSdP_T':dSdP_T, 'dKtdT_P':dKtdT_P}
+                'Cvvib':Cvvib,'Pcold':Pcold,'dPdT_V':dPdT_V,'G^2':Ktp**2-2*Kt*Ktpp,
+                'dSdP_T':dSdP_T, 'dKtdT_P':dKtdT_P, 'dadP_T':dadP_T, 'dCpdP_T':dCpdP_T,'ddSdT_PdP_T':ddSdT_PdP_T}

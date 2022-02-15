@@ -122,6 +122,9 @@ class Vibrational:
             if x<0.07:return 1
         return 3*r*NAv*kB*(tD*3/8 + T*np.log(1-np.exp(-x))  - D3*T/3)
 
+    def dSdV_T(self, T, V):
+        _dSvibdV_T =  -3*kB*(_dtDdV_T*np.exp(-_x)*_tD/(_T*(1-np.exp(-_x)))+np.log(1-np.exp(-_x))*_dtDdV_T+(_d2tDdVdT*_T-4*_dtDdV_T*(1/3))*_D3+(_dtDdT_V*_T-4*_tD*(1/3))*_dD3dx*_dtDdV_T/_T+3*_d2tDdVdT*_tD*(1/8)+3*_dtDdT_V*_dtDdV_T*(1/8))*r*NAv/_tD+3*kB*(np.log(1-np.exp(-_x))*_tD+(_dtDdT_V*_T-4*_tD*(1/3))*_D3+3*_dtDdT_V*_tD*(1/8))*r*NAv*_dtDdV_T/_tD**2
+
     def dFdV_T(self,T,V):
         d2E0dV2_T = self.EOS.d2E0dV2_T(V)
         if type(V) == np.ndarray:

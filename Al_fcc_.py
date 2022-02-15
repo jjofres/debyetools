@@ -76,7 +76,10 @@ for P in np.arange(-stp,stp+step,step):
     tprops_dict = ndeb.eval_props(T, V, P=P)
 
     for i in range(len(T)):
-        print(tprops_dict['T'][i],P,tprops_dict['S'][i],tprops_dict['V'][i],tprops_dict['a'][i], tprops_dict['dSdP_T'][i], tprops_dict['Kt'][i], tprops_dict['dKtdT_P'][i]
+        print(tprops_dict['T'][i],P,tprops_dict['S'][i],tprops_dict['V'][i],tprops_dict['a'][i],
+              tprops_dict['dSdP_T'][i], tprops_dict['Kt'][i], tprops_dict['dKtdT_P'][i],
+              tprops_dict['Cp'][i], tprops_dict['dadP_T'][i], 
+              tprops_dict['dCpdP_T'][i], tprops_dict['ddSdT_PdP_T'][i]
               #tprops_dict['Cp'][i],tprops_dict['E0'][i]
               )
 print('ok')

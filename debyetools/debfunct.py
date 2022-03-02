@@ -29,12 +29,13 @@ def D_3(x):
     """
     Debye function with n=3.
     """
-
     if type(x)==np.ndarray:
         return np.array([D_3(xi) for xi in x])
     # return K_24(x)
     # # if x<=1:
     x=x#x**1.5/((1/3)*x+1)+(1/3)*x
+    if np.isnan(x):
+        return 0
     if x >=499.99999999999966:
         return 1.5585456848144562e-07
     elif x>=1.579779e+01:

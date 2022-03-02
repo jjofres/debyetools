@@ -175,14 +175,25 @@ def gui():
                 for k in opened_EOS_dict.keys():
                     if opened_EOS_dict[k]:
                         nDebs_dict[k] = {'ndeb':'','T':'','V':'','tprops':''}
-                Pressure, T_initial, T_final, number_Temps = float(window['--I_Pi'].get()), float(window['--I_Ti'].get()), float(window['--I_Tf'].get()), float(window['--I_ntemps'].get())
+                Pressure, T_initial, T_final, number_Temps = window['--I_Pi'].get(), float(window['--I_Ti'].get()), float(window['--I_Tf'].get()), float(window['--I_ntemps'].get())
+
+                try:
+                    Pressure = float(Pressure)
+                    V0_DM, a_DM, b_DM = EOS2params.pEOS[1], 0, 0
+                except:
+                    Pressure = [float(stri) for stri in Pressure.replace(' ','').split(',')]
+                    V0_DM, a_DM, b_DM = EOS2params.pEOS[1], Pressure[1],Pressure[2]
+                    Pressure = Pressure[0]
+
+
                 T = gen_Ts(T_initial, T_final, number_Temps)
 
                 for k in opened_EOS_dict.keys():
                     if opened_EOS_dict[k]:
                         nDebs_dict[k]['ndeb'] = nDeb(nu, m, p_intanh, EOS2plot_dict[k], p_electronic,
                                              p_defects, p_anh)
-                        Tmin, Vmin = nDebs_dict[k]['ndeb'].min_G(T,nDebs_dict[k]['ndeb'].EOS.V0,P=Pressure)
+                        Tmin, Vmin = nDebs_dict[k]['ndeb'].min_G(T,nDebs_dict[k]['ndeb'].EOS.V0,Pressure, V0_DM, a_DM, b_DM)
+                        #Tmin, Vmin = nDebs_dict[k]['ndeb'].min_G(T,nDebs_dict[k]['ndeb'].EOS.V0,Pressure, Vmin[0], a_DM, b_DM)
                         nDebs_dict[k]['T'] = np.array(Tmin)
                         nDebs_dict[k]['V'] = Vmin
                 txt2VT = '#T'
@@ -215,7 +226,7 @@ def gui():
                 for o in opened_EOS_dict:
                     if opened_EOS_dict[o]:
                         print('Results for:',o)
-                        tprops_dict_all[o] = nDebs_dict[o]['ndeb'].eval_props(nDebs_dict[o]['T'],nDebs_dict[o]['V'],P=Pressure)
+                        tprops_dict_all[o] = nDebs_dict[o]['ndeb'].eval_props(nDebs_dict[o]['T'],nDebs_dict[o]['V'],Pressure, V0_DM, a_DM, b_DM)
 
                         window['--Tab_'+o].update(visible=True)
                         #window['--Tab_'+o].select()

@@ -51,7 +51,7 @@ class nDeb:
         r=1
         self.xDcte = hbar*6**(1/3.)*(np.pi**2*NAv*r)**(1/3.)
 
-    def G(self,T,V, P):
+    def G(self,T,V, P, V0_DM, a_DM, b_DM):
         """
         Helmholtz free energy.
 
@@ -64,34 +64,54 @@ class nDeb:
 
         E_0 = self.EOS.E0(V)
 
-        Fvib = self.vib.F(T,V)#3*r*NAv*kB*(tD*3/8 + T*np.log(1-np.exp(-x))  - D3*T/3)
+        Fvib = self.vib.F(T,V, V0_DM, a_DM, b_DM)#3*r*NAv*kB*(tD*3/8 + T*np.log(1-np.exp(-x))  - D3*T/3)
         Fa = self.anh.F(T,V)
         Fdef = self.deff.F(T,V)
         Fel = self.el.F(T,V)
         _F = E_0 + Fvib + Fel + Fdef + Fa
         return _F + P*V
 
-    def dGdV_T(self, T, V, P):
-        self.vib.set_int_anh(T, V)
-        self.vib.set_theta(T, V)
+    def G2min(self,T,V, P, V0_DM, a_DM, b_DM):
+        """
+        Helmholtz free energy.
 
-        dE0dV = self.EOS.dE0dV_T(V)
-        dFvibdV_T = self.vib.dFdV_T(T, V)
-        dFeldV_T = self.el.dFdV_T(T, V)
-        dFadV_T = self.anh.dFdV_T(T, V)
-        dFdefdV_T = self.deff.dFdV_T(T, V)
-        dFdV_T = dE0dV + dFvibdV_T + dFeldV_T + dFdefdV_T + dFadV_T
+        :param float T: Temperature.
+        :param float V: Volume.
+        :param float P: Pressure.
 
-        # d2E0dV2_T = self.EOS.d2E0dV2_T(V)
-        # d2FvibdV2_T = self.vib.d2FdV2_T(T, V)
-        # d2FeldV2_T  = self.el.d2FdV2_T(T,V)
-        # d2FdefdV2_T = self.deff.d2FdV2_T(T,V)
-        # d2FadV2_T   = self.anh.d2FdV2_T(T,V)
-        # d2FdV2_T = d2E0dV2_T + d2FvibdV2_T + d2FeldV2_T + d2FdefdV2_T + d2FadV2_T
-        # dPdV_T = - d2FdV2_T
-        return dFdV_T# + P + dPdV_T*V
+        :return float: Free energy.
+        """
 
-    def min_G(self,T, initial_V, P):
+        E_0 = self.EOS.E0(V)
+
+        Fvib = self.vib.Fmin(T,V, V0_DM, a_DM, b_DM)#3*r*NAv*kB*(tD*3/8 + T*np.log(1-np.exp(-x))  - D3*T/3)
+        Fa = self.anh.F(T,V)
+        Fdef = self.deff.F(T,V)
+        Fel = self.el.F(T,V)
+        _F = E_0 + Fvib + Fel + Fdef + Fa
+        return _F + P*V
+
+    # def dGdV_T(self, T, V, P):
+    #     self.vib.set_int_anh(T, V)
+    #     self.vib.set_theta(T, V)
+    #
+    #     dE0dV = self.EOS.dE0dV_T(V)
+    #     dFvibdV_T = self.vib.dFdV_T(T, V)
+    #     dFeldV_T = self.el.dFdV_T(T, V)
+    #     dFadV_T = self.anh.dFdV_T(T, V)
+    #     dFdefdV_T = self.deff.dFdV_T(T, V)
+    #     dFdV_T = dE0dV + dFvibdV_T + dFeldV_T + dFdefdV_T + dFadV_T
+    #
+    #     # d2E0dV2_T = self.EOS.d2E0dV2_T(V)
+    #     # d2FvibdV2_T = self.vib.d2FdV2_T(T, V)
+    #     # d2FeldV2_T  = self.el.d2FdV2_T(T,V)
+    #     # d2FdefdV2_T = self.deff.d2FdV2_T(T,V)
+    #     # d2FadV2_T   = self.anh.d2FdV2_T(T,V)
+    #     # d2FdV2_T = d2E0dV2_T + d2FvibdV2_T + d2FeldV2_T + d2FdefdV2_T + d2FadV2_T
+    #     # dPdV_T = - d2FdV2_T
+    #     return dFdV_T# + P + dPdV_T*V
+
+    def min_G(self,T, initial_V, P, V0_DM, a_DM, b_DM):
         """
         Procedure for the calculation of the volume as function of temperature.
 
@@ -101,13 +121,30 @@ class nDeb:
         :return list_of_floats: Temperature.
         :return list_of_floats: Equilibrium Volume as function of the temperature.
         """
-        V0i=initial_V
+        V0i=initial_V/1e-5
+
         V=[]
         for Ti in T:
-            f2min = lambda Vi: self.G(Ti,Vi,P=P)
+            f2min = lambda Vi: self.G2min(Ti,Vi*1e-5,P, V0_DM, a_DM, b_DM)/3e5
             # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
-            V0i = fmin(f2min,x0=V0i,disp=False)[0]
+            V0i = fmin(f2min,x0=V0i,disp=False)[0]*1e-5
             V.append(V0i)
+
+        V0_DM = V[0]
+        V=[]
+        for Ti in T:
+            f2min = lambda Vi: self.G(Ti,Vi*1e-5,P, V0_DM, a_DM, b_DM)/3e5
+            # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
+            V0i = fmin(f2min,x0=V0i,disp=False)[0]*1e-5
+            V.append(V0i)
+        V0_DM = V[0]
+        V=[]
+        for Ti in T:
+            f2min = lambda Vi: self.G(Ti,Vi*1e-5,P, V0_DM, a_DM, b_DM)/3e5
+            # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
+            V0i = fmin(f2min,x0=V0i,disp=False)[0]*1e-5
+            V.append(V0i)
+
 
         newV = np.array(V) # V[0]*np.exp(self.integrl())
         del V
@@ -116,11 +153,9 @@ class nDeb:
         Tmax = T[-1]
         T,V = T[ixs],newV[ixs]
 
-        tps = self.eval_props(T, V, P)
-
         return T,V
 
-    def eval_props(self, T, V, P):
+    def eval_props(self, T, V, P, V0_DM, a_DM, b_DM):
         """
         Evaluates the thermodynamic properties of a given compound/element at (T,V).
 
@@ -134,7 +169,7 @@ class nDeb:
         kv = self.kv
 
         self.vib.set_int_anh(T, V)
-        self.vib.set_theta(T, V)
+        self.vib.set_theta(T, V, V0_DM, a_DM, b_DM)
 
         d2E0dV2_T = self.EOS.d2E0dV2_T(V)
         d3E0dV3_T = self.EOS.d3E0dV3_T(V)
@@ -212,7 +247,7 @@ class nDeb:
 
         dKsdP_T = dKsdV_T/dPdV_T
         Ksp = dKsdP_T
-        G = self.G(T, V, P=P)
+        G = self.G(T, V, P, V0_DM, a_DM, b_DM)
 
         Evib = self.vib.E(T,V)
         Eel = self.el.E(T,V)
@@ -227,7 +262,7 @@ class nDeb:
         Sa = self.anh.S(T,V)
         S = Svib + Sel + Sdef + Sa
 
-        Fvib = self.vib.F(T,V)
+        Fvib = self.vib.F(T, V, V0_DM, a_DM, b_DM)
         Evib = self.vib.E(T,V)
         Svib = self.vib.S(T,V)
 
@@ -256,4 +291,4 @@ class nDeb:
                 'Cv':Cv,'a':a,'Cp':Cp,'Ks':Ks,'Ksp':Ksp,
                 'G':G,'E':E,'S':S,'E0':E0,'Fvib':Fvib,'Evib':Evib,'Svib':Svib,
                 'Cvvib':Cvvib,'Pcold':Pcold,'dPdT_V':dPdT_V,'G^2':Ktp**2-2*Kt*Ktpp,
-                'dSdP_T':dSdP_T, 'dKtdT_P':dKtdT_P, 'dadP_T':dadP_T, 'dCpdP_T':dCpdP_T,'ddSdT_PdP_T':ddSdT_PdP_T}
+                'dSdP_T':dSdP_T, 'dKtdT_P':dKtdT_P, 'dadP_T':dadP_T, 'dCpdP_T':dCpdP_T,'ddSdT_PdP_T':ddSdT_PdP_T, 'DM':self.vib.DM}

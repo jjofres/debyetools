@@ -48,54 +48,52 @@ class Vibrational:
         """
         kv = self.kv
         m = self.m
-        # dE0dV_T = self.EOS.dE0dV_T(V)
+        dE0dV_T = self.EOS.dE0dV_T(V)
         d2E0dV2_T = self.EOS.d2E0dV2_T(V)
         d3E0dV3_T = self.EOS.d3E0dV3_T(V)
         d4E0dV4_T = self.EOS.d4E0dV4_T(V)
         d5E0dV5_T = self.EOS.d5E0dV5_T(V)
         d6E0dV6_T = self.EOS.d6E0dV6_T(V)
-
-        dE0dV_T_0 = self.EOS.dE0dV_T(V0_DM)
-        d2E0dV2_T_0 = self.EOS.d2E0dV2_T(V0_DM)
-        d3E0dV3_T_0 = self.EOS.d3E0dV3_T(V0_DM)
-        d4E0dV4_T_0 = self.EOS.d4E0dV4_T(V0_DM)
-        d5E0dV5_T_0 = self.EOS.d5E0dV5_T(V0_DM)
-        d6E0dV6_T_0 = self.EOS.d6E0dV6_T(V0_DM)
-
-        B0_DM = V0_DM*d2E0dV2_T_0
-
-        dP0dV_0   = - d2E0dV2_T_0
-        d2P0dV2_0 = - d3E0dV3_T_0
-        d3P0dV3_0 = - d4E0dV4_T_0
-        d4P0dV4_0 = - d5E0dV5_T_0
-        d5P0dV5_0 = - d6E0dV6_T_0
-
-        vDPrm  = - dP0dV_0/(r*m)
+        P0      = - dE0dV_T
+        dP0dV   = - d2E0dV2_T
+        d2P0dV2 = - d3E0dV3_T
+        d3P0dV3 = - d4E0dV4_T
+        d4P0dV4 = - d5E0dV5_T
+        d5P0dV5 = - d6E0dV6_T
+        vDPrm  = - dP0dV/(r*m)
         vDsqrt = np.sqrt( vDPrm)
+        vD      = kv*V*vDsqrt
+        dvDdV   = kv*vDsqrt-kv*V*d2P0dV2/(2*vDsqrt*r*m)
+        d2vDdV2 = -kv*d2P0dV2/(vDsqrt*r*m)-kv*V*d2P0dV2**2/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V*d3P0dV3/(2*vDsqrt*r*m)
+        d3vDdV3 = -3*kv*d2P0dV2**2/(4*(vDPrm)**(3/2)*r**2*m**2)-3*kv*d3P0dV3/(2*vDsqrt*r*m)-3*kv*V*d2P0dV2**3/(8*(vDPrm)**(5/2)*r**3*m**3)-3*kv*V*d2P0dV2*d3P0dV3/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V*d4P0dV4/(2*vDsqrt*r*m)
+        d4vDdV4 = -3*kv*(d2P0dV2)**3/(2*(-dP0dV/(r*m))**(5/2)*r**3*m**3)-3*kv*(d2P0dV2)*(d3P0dV3)/((-dP0dV/(r*m))**(3/2)*r**2*m**2)-2*kv*(d4P0dV4)/(np.sqrt(-dP0dV/(r*m))*r*m)-15*kv*V*(d2P0dV2)**4/(16*(-dP0dV/(r*m))**(7/2)*r**4*m**4)-9*kv*V*(d2P0dV2)**2*(d3P0dV3)/(4*(-dP0dV/(r*m))**(5/2)*r**3*m**3)-3*kv*V*(d3P0dV3)**2/(4*(-dP0dV/(r*m))**(3/2)*r**2*m**2)-kv*V*(d2P0dV2)*(d4P0dV4)/((-dP0dV/(r*m))**(3/2)*r**2*m**2)-kv*V*(d5P0dV5)/(2*np.sqrt(-dP0dV/(r*m))*r*m)
+        xD      = self.xDcte*(1/V)**(1/3.)/kB
+        dxDdV   = - self.xDcte/(3*kB*V**(4/3.))
+        d2xDdV2 = 4*self.xDcte/(9*kB*V**(7/3.))
+        d3xDdV3 = -28*self.xDcte/(27*V**(10/3)*kB)
+        d4xDdV4 = 280*self.xDcte/(81*V**(13/3)*kB)
 
-        vD      = kv*V0_DM*vDsqrt
-        dvDdV   = 0#kv*vDsqrt - kv*V0_DM*d2P0dV2_0/(2*vDsqrt*r*m)
-        d2vDdV2 = 0#-kv*d2P0dV2_0/(vDsqrt*r*m)-kv*V0_DM*d2P0dV2_0**2/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V0_DM*d3P0dV3_0/(2*vDsqrt*r*m)
-        d3vDdV3 = 0#-3*kv*d2P0dV2_0**2/(4*(vDPrm)**(3/2)*r**2*m**2)-3*kv*d3P0dV3_0/(2*vDsqrt*r*m)-3*kv*V0_DM*d2P0dV2_0**3/(8*(vDPrm)**(5/2)*r**3*m**3)-3*kv*V0_DM*d2P0dV2_0*d3P0dV3_0/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V0_DM*d4P0dV4_0/(2*vDsqrt*r*m)
-        d4vDdV4 = 0#-3*kv*(d2P0dV2_0)**3/(2*(-dP0dV_0/(r*m))**(5/2)*r**3*m**3)-3*kv*(d2P0dV2_0)*(d3P0dV3_0)/((-dP0dV_0/(r*m))**(3/2)*r**2*m**2)-2*kv*(d4P0dV4_0)/(np.sqrt(-dP0dV_0/(r*m))*r*m)-15*kv*V0_DM*(d2P0dV2_0)**4/(16*(-dP0dV_0/(r*m))**(7/2)*r**4*m**4)-9*kv*V0_DM*(d2P0dV2_0)**2*(d3P0dV3_0)/(4*(-dP0dV_0/(r*m))**(5/2)*r**3*m**3)-3*kv*V0_DM*(d3P0dV3_0)**2/(4*(-dP0dV_0/(r*m))**(3/2)*r**2*m**2)-kv*V0_DM*(d2P0dV2_0)*(d4P0dV4_0)/((-dP0dV_0/(r*m))**(3/2)*r**2*m**2)-kv*V0_DM*(d5P0dV5_0)/(2*np.sqrt(-dP0dV_0/(r*m))*r*m)
-
-        xD      = self.xDcte*(1/V0_DM)**(1/3.)/kB
-        dxDdV   = 0#- self.xDcte/(3*kB*V0_DM**(4/3.))
-        d2xDdV2 = 0#4*self.xDcte/(9*kB*V0_DM**(7/3.))
-        d3xDdV3 = 0#-28*self.xDcte/(27*V0_DM**(10/3)*kB)
-        d4xDdV4 = 0#280*self.xDcte/(81*V0_DM**(13/3)*kB)
-
-        # print(V*d2E0dV2_T, B0_DM, V, V0_DM)
-        DM = (V*d2E0dV2_T/B0_DM)**b_DM/(V/V0_DM)**a_DM
-        self.DM = DM
-        dDMdV = (V*d2E0dV2_T/B0_DM)**b_DM*b_DM*(d2E0dV2_T/B0_DM+V*(d3E0dV3_T)/B0_DM)*B0_DM/(V*d2E0dV2_T*(V/V0_DM)**a_DM)-(V*d2E0dV2_T/B0_DM)**b_DM*a_DM/((V/V0_DM)**a_DM*V)
-        d2DMdV2 = V0_DM**a_DM*B0_DM**(-b_DM)*(-2*(d3E0dV3_T)*b_DM*d2E0dV2_T**(b_DM-1)*(-b_DM+a_DM)*V**(b_DM-1-a_DM)+d2E0dV2_T**b_DM*(-b_DM+1+a_DM)*(-b_DM+a_DM)*V**(b_DM-2-a_DM)+V**(b_DM-a_DM)*(d2E0dV2_T**(b_DM-1)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-2)*(b_DM-1))*b_DM)
-        d3DMdV3 = -V0_DM**a_DM*B0_DM**(-b_DM)*(d2E0dV2_T**b_DM*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*(-b_DM+a_DM)*V**(b_DM-a_DM-3)-3*b_DM*(-(d2E0dV2_T**(b_DM-1)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-2)*(b_DM-1))*(-b_DM+a_DM)*V**(b_DM-1-a_DM)+(d3E0dV3_T)*d2E0dV2_T**(b_DM-1)*(-b_DM+1+a_DM)*(-b_DM+a_DM)*V**(b_DM-2-a_DM)+(1/3)*V**(b_DM-a_DM)*(d2E0dV2_T**(b_DM-1)*(d5E0dV5_T)+(d3E0dV3_T)*(3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-3)*(b_DM-2))*(b_DM-1))))
-        d4DMdV4 = (d2E0dV2_T**b_DM*(-b_DM+a_DM)*(-b_DM+a_DM+3)*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*V**(b_DM-4-a_DM)+6*b_DM*((d2E0dV2_T**(b_DM-1)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-2)*(b_DM-1))*(-b_DM+a_DM)*(-b_DM+1+a_DM)*V**(b_DM-2-a_DM)-(1/3)*(2*(d2E0dV2_T**(b_DM-1)*(d5E0dV5_T)+(d3E0dV3_T)*(3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-3)*(b_DM-2))*(b_DM-1)))*(-b_DM+a_DM)*V**(b_DM-1-a_DM)-2*(d3E0dV3_T)*d2E0dV2_T**(b_DM-1)*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*(-b_DM+a_DM)*V**(b_DM-a_DM-3)*(1/3)+(1/6)*(d2E0dV2_T**(b_DM-1)*(d6E0dV6_T)+(4*(d3E0dV3_T)*d2E0dV2_T**(b_DM-2)*(d5E0dV5_T)+3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)**2+(6*d2E0dV2_T**(b_DM-3)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-4)*(b_DM-3))*(b_DM-2)*(d3E0dV3_T)**2)*(b_DM-1))*V**(b_DM-a_DM)))*V0_DM**a_DM*B0_DM**(-b_DM)
-
+        B0_DM = V0_DM*self.EOS.d2E0dV2_T(V0_DM)
+        DM = 1#(V*d2E0dV2_T/B0_DM)**b_DM/(V/V0_DM)**a_DM
+        dDMdV = 0#V0_DM**a_DM*(-d2E0dV2_T**b_DM*(-b_DM+a_DM)*V**(b_DM-1-a_DM)+V**(b_DM-a_DM)*d2E0dV2_T**(b_DM-1)*(d3E0dV3_T)*b_DM)*B0_DM**(-b_DM)
+        d2DMdV2 = 0#V0_DM**a_DM*B0_DM**(-b_DM)*(-2*(d3E0dV3_T)*b_DM*d2E0dV2_T**(b_DM-1)*(-b_DM+a_DM)*V**(b_DM-1-a_DM)+d2E0dV2_T**b_DM*(-b_DM+1+a_DM)*(-b_DM+a_DM)*V**(b_DM-2-a_DM)+V**(b_DM-a_DM)*(d2E0dV2_T**(b_DM-1)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-2)*(b_DM-1))*b_DM)
+        d3DMdV3 = 0#-V0_DM**a_DM*B0_DM**(-b_DM)*(d2E0dV2_T**b_DM*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*(-b_DM+a_DM)*V**(b_DM-a_DM-3)-3*b_DM*(-(d2E0dV2_T**(b_DM-1)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-2)*(b_DM-1))*(-b_DM+a_DM)*V**(b_DM-1-a_DM)+(d3E0dV3_T)*d2E0dV2_T**(b_DM-1)*(-b_DM+1+a_DM)*(-b_DM+a_DM)*V**(b_DM-2-a_DM)+(1/3)*V**(b_DM-a_DM)*(d2E0dV2_T**(b_DM-1)*(d5E0dV5_T)+(d3E0dV3_T)*(3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-3)*(b_DM-2))*(b_DM-1))))
+        d4DMdV4 = 0#(d2E0dV2_T**b_DM*(-b_DM+a_DM)*(-b_DM+a_DM+3)*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*V**(b_DM-4-a_DM)+6*b_DM*((d2E0dV2_T**(b_DM-1)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-2)*(b_DM-1))*(-b_DM+a_DM)*(-b_DM+1+a_DM)*V**(b_DM-2-a_DM)-(1/3)*(2*(d2E0dV2_T**(b_DM-1)*(d5E0dV5_T)+(d3E0dV3_T)*(3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-3)*(b_DM-2))*(b_DM-1)))*(-b_DM+a_DM)*V**(b_DM-1-a_DM)-2*(d3E0dV3_T)*d2E0dV2_T**(b_DM-1)*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*(-b_DM+a_DM)*V**(b_DM-a_DM-3)*(1/3)+(1/6)*(d2E0dV2_T**(b_DM-1)*(d6E0dV6_T)+(4*(d3E0dV3_T)*d2E0dV2_T**(b_DM-2)*(d5E0dV5_T)+3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)**2+(6*d2E0dV2_T**(b_DM-3)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-4)*(b_DM-3))*(b_DM-2)*(d3E0dV3_T)**2)*(b_DM-1))*V**(b_DM-a_DM)))*V0_DM**a_DM*B0_DM**(-b_DM)
 
         self.tD        = xD*vD*DM*self.Anh
-        self.dtDdV_T   = (dxDdV)*vD*DM*self.Anh+xD*(dvDdV)*DM*self.Anh+xD*vD*(dDMdV)*self.Anh+xD*vD*DM*self.dAnhdV_T
+
+        B0_DM = V0_DM*self.EOS.d2E0dV2_T(V0_DM)
+        DM = (V*d2E0dV2_T/B0_DM)**b_DM/(V/V0_DM)**a_DM
+        Anh         = self.intanh.Anh(T,V)
+        xDcte = self.xDcte
+        xD      = xDcte*(1/V)**(1/3.)/kB
+        vDPrm  = - dP0dV/(r*m)
+        vDsqrt = np.sqrt( vDPrm)
+        vD      = kv*V*vDsqrt
+        self.tD        = xD*vD*Anh*DM
+
+
+        self.dtDdV_T   = dxDdV*vD*self.Anh*DM+xD*dvDdV*self.Anh*DM+xD*vD*self.dAnhdV_T*DM+xD*vD*self.Anh*dDMdV
         self.dtDdT_V   = xD*vD*DM*self.dAnhdT_V
         self.d2tDdV2_T = xD*vD*self.d2AnhdV2_T*DM+xD*vD*self.Anh*d2DMdV2+xD*d2vDdV2*self.Anh*DM+d2xDdV2*vD*self.Anh*DM+(2*vD*xD*dDMdV+2*DM*(dxDdV*vD+xD*dvDdV))*self.dAnhdV_T+(2*((dxDdV*vD+xD*dvDdV)*dDMdV+DM*dvDdV*dxDdV))*self.Anh
         self.d2tDdT2_V = xD*vD*DM*self.d2AnhdT2_V
@@ -158,23 +156,23 @@ class Vibrational:
         :param float V: Volume.
         """
         d2E0dV2_T = self.EOS.d2E0dV2_T(V)
-        # dE0dV_T = self.EOS.dE0dV_T(V)
+        dE0dV_T = self.EOS.dE0dV_T(V)
         if type(V) == np.ndarray:
             if min(d2E0dV2_T)<0:return 1
         kv = self.kv
         m = self.m
 
-        # P0 = - dE0dV_T
-        dP0dV   = - self.EOS.d2E0dV2_T(V0_DM)
+        P0 = - dE0dV_T
+        dP0dV   = - d2E0dV2_T
 
         B0_DM = V0_DM*self.EOS.d2E0dV2_T(V0_DM)
         DM = (V*d2E0dV2_T/B0_DM)**b_DM/(V/V0_DM)**a_DM
         Anh         = self.intanh.Anh(T,V)
         xDcte = self.xDcte
-        xD      = xDcte*(1/V0_DM)**(1/3.)/kB
+        xD      = xDcte*(1/V)**(1/3.)/kB
         vDPrm  = - dP0dV/(r*m)
         vDsqrt = np.sqrt( vDPrm)
-        vD      = kv*V0_DM*vDsqrt
+        vD      = kv*V*vDsqrt
         tD        = xD*vD*Anh*DM
 
         x = tD/T

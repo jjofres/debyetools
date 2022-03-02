@@ -53,7 +53,7 @@ def gui():
 
     while True:
         event, values = window.read()
-        #print(event)
+        print(event)
 
         # #close window
         if event in (sg.WIN_CLOSED, '--B_close'):
@@ -64,18 +64,19 @@ def gui():
             try:
                 # opened_EOS_dict = events.fbrowser_resets(window, opened_EOS_dict)
                 str_folderbrowser = events.fbrowser_fill_browser(window, event)
-                events.fbrowser_update_fields(window, contcar_str, mws_dict, str_folderbrowser)
+                events.fbrowser_update_fields(window, contcar_str, mws_dict, str_folderbrowser, opened_EOS_dict,EOS_long_lst,EOS_str_lst)
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
         if event == '||B_add_EOS':
             try:
-                for k in opened_EOS_dict.keys():
-                    opened_EOS_dict[k]=False
-                for k in window['--LBx_EOS_listbox'].get():
-                    opened_EOS_dict[EOS_long_lst[k]]=True
-                # print(opened_EOS_dict)
-
-                events.chk_eos(window,opened_EOS_dict)
+                events.add_EOS(window, opened_EOS_dict,EOS_long_lst)
+            #     for k in opened_EOS_dict.keys():
+            #         opened_EOS_dict[k]=False
+            #     for k in window['--LBx_EOS_listbox'].get():
+            #         opened_EOS_dict[EOS_long_lst[k]]=True
+            #     # print(opened_EOS_dict)
+            #
+            #     events.chk_eos(window,opened_EOS_dict)
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
 #

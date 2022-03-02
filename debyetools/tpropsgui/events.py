@@ -13,7 +13,7 @@ def fbrowser_fill_browser(window,event):
     window['--I_compound'].update(move_cursor_to='end')
     return str_folderbrowser
 #
-def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser):
+def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser,opened_EOS_dict,EOS_long_lst,EOS_str_lst):
 
     with open(window['--I_compound'].get() +contcar_str) as f:
         lines = f.readlines()
@@ -42,6 +42,12 @@ def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser):
     window['--I_ntemps'].update(20)
     window['--I_Tm'].update(disabled=False)
     window['--I_mass'].update(disabled=False)
+    window['--M_minF_output'].update('')
+    window['--LBx_EOS_listbox'].set_value([False for k in window['--LBx_EOS_listbox'].get()])
+    add_EOS(window, opened_EOS_dict,EOS_long_lst)
+    for eos in EOS_str_lst:
+        window['--I_params_'+eos].update('0, 0, 0, 0')
+
 #
 def chk_eos(window,opened_dict):
     for k in opened_dict.keys():
@@ -57,6 +63,15 @@ def bool_chks(window,opened_dict):
     bool_run_eos_fitting = any([all([bool_dict_params_EOS[stri],bool_dict_EOS[stri]]) for stri in opened_dict.keys()])
 
     return bool_run_eos_fitting, bool_dict_params_EOS
+def add_EOS(window, opened_EOS_dict,EOS_long_lst):
+    for k in opened_EOS_dict.keys():
+        opened_EOS_dict[k]=False
+    for k in window['--LBx_EOS_listbox'].get():
+        opened_EOS_dict[EOS_long_lst[k]]=True
+    # print(opened_EOS_dict)
+
+    chk_eos(window,opened_EOS_dict)
+
 #
 def update_diabled(window,opened_dict,eos_available,bool_dict_params_EOS):
     bool_run_eos_fitting, bool_dict_params_EOS = bool_chks(window,opened_dict)

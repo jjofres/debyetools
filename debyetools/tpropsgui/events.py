@@ -13,7 +13,7 @@ def fbrowser_fill_browser(window,event):
     window['--I_compound'].update(move_cursor_to='end')
     return str_folderbrowser
 #
-def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser,opened_EOS_dict,EOS_long_lst,EOS_str_lst):
+def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser,opened_EOS_dict,EOS_long_lst,EOS_str_lst,checked_EOS_dict):
 
     with open(window['--I_compound'].get() +contcar_str) as f:
         lines = f.readlines()
@@ -47,6 +47,32 @@ def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser,opened_
     add_EOS(window, opened_EOS_dict,EOS_long_lst)
     for eos in EOS_str_lst:
         window['--I_params_'+eos].update('0, 0, 0, 0')
+    window['--I_nu'].update('')
+    window['--I_p_el'].update('0, 0, 0, 0')
+    window['--I_p_evac'].update('8')
+    window['--I_p_svac'].update('2')
+    window['--I_p_intanh'].update('0, 1')
+    window['--Chk_el'].update(False)
+    window['--I_p_el'].update(disabled= not bool(window['--Chk_el'].get()))
+    window['||B_calc_el'].update(disabled= not bool(window['--Chk_el'].get()))
+    window['--Chk_def'].update(False)
+    window['--I_p_evac'].update(disabled= not bool(window['--Chk_def'].get()))
+    window['--I_p_svac'].update(disabled= not bool(window['--Chk_def'].get()))
+    window['--Chk_intanh'].update(False)
+    window['--I_p_intanh'].update(disabled= not bool(window['--Chk_intanh'].get()))
+    window['--Chk_anhxc'].update(False)
+    window['--I_p_anhxc'].update(disabled= not bool(window['--Chk_anhxc'].get()))
+
+    for k in EOS_str_lst:
+        print('XXXX', k)
+        window['--M_tprop_'+k].update('')
+        window['--Tab_'+k].update(visible=False)
+        print('XXXX', k)
+    window['--Tab_'].update(visible=True)
+
+
+    checked_EOS_dict = update_diabled(window,opened_EOS_dict,EOS_str_lst,checked_EOS_dict)
+    return checked_EOS_dict
 
 #
 def chk_eos(window,opened_dict):

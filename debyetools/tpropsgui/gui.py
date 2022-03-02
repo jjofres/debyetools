@@ -64,7 +64,7 @@ def gui():
             try:
                 # opened_EOS_dict = events.fbrowser_resets(window, opened_EOS_dict)
                 str_folderbrowser = events.fbrowser_fill_browser(window, event)
-                events.fbrowser_update_fields(window, contcar_str, mws_dict, str_folderbrowser, opened_EOS_dict,EOS_long_lst,EOS_str_lst)
+                checked_EOS_dict = events.fbrowser_update_fields(window, contcar_str, mws_dict, str_folderbrowser, opened_EOS_dict,EOS_long_lst,EOS_str_lst,checked_EOS_dict)
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
         if event == '||B_add_EOS':

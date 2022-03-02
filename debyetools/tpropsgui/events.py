@@ -64,12 +64,35 @@ def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser,opened_
     window['--I_p_anhxc'].update(disabled= not bool(window['--Chk_anhxc'].get()))
 
     for k in EOS_str_lst:
-        print('XXXX', k)
         window['--M_tprop_'+k].update('')
         window['--Tab_'+k].update(visible=False)
-        print('XXXX', k)
+        window['--Tab_fs_'+k].update(visible=False)
+        window['--I_H298'+k].update('',disabled=True)
+        window['--I_S298'+k].update('',disabled=True)
+        for i in range(6):
+            window['--I_fsCp_P'+str(i)+k].update('',disabled=True)
+        for i in range(4):
+            window['--I_fsa_P'+str(i)+k].update('',disabled=True)
+        for i in range(4):
+            window['--I_fsK_P'+str(i)+k].update('',disabled=True)
+        for i in range(2):
+            window['--I_fsKp_P'+str(i)+k].update('',disabled=True)
     window['--Tab_'].update(visible=True)
+    window['--Tab_'].select()
+    window['--Tab_fs_'].update(visible=True)
+    window['--Tab_fs_'].select()
 
+    window['--I_fs_Tfrom'].update('')
+    window['--I_fs_Tfrom'].update(disabled = True)
+    window['--I_fs_Tto'].update('')
+    window['--I_fs_Tto'].update(disabled = True)
+    window['||B_plotter'].update(disabled=True)
+    window['||B_plotter_tprops'].update(disabled=True)
+    window['||B_plotter_fsprop2plt'].update(disabled=True)
+    window['||B_eval_tprops'].update(disabled=True)
+    window['||B_run_fs_params'].update(disabled=True)
+
+    window['--IC_prop2plt'].update('')
 
     checked_EOS_dict = update_diabled(window,opened_EOS_dict,EOS_str_lst,checked_EOS_dict)
     return checked_EOS_dict

@@ -156,11 +156,45 @@ def gui():
                 p_electronic = fit_electronic(V_DFT, p_el_inittial,E,N,Ef)
 
                 window['--I_p_el'].update(', '.join(['%.5e' for _ in p_electronic]) % tuple(p_electronic))
+            except FileNotFoundError:
+                sg.popup_ok("DOSCAR files not found.\n\nIf you don't have any, try using your own parameter values or just without electronic contribution.")
             except Exception as e:
+                print(e.__class__)
                 sg.popup_ok(traceback.format_exc())
 
         if event == '||B_run_minF':
             try:
+                for k in EOS_str_lst:
+                    window['--M_tprop_'+k].update('')
+                    window['--Tab_'+k].update(visible=False)
+                    window['--Tab_fs_'+k].update(visible=False)
+                    window['--I_H298'+k].update('',disabled=True)
+                    window['--I_S298'+k].update('',disabled=True)
+                    for i in range(6):
+                        window['--I_fsCp_P'+str(i)+k].update('',disabled=True)
+                    for i in range(4):
+                        window['--I_fsa_P'+str(i)+k].update('',disabled=True)
+                    for i in range(4):
+                        window['--I_fsK_P'+str(i)+k].update('',disabled=True)
+                    for i in range(2):
+                        window['--I_fsKp_P'+str(i)+k].update('',disabled=True)
+                window['--Tab_'].update(visible=True)
+                window['--Tab_'].select()
+                window['--Tab_fs_'].update(visible=True)
+                window['--Tab_fs_'].select()
+
+                window['--I_fs_Tfrom'].update('')
+                window['--I_fs_Tfrom'].update(disabled = True)
+                window['--I_fs_Tto'].update('')
+                window['--I_fs_Tto'].update(disabled = True)
+                window['||B_plotter'].update(disabled=True)
+                window['||B_plotter_tprops'].update(disabled=True)
+                window['||B_plotter_fsprop2plt'].update(disabled=True)
+                window['||B_eval_tprops'].update(disabled=True)
+                window['||B_run_fs_params'].update(disabled=True)
+
+                window['--IC_prop2plt'].update('')
+
                 nu = float(window['--I_nu'].get())
                 m =float(window['--I_mass'].get())
                 p_electronic = [float(stri) for stri in window['--I_p_el'].get().replace(' ','').split(',')]

@@ -28,7 +28,7 @@ def lo_fsparams(i):
                elmt.C(lo=lo_fs_Kp(i), key='fc_Kp'+str(i))],
               [elmt.T('select property to plot:','fsprop2plt'+str(i)),
                elmt.ICombo(['       ','Cp','alpha','1/K','dK/dP'],'fsprop2plt'+str(i),10,1),
-               elmt.Bc('Open plotter','plotter_fsprop2plt'+str(i),('white',elmt.theme_background_color()))]]
+               elmt.Bc('Plot','plotter_fsprop2plt'+str(i),('white',elmt.theme_background_color()))]]
 
 def layout(EOS_str_lst):
     lo_options = {EOSStr:[[elmt.T(EOSStr+' params.:','params_'+EOSStr),elmt.dI('0, 0, 0, 0','params_'+EOSStr,25),elmt.dChk('fit','calc_params_'+EOSStr,True)]] for EOSStr in EOS_str_lst}
@@ -55,13 +55,13 @@ def layout(EOS_str_lst):
 
               ]
     lo_EOS = lo_EOS+lo_EOS_collapes
-    lo_EOS = lo_EOS + [[elmt.Be('fit EOS parameters','run_eos_fitting',('white', 'green'),right_click_menu=['',['plot fitting::PlotfittingEOS']])],]
+    lo_EOS = lo_EOS + [[elmt.Bc('fit EOS parameters','run_eos_fitting',('white', 'green'),right_click_menu=['',['plot fitting::PlotfittingEOS']])],]
 
     lo_poisson = [[elmt.T('nu:', 'nu'),elmt.dI('','nu',6), elmt.Bc('calculate','calc_nu',('white', 'green'),right_click_menu=['',['details...::nu']])]]
 
     lo_el = [[elmt.Chk('parameters:','el',disabled=True),elmt.dI('','p_el',20),elmt.Bc('calculate','calc_el',('gray','gray'))]]
 
-    lo_def = [[elmt.Chk('','def',disabled=True),elmt.T('Evac:','p_evac'),elmt.dI('','p_evac',3),elmt.T('Svac:','p_svac'),elmt.dI('','p_svac',3)]]
+    lo_def = [[elmt.Chk('','def',disabled=True),elmt.T('Evac:','p_evac'),elmt.dI('','p_evac',3),elmt.T('Svac:','p_svac'),elmt.dI('','p_svac',3),elmt.T('Tm:','Tm'),elmt.dI('','Tm',7)]]
 
     lo_anhxc = [[elmt.Chk('parameters:','anhxc',disabled=True),elmt.dI('','p_anhxc',10)]]
 
@@ -72,7 +72,7 @@ def layout(EOS_str_lst):
                 elmt.dI(txt='', key='FILEBROWSE_', w=0, disabled=False,enable_events=True,visible=False),
                 elmt.Br('compound')],
                [elmt.T('formula:','formula'),elmt.dI('','formula',6),elmt.T('structure:','strkt'),elmt.dI('','strkt',4)],
-               [elmt.T('mass: (Kg/mol-at)','mass'),elmt.dI('','mass',7),elmt.T('Tm:','Tm'),elmt.dI('','Tm',7),elmt.T('r:','r',visible=False),elmt.dI('1','r',5,visible=False)],
+               [elmt.T('mass: (Kg/mol-at)','mass'),elmt.dI('','mass',7),elmt.T('r:','r',visible=False),elmt.dI('1','r',5,visible=False)],
                [elmt.F('EOS parametrization',lo_EOS,'EOS', right_click_menu=['',['More Info...::EOS','Go to code...::GoToEOS',]])],
                [elmt.F("Poisson's ratio", lo_poisson,'poisson', right_click_menu=['',['More Info...::Poisson','Go to code...::GoToPoisson',]])],
                [elmt.F('Electronic contribution',lo_el,'el', right_click_menu=['',['More Info...::Electronic','Go to code...::GoToElectronic',]])],
@@ -84,13 +84,13 @@ def layout(EOS_str_lst):
     lo_minF = [[elmt.T('P (Pa):','Pi'),elmt.dI('','Pi',4),elmt.T('initial T (K):','Ti'),elmt.dI('','Ti',4),elmt.T('final T (K):','Tf'),elmt.dI('','Tf',4),elmt.T('No. steps:','ntemps'),elmt.dI('','ntemps',4)],
                [elmt.Bc('run minimization','run_minF',('gray','gray'))],
                [elmt.sCol([[elmt.M('','minF_output',100,7)]], 'minF_output', 480, 80)],
-               [elmt.Bc('Open plotter','plotter',('gray','gray'))],]
+               [elmt.Bc('Plot V(T)','plotter',('gray','gray'))],]
 
     lo_tabs_tprops = [[elmt.Tab(eos_str,[[elmt.sCol([[elmt.M('','tprop_'+eos_str,400,7)]], 'tprop_'+eos_str, 470, 80)]],eos_str,False) for eos_str in ['','MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']]]
 
     lo_tprops = [[elmt.Bc('evaluate','eval_tprops',('gray','gray'))],
              [elmt.TG(lo_tabs_tprops,'tabs_tprops')],
-             [elmt.T('select property to plot:','prop2plt'),elmt.ICombo(['       ','       ','       ','       '],'prop2plt',10,1),elmt.Bc('Open plotter','plotter_tprops',('white',elmt.theme_background_color()))]]
+             [elmt.T('select property to plot:','prop2plt'),elmt.ICombo(['       ','       ','       ','       '],'prop2plt',10,1),elmt.Bc('Plot','plotter_tprops',('white',elmt.theme_background_color()))]]
 
     lo_tabs_fsparams = [[elmt.Tab(k,lo_fsparams(k),'fs_'+k,False) for k in ['','MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']]]
 

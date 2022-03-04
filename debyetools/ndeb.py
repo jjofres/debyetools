@@ -28,14 +28,15 @@ class nDeb:
     :param list_of_floats p_anh: Excess contribution parameters.
     :param string EOS_name: The EOS or potential to use as internal energy description.
     """
-    def __init__(self, nu, m, p_intanh, EOS, p_electronic, p_defects, p_anh,*args,units='J/mol'):
+    def __init__(self, nu, m, p_intanh, EOS, p_electronic, p_defects, p_anh,*args,units='J/mol', mode=''):
+
         a0, m0 = p_intanh
         q0,q1,q2,q3 = p_electronic
         Evac00,Svac00,Tm,a = p_defects
         s0,s1,s2 = p_anh
 
         self.nu, self.r, self.m = nu, 1, m
-
+        self.mode = mode
 
         self.kv = (2./3.*((2. + 2.*nu)/(3.-6.*nu))**(3./2.) + 1./3.*((1. + nu)/(3. - 3.*nu))**(3./2.))**(-1./3.)
 
@@ -46,12 +47,12 @@ class nDeb:
 
         self.EOS = EOS#getattr(pots,EOS_name)(*args,units=units, parameters = p_EOS)
         # self.EOS.pEOS = p_EOS
-        self.vib = Vibrational(nu, self.EOS, m, self.intanh)
+        self.vib = Vibrational(nu, self.EOS, m, self.intanh, mode)
 
         r=1
         self.xDcte = hbar*6**(1/3.)*(np.pi**2*NAv*r)**(1/3.)
 
-    def G(self,T,V, P, V0_DM, a_DM, b_DM):
+    def G(self,T,V, P):
         """
         Helmholtz free energy.
 
@@ -64,14 +65,14 @@ class nDeb:
 
         E_0 = self.EOS.E0(V)
 
-        Fvib = self.vib.F(T,V, V0_DM, a_DM, b_DM)#3*r*NAv*kB*(tD*3/8 + T*np.log(1-np.exp(-x))  - D3*T/3)
+        Fvib = self.vib.F(T,V)#3*r*NAv*kB*(tD*3/8 + T*np.log(1-np.exp(-x))  - D3*T/3)
         Fa = self.anh.F(T,V)
         Fdef = self.deff.F(T,V)
         Fel = self.el.F(T,V)
         _F = E_0 + Fvib + Fel + Fdef + Fa
         return _F + P*V
 
-    def G2min(self,T,V, P, V0_DM, a_DM, b_DM):
+    def G2min(self,T,V, P):
         """
         Helmholtz free energy.
 
@@ -84,7 +85,7 @@ class nDeb:
 
         E_0 = self.EOS.E0(V)
 
-        Fvib = self.vib.Fmin(T,V, V0_DM, a_DM, b_DM)#3*r*NAv*kB*(tD*3/8 + T*np.log(1-np.exp(-x))  - D3*T/3)
+        Fvib = self.vib.Fmin(T,V)#3*r*NAv*kB*(tD*3/8 + T*np.log(1-np.exp(-x))  - D3*T/3)
         Fa = self.anh.F(T,V)
         Fdef = self.deff.F(T,V)
         Fel = self.el.F(T,V)
@@ -111,7 +112,7 @@ class nDeb:
     #     # dPdV_T = - d2FdV2_T
     #     return dFdV_T# + P + dPdV_T*V
 
-    def min_G(self,T, initial_V, P, V0_DM, a_DM, b_DM):
+    def min_G(self,T, initial_V, P):
         """
         Procedure for the calculation of the volume as function of temperature.
 
@@ -125,22 +126,25 @@ class nDeb:
 
         V=[]
         for Ti in T:
-            f2min = lambda Vi: self.G2min(Ti,Vi*1e-5,P, V0_DM, a_DM, b_DM)/3e5
+            f2min = lambda Vi: self.G2min(Ti,Vi*1e-5,P)/3e5
             # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
             V0i = fmin(f2min,x0=V0i,disp=False)[0]*1e-5
             V.append(V0i)
 
         V0_DM = V[0]
         V=[]
-        for Ti in T:
-            f2min = lambda Vi: self.G(Ti,Vi*1e-5,P, V0_DM, a_DM, b_DM)/3e5
+        for Ti in T[0:1]:
+            f2min = lambda Vi: self.G(Ti,Vi*1e-5,P)/3e5
             # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
             V0i = fmin(f2min,x0=V0i,disp=False)[0]*1e-5
             V.append(V0i)
-        V0_DM = V[0]
+        if self.mode == '':
+            pass
+        else:
+            self.vib.V0_DM = V[0]
         V=[]
         for Ti in T:
-            f2min = lambda Vi: self.G(Ti,Vi*1e-5,P, V0_DM, a_DM, b_DM)/3e5
+            f2min = lambda Vi: self.G(Ti,Vi*1e-5,P)/3e5
             # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
             V0i = fmin(f2min,x0=V0i,disp=False)[0]*1e-5
             V.append(V0i)
@@ -155,7 +159,7 @@ class nDeb:
 
         return T,V
 
-    def eval_props(self, T, V, P, V0_DM, a_DM, b_DM):
+    def eval_props(self, T, V, P):
         """
         Evaluates the thermodynamic properties of a given compound/element at (T,V).
 
@@ -169,7 +173,7 @@ class nDeb:
         kv = self.kv
 
         self.vib.set_int_anh(T, V)
-        self.vib.set_theta(T, V, V0_DM, a_DM, b_DM)
+        self.vib.set_theta(T, V)
 
         d2E0dV2_T = self.EOS.d2E0dV2_T(V)
         d3E0dV3_T = self.EOS.d3E0dV3_T(V)
@@ -247,7 +251,7 @@ class nDeb:
 
         dKsdP_T = dKsdV_T/dPdV_T
         Ksp = dKsdP_T
-        G = self.G(T, V, P, V0_DM, a_DM, b_DM)
+        G = self.G(T, V, P)
 
         Evib = self.vib.E(T,V)
         Eel = self.el.E(T,V)
@@ -262,7 +266,7 @@ class nDeb:
         Sa = self.anh.S(T,V)
         S = Svib + Sel + Sdef + Sa
 
-        Fvib = self.vib.F(T, V, V0_DM, a_DM, b_DM)
+        Fvib = self.vib.F(T, V)
         Evib = self.vib.E(T,V)
         Svib = self.vib.S(T,V)
 

@@ -111,9 +111,11 @@ def chk_calc_params(window,event):
 def bool_chks(window,opened_dict):
     bool_dict_params_EOS = {stri:window['--Chk_calc_params_'+stri].get() for stri in opened_dict.keys()}
     bool_dict_EOS =  {stri:opened_dict[stri] for stri in opened_dict.keys()}
-    bool_run_eos_fitting = any([all([bool_dict_params_EOS[stri],bool_dict_EOS[stri]]) for stri in opened_dict.keys()])
+    bool_run_eos_fitting = any([all([True,bool_dict_EOS[stri]]) for stri in opened_dict.keys()])
+    bool_mode = any([window['--Chk_mode_'+stri].get() for stri in ['jj', 'DM', 'Sl', 'VZ', 'mfv']])
 
-    return bool_run_eos_fitting, bool_dict_params_EOS
+
+    return bool_run_eos_fitting, bool_dict_params_EOS, bool_mode
 def add_EOS(window, opened_EOS_dict,EOS_long_lst):
     for k in opened_EOS_dict.keys():
         opened_EOS_dict[k]=False
@@ -125,10 +127,10 @@ def add_EOS(window, opened_EOS_dict,EOS_long_lst):
 
 #
 def update_diabled(window,opened_dict,eos_available,bool_dict_params_EOS):
-    bool_run_eos_fitting, bool_dict_params_EOS = bool_chks(window,opened_dict)
+    bool_run_eos_fitting, bool_dict_params_EOS, bool_mode = bool_chks(window,opened_dict)
     # window['||B_run_eos_fitting'].update(disabled=not bool_run_eos_fitting)
 
-    bool_minF = bool_run_eos_fitting and (True if window['--I_nu'].get()!='' else False)
+    bool_minF = bool_run_eos_fitting and (True if window['--I_nu'].get()!='' else False) and bool_mode
 
     window['||B_run_minF'].update(disabled=not bool_minF)
 

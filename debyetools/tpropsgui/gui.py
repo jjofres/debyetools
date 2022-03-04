@@ -113,7 +113,7 @@ def gui():
                         else:
                             E0 = min(E_DFT)
                             V0 = V_DFT[np.where(E_DFT==E0)]
-                            initial_parameters = [float(pi) for pi in window['--I_params_BM'].get().split(', ')]+[0]
+                            initial_parameters = [float(pi) for pi in window['--I_params_'+k].get().split(', ')]+[0]
                             if np.sum(initial_parameters)==0:
                                 initial_parameters =  [E0, V0, 7.618619745e+10, 4.591924487e+00,1e-10]+[0]
                             else:
@@ -163,6 +163,7 @@ def gui():
                 sg.popup_ok(traceback.format_exc())
 
         if event == '||B_run_minF':
+            # mode=''
             try:
                 for k in EOS_str_lst:
                     window['--M_tprop_'+k].update('')
@@ -212,13 +213,7 @@ def gui():
                         nDebs_dict[k] = {'ndeb':'','T':'','V':'','tprops':''}
                 Pressure, T_initial, T_final, number_Temps = window['--I_Pi'].get(), float(window['--I_Ti'].get()), float(window['--I_Tf'].get()), float(window['--I_ntemps'].get())
 
-                try:
-                    Pressure = float(Pressure)
-                    V0_DM, a_DM, b_DM = EOS2params.pEOS[1], 0, 0
-                except:
-                    Pressure = [float(stri) for stri in Pressure.replace(' ','').split(',')]
-                    V0_DM, a_DM, b_DM = EOS2params.pEOS[1], Pressure[1],Pressure[2]
-                    Pressure = Pressure[0]
+                Pressure = float(Pressure)
 
 
                 T = gen_Ts(T_initial, T_final, number_Temps)
@@ -226,8 +221,8 @@ def gui():
                 for k in opened_EOS_dict.keys():
                     if opened_EOS_dict[k]:
                         nDebs_dict[k]['ndeb'] = nDeb(nu, m, p_intanh, EOS2plot_dict[k], p_electronic,
-                                             p_defects, p_anh)
-                        Tmin, Vmin = nDebs_dict[k]['ndeb'].min_G(T,nDebs_dict[k]['ndeb'].EOS.V0,Pressure, V0_DM, a_DM, b_DM)
+                                             p_defects, p_anh, mode=mode)
+                        Tmin, Vmin = nDebs_dict[k]['ndeb'].min_G(T,nDebs_dict[k]['ndeb'].EOS.V0,Pressure)
                         #Tmin, Vmin = nDebs_dict[k]['ndeb'].min_G(T,nDebs_dict[k]['ndeb'].EOS.V0,Pressure, Vmin[0], a_DM, b_DM)
                         nDebs_dict[k]['T'] = np.array(Tmin)
                         nDebs_dict[k]['V'] = Vmin
@@ -261,7 +256,7 @@ def gui():
                 for o in opened_EOS_dict:
                     if opened_EOS_dict[o]:
                         print('Results for:',o)
-                        tprops_dict_all[o] = nDebs_dict[o]['ndeb'].eval_props(nDebs_dict[o]['T'],nDebs_dict[o]['V'],Pressure, V0_DM, a_DM, b_DM)
+                        tprops_dict_all[o] = nDebs_dict[o]['ndeb'].eval_props(nDebs_dict[o]['T'],nDebs_dict[o]['V'],Pressure)
 
                         window['--Tab_'+o].update(visible=True)
                         #window['--Tab_'+o].select()
@@ -272,8 +267,35 @@ def gui():
                             tprops_str = tprops_str + ' '.join(['%.11e' for i in rowi])%tuple(rowi)+'\n'
                         window['--M_tprop_'+o].update(tprops_str)
                         window['--IC_prop2plt'].update(values=list(keys_TPs)[1:])
+
+
+
+                for k in EOS_str_lst:
+                    window['--Tab_fs_'+k].update(visible=False)
+                    window['--I_H298'+k].update('',disabled=True)
+                    window['--I_S298'+k].update('',disabled=True)
+                    for i in range(6):
+                        window['--I_fsCp_P'+str(i)+k].update('',disabled=True)
+                    for i in range(4):
+                        window['--I_fsa_P'+str(i)+k].update('',disabled=True)
+                    for i in range(4):
+                        window['--I_fsK_P'+str(i)+k].update('',disabled=True)
+                    for i in range(2):
+                        window['--I_fsKp_P'+str(i)+k].update('',disabled=True)
+                window['--Tab_fs_'].update(visible=True)
+                window['--Tab_fs_'].select()
+                window['--I_fs_Tfrom'].update('')
+                window['--I_fs_Tfrom'].update(disabled = True)
+                window['--I_fs_Tto'].update('')
+                window['--I_fs_Tto'].update(disabled = True)
+                window['||B_plotter_fsprop2plt'].update(disabled=True)
+                window['||B_run_fs_params'].update(disabled=True)
+
                 window['--Tab_'].update(visible=False)
                 events.tprops_enable_nexts(window)
+
+
+
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
 
@@ -353,6 +375,24 @@ def gui():
                 events.plot_fsprops(window,event,FS_db_params, float(window['--I_fs_Tfrom'].get()),float(window['--I_fs_Tto'].get()), tprops_dict_all)
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
+        if '--Chk_mode_' in event:
+            window['--M_minF_output'].update('')
+            l = ['jj', 'DM', 'Sl', 'VZ', 'mfv']
+            l.remove(event.replace('--Chk_mode_',''))
+            for stri in l:
+                window['--Chk_mode_'+stri].update(False)
+            # if window['--Chk_mode_jj'].get()==True:
+            #     for stri in ['DM', 'Sl', 'VZ', 'mfv']:
+            #         window['--Chk_mode_'+stri].update(disabled=True)
+            #
+            # if window['--Chk_mode_jj'].get()==False:
+            #     for stri in ['DM', 'Sl', 'VZ', 'mfv']:
+            #         window['--Chk_mode_'+stri].update(disabled=False)
 
+            if window[event].get():
+                mode = event.replace('--Chk_mode_','')
+            else:
+                mode = 'xx'
+            print(mode)
 
         checked_EOS_dict = events.update_diabled(window,opened_EOS_dict,EOS_str_lst,checked_EOS_dict)

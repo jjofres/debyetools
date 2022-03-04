@@ -13,13 +13,43 @@ class Vibrational:
     :param float m: Mass in Kg/mol-at.
     :param intAnharmonicity_instance intanh: Intrinsic anharmonicity object.
     """
-    def __init__(self, nu, EOS_obj, m, intanh):
+    def __init__(self, nu, EOS_obj, m, intanh,mode):
         self.EOS = EOS_obj
         self.kv = (2./3.*((2. + 2.*nu)/(3.-6.*nu))**(3./2.) + 1./3.*((1. + nu)/(3. - 3.*nu))**(3./2.))**(-1./3.)
         self.m = m
         self.intanh = intanh
 
         self.xDcte = hbar*6**(1/3.)*(np.pi**2*NAv*r)**(1/3.)
+
+        self.mode = mode
+        print('YYYYYYYY','zzz'+mode+'zzz')
+        if mode == 'DM':
+            self.V0_DM = EOS_obj.V0
+            self.b_DM = 0.5
+            self.a_DM = -0.5
+        elif mode == 'Sl':
+            print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+            self.V0_DM = EOS_obj.V0
+            self.b_DM = 0.5
+            self.a_DM = -1/6
+        elif mode == 'mfv':
+            self.V0_DM = EOS_obj.V0
+            self.b_DM = 0.5
+            self.a_DM = -0.95
+        elif mode == 'VZ':
+            self.V0_DM = EOS_obj.V0
+            self.b_DM = 0.5
+            self.a_DM = -5/6
+        elif mode == 'jj':
+            self.V0_DM = ''
+            self.b_DM = 0
+            self.a_DM = 0
+
+        else:
+            print('XXXXXXXXXXXXXXXX')
+            self.V0_DM = ''
+            self.b_DM = ''
+            self.a_DM = ''
 
     def set_int_anh(self, T, V):
         """
@@ -39,13 +69,20 @@ class Vibrational:
         self.d3AnhdV3_T  = self.intanh.d3AnhdV3_T(T,V)
         self.d4AnhdV4_T  = self.intanh.d4AnhdV4_T(T,V)
 
-    def set_theta(self, T, V, V0_DM, a_DM, b_DM):
+    def set_theta(self, T, V):
         """
         Calculates the Debye Temperature and its derivatives.
 
         :param float T: Temperature.
         :param float V: Volume.
         """
+        b_DM = self.b_DM
+        a_DM = self.a_DM
+        if self.mode == 'jj':
+            V0_DM = V
+        else:
+            V0_DM = self.V0_DM
+
         kv = self.kv
         m = self.m
         # dE0dV_T = self.EOS.dE0dV_T(V)
@@ -74,16 +111,25 @@ class Vibrational:
         vDsqrt = np.sqrt( vDPrm)
 
         vD      = kv*V0_DM*vDsqrt
-        dvDdV   = 0#kv*vDsqrt - kv*V0_DM*d2P0dV2_0/(2*vDsqrt*r*m)
-        d2vDdV2 = 0#-kv*d2P0dV2_0/(vDsqrt*r*m)-kv*V0_DM*d2P0dV2_0**2/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V0_DM*d3P0dV3_0/(2*vDsqrt*r*m)
-        d3vDdV3 = 0#-3*kv*d2P0dV2_0**2/(4*(vDPrm)**(3/2)*r**2*m**2)-3*kv*d3P0dV3_0/(2*vDsqrt*r*m)-3*kv*V0_DM*d2P0dV2_0**3/(8*(vDPrm)**(5/2)*r**3*m**3)-3*kv*V0_DM*d2P0dV2_0*d3P0dV3_0/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V0_DM*d4P0dV4_0/(2*vDsqrt*r*m)
-        d4vDdV4 = 0#-3*kv*(d2P0dV2_0)**3/(2*(-dP0dV_0/(r*m))**(5/2)*r**3*m**3)-3*kv*(d2P0dV2_0)*(d3P0dV3_0)/((-dP0dV_0/(r*m))**(3/2)*r**2*m**2)-2*kv*(d4P0dV4_0)/(np.sqrt(-dP0dV_0/(r*m))*r*m)-15*kv*V0_DM*(d2P0dV2_0)**4/(16*(-dP0dV_0/(r*m))**(7/2)*r**4*m**4)-9*kv*V0_DM*(d2P0dV2_0)**2*(d3P0dV3_0)/(4*(-dP0dV_0/(r*m))**(5/2)*r**3*m**3)-3*kv*V0_DM*(d3P0dV3_0)**2/(4*(-dP0dV_0/(r*m))**(3/2)*r**2*m**2)-kv*V0_DM*(d2P0dV2_0)*(d4P0dV4_0)/((-dP0dV_0/(r*m))**(3/2)*r**2*m**2)-kv*V0_DM*(d5P0dV5_0)/(2*np.sqrt(-dP0dV_0/(r*m))*r*m)
-
         xD      = self.xDcte*(1/V0_DM)**(1/3.)/kB
-        dxDdV   = 0#- self.xDcte/(3*kB*V0_DM**(4/3.))
-        d2xDdV2 = 0#4*self.xDcte/(9*kB*V0_DM**(7/3.))
-        d3xDdV3 = 0#-28*self.xDcte/(27*V0_DM**(10/3)*kB)
-        d4xDdV4 = 0#280*self.xDcte/(81*V0_DM**(13/3)*kB)
+        if self.mode=='':
+            dvDdV   = kv*vDsqrt - kv*V0_DM*d2P0dV2_0/(2*vDsqrt*r*m)
+            d2vDdV2 = -kv*d2P0dV2_0/(vDsqrt*r*m)-kv*V0_DM*d2P0dV2_0**2/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V0_DM*d3P0dV3_0/(2*vDsqrt*r*m)
+            d3vDdV3 = -3*kv*d2P0dV2_0**2/(4*(vDPrm)**(3/2)*r**2*m**2)-3*kv*d3P0dV3_0/(2*vDsqrt*r*m)-3*kv*V0_DM*d2P0dV2_0**3/(8*(vDPrm)**(5/2)*r**3*m**3)-3*kv*V0_DM*d2P0dV2_0*d3P0dV3_0/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V0_DM*d4P0dV4_0/(2*vDsqrt*r*m)
+            d4vDdV4 = -3*kv*(d2P0dV2_0)**3/(2*(-dP0dV_0/(r*m))**(5/2)*r**3*m**3)-3*kv*(d2P0dV2_0)*(d3P0dV3_0)/((-dP0dV_0/(r*m))**(3/2)*r**2*m**2)-2*kv*(d4P0dV4_0)/(np.sqrt(-dP0dV_0/(r*m))*r*m)-15*kv*V0_DM*(d2P0dV2_0)**4/(16*(-dP0dV_0/(r*m))**(7/2)*r**4*m**4)-9*kv*V0_DM*(d2P0dV2_0)**2*(d3P0dV3_0)/(4*(-dP0dV_0/(r*m))**(5/2)*r**3*m**3)-3*kv*V0_DM*(d3P0dV3_0)**2/(4*(-dP0dV_0/(r*m))**(3/2)*r**2*m**2)-kv*V0_DM*(d2P0dV2_0)*(d4P0dV4_0)/((-dP0dV_0/(r*m))**(3/2)*r**2*m**2)-kv*V0_DM*(d5P0dV5_0)/(2*np.sqrt(-dP0dV_0/(r*m))*r*m)
+            dxDdV   = - self.xDcte/(3*kB*V0_DM**(4/3.))
+            d2xDdV2 = 4*self.xDcte/(9*kB*V0_DM**(7/3.))
+            d3xDdV3 = -28*self.xDcte/(27*V0_DM**(10/3)*kB)
+            d4xDdV4 = 280*self.xDcte/(81*V0_DM**(13/3)*kB)
+        else:
+            dvDdV   = 0#kv*vDsqrt - kv*V0_DM*d2P0dV2_0/(2*vDsqrt*r*m)
+            d2vDdV2 = 0#-kv*d2P0dV2_0/(vDsqrt*r*m)-kv*V0_DM*d2P0dV2_0**2/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V0_DM*d3P0dV3_0/(2*vDsqrt*r*m)
+            d3vDdV3 = 0#-3*kv*d2P0dV2_0**2/(4*(vDPrm)**(3/2)*r**2*m**2)-3*kv*d3P0dV3_0/(2*vDsqrt*r*m)-3*kv*V0_DM*d2P0dV2_0**3/(8*(vDPrm)**(5/2)*r**3*m**3)-3*kv*V0_DM*d2P0dV2_0*d3P0dV3_0/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V0_DM*d4P0dV4_0/(2*vDsqrt*r*m)
+            d4vDdV4 = 0#-3*kv*(d2P0dV2_0)**3/(2*(-dP0dV_0/(r*m))**(5/2)*r**3*m**3)-3*kv*(d2P0dV2_0)*(d3P0dV3_0)/((-dP0dV_0/(r*m))**(3/2)*r**2*m**2)-2*kv*(d4P0dV4_0)/(np.sqrt(-dP0dV_0/(r*m))*r*m)-15*kv*V0_DM*(d2P0dV2_0)**4/(16*(-dP0dV_0/(r*m))**(7/2)*r**4*m**4)-9*kv*V0_DM*(d2P0dV2_0)**2*(d3P0dV3_0)/(4*(-dP0dV_0/(r*m))**(5/2)*r**3*m**3)-3*kv*V0_DM*(d3P0dV3_0)**2/(4*(-dP0dV_0/(r*m))**(3/2)*r**2*m**2)-kv*V0_DM*(d2P0dV2_0)*(d4P0dV4_0)/((-dP0dV_0/(r*m))**(3/2)*r**2*m**2)-kv*V0_DM*(d5P0dV5_0)/(2*np.sqrt(-
+            dxDdV   = 0#- self.xDcte/(3*kB*V0_DM**(4/3.))
+            d2xDdV2 = 0#4*self.xDcte/(9*kB*V0_DM**(7/3.))
+            d3xDdV3 = 0#-28*self.xDcte/(27*V0_DM**(10/3)*kB)
+            d4xDdV4 = 0#280*self.xDcte/(81*V0_DM**(13/3)*kB)
 
         # print(V*d2E0dV2_T, B0_DM, V, V0_DM)
         DM = (V*d2E0dV2_T/B0_DM)**b_DM/(V/V0_DM)**a_DM
@@ -116,16 +162,23 @@ class Vibrational:
         D3 = D_3(x)
 
         return -3*kB*(np.log(1-np.exp(-self.tD/T))*self.tD+(self.dtDdT_V*T-4*self.tD*(1/3))*D3+3*self.dtDdT_V*self.tD*(1/8))*r*NAv/self.tD
-    def Fmin(self, T, V, V0_DM, a_DM, b_DM):
+    def Fmin(self, T, V):
         """
         Vibration Helmholtz free energy.
 
         :param float T: Temperature.
         :param float V: Volume.
         """
+        b_DM = self.b_DM
+        a_DM = self.a_DM
+        if self.mode == 'jj':
+            V0_DM = V
+        else:
+            V0_DM = self.V0_DM
+
         d2E0dV2_T_0 = self.EOS.d2E0dV2_T(V0_DM)
         d2E0dV2_T = self.EOS.d2E0dV2_T(V)
-        dE0dV_T_0 = self.EOS.dE0dV_T(V0_DM)
+        # dE0dV_T_0 = self.EOS.dE0dV_T(V0_DM)
         if type(V) == np.ndarray:
             if d2E0dV2_T_0<0:return 1
         kv = self.kv
@@ -150,13 +203,20 @@ class Vibrational:
             if x<0.07:return 1
         return 3*r*NAv*kB*(tD0*3/8 + T*np.log(1-np.exp(-x))  - D3*T/3)
 
-    def F(self, T, V, V0_DM, a_DM, b_DM):
+    def F(self, T, V):
         """
         Vibration Helmholtz free energy.
 
         :param float T: Temperature.
         :param float V: Volume.
         """
+        b_DM = self.b_DM
+        a_DM = self.a_DM
+        if self.mode == 'jj':
+            V0_DM = V
+        else:
+            V0_DM = self.V0_DM
+
         d2E0dV2_T = self.EOS.d2E0dV2_T(V)
         # dE0dV_T = self.EOS.dE0dV_T(V)
         if type(V) == np.ndarray:

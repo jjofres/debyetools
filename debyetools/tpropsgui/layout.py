@@ -55,7 +55,7 @@ def layout(EOS_str_lst):
 
               ]
     lo_EOS = lo_EOS+lo_EOS_collapes
-    lo_EOS = lo_EOS + [[elmt.Bc('fit EOS parameters','run_eos_fitting',('white', 'green'),right_click_menu=['',['plot fitting::PlotfittingEOS']])],]
+    lo_EOS = lo_EOS + [[elmt.Bc('fit EOS parameters','run_eos_fitting',('white', 'green')),elmt.Bc('plot fiting', 'PlotfittingEOS',('white', 'green'))], ]
 
     lo_poisson = [[elmt.T('nu:', 'nu'),elmt.dI('','nu',6), elmt.Bc('calculate','calc_nu',('white', 'green'),right_click_menu=['',['details...::nu']])]]
 

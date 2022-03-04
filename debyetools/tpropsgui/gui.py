@@ -136,7 +136,7 @@ def gui():
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
         # Plot the fitting
-        if event == 'plot fitting::PlotfittingEOS':
+        if event == '||B_PlotfittingEOS':
             try:
                 events.plot_EvV(window, EOS2plot_dict, opened_EOS_dict)
             except Exception as e:

@@ -13,6 +13,7 @@ Requirements
 * Python_ 3.6 or newer
 * NumPy_ (base N-dimensional array package)
 * SciPy_ (fundamental algorithms for scientific computing in Python)
+* mpmath_ (real and complex floating-point arithmetic with arbitrary precision)
 
 Other recommended packages:
 
@@ -34,3 +35,4 @@ The simplest way to install Debye Tools is to use pip_ which will automatically 
 .. _Matplotlib: https://matplotlib.org/
 .. _PySimpleGUI: https://pysimplegui.readthedocs.io/en/latest/
 .. _GitHub: https://github.com/jjofres/debyetools
+.. _mpmath: https://mpmath.org/

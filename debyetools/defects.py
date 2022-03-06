@@ -1,4 +1,5 @@
 import numpy as np
+np.seterr(divide='ignore')
 
 kB   = 0.138064852e-22
 NAv  = 0.6022140857e24

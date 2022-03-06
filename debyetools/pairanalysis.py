@@ -13,6 +13,7 @@ def neighbor_list(size, cutoff, center, basis_vectors, primitive_cell):
     :param array center: The position in space where the system of reference is
     :param array basis_vectors: atoms position within a single primitive cell
     :param array primitive_cell: the primitive cell
+    :return: D, I , J
     """
 
     basis_vectors = np.dot(basis_vectors,primitive_cell)

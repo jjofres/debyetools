@@ -92,26 +92,6 @@ class nDeb:
         _F = E_0 + Fvib + Fel + Fdef + Fa
         return _F + P*V
 
-    # def dGdV_T(self, T, V, P):
-    #     self.vib.set_int_anh(T, V)
-    #     self.vib.set_theta(T, V)
-    #
-    #     dE0dV = self.EOS.dE0dV_T(V)
-    #     dFvibdV_T = self.vib.dFdV_T(T, V)
-    #     dFeldV_T = self.el.dFdV_T(T, V)
-    #     dFadV_T = self.anh.dFdV_T(T, V)
-    #     dFdefdV_T = self.deff.dFdV_T(T, V)
-    #     dFdV_T = dE0dV + dFvibdV_T + dFeldV_T + dFdefdV_T + dFadV_T
-    #
-    #     # d2E0dV2_T = self.EOS.d2E0dV2_T(V)
-    #     # d2FvibdV2_T = self.vib.d2FdV2_T(T, V)
-    #     # d2FeldV2_T  = self.el.d2FdV2_T(T,V)
-    #     # d2FdefdV2_T = self.deff.d2FdV2_T(T,V)
-    #     # d2FadV2_T   = self.anh.d2FdV2_T(T,V)
-    #     # d2FdV2_T = d2E0dV2_T + d2FvibdV2_T + d2FeldV2_T + d2FdefdV2_T + d2FadV2_T
-    #     # dPdV_T = - d2FdV2_T
-    #     return dFdV_T# + P + dPdV_T*V
-
     def min_G(self,T, initial_V, P):
         """
         Procedure for the calculation of the volume as function of temperature.
@@ -155,7 +135,7 @@ class nDeb:
 
         ixs = np.where(newV<=1.5*newV[0])
         Tmax = T[-1]
-        T,V = T[ixs],newV[ixs]
+        T, V = T[ixs], newV[ixs]
 
         return T,V
 
@@ -166,7 +146,15 @@ class nDeb:
         :params float T: The temperature in Kelvin.
         :params float V: The volume in "units".
 
-        :return float: The heat capacity for the moment.
+        :return dict: A dictionary with the following keys: 'T': temperature, 'V': volume, 'tD': Debye temperature,
+        'g': Gruneisen parameter, 'Kt': isothermal bulk modulus, 'Ktp': pressure derivative of the isothermal bulk
+        modulus, 'Ktpp': second order pressure derivative of the isothermal bulk modulus, 'Cv': constant-volume heat
+        capacity, 'a': thermal expansion, 'Cp': constant-pressure heat capacity, 'Ks': adiabatic bulk modulus , 'Ksp':
+        pressure derivative of the adiabatic bulk modulus, 'G': Gibbs free energy, 'E': total internal energy, 'S':
+        entropy, 'E0': 'cold' internal energy defined by the EOS, 'Fvib': vibrational free energy, 'Evib': vibrational
+        internal energy, 'Svib': vibrational entropy, 'Cvvib': vibrational heat capacity, 'Pcold': 'cold' pressure,
+        'dPdT_V': (dP/dT)_V, 'G^2': Ktp**2-2*Kt*Ktpp, 'dSdP_T': (dS/dP)_T, 'dKtdT_P': (dKt/dT)_P, 'dadP_T': (da/dP)_T,
+        'dCpdP_T': (dCp/dP)_T, 'ddSdT_PdP_T': (d2S/dTdP).
         """
         nu, r, m = self.nu,self.r,self.m
 

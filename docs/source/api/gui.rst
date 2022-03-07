@@ -18,7 +18,7 @@ Note that in this version, most :ref:`input file <fileformats>` must be in VASP_
 How to launch it:
 -----------------
 
-To start getting fimiliar with the interface you can download `examples input files`_.
+To start getting familiar with the interface you can download `examples input files`_.
 The GUI can be launched by executing the interface script from the debyetools repository main folder::
 
 $ python gui.py

@@ -139,7 +139,7 @@ class Vibrational:
 
         vD = kv * V0_DM * vDsqrt
         xD = self.xDcte * (1 / V0_DM) ** (1 / 3.) / kB
-        if self.mode == '':
+        if self.mode == 'jj':
             dvDdV = kv * vDsqrt - kv * V0_DM * d2P0dV2_0 / (2 * vDsqrt * r * m)
             d2vDdV2 = -kv * d2P0dV2_0 / (vDsqrt * r * m) - kv * V0_DM * d2P0dV2_0 ** 2 / (
                         4 * (vDPrm) ** (3 / 2) * r ** 2 * m ** 2) - kv * V0_DM * d3P0dV3_0 / (2 * vDsqrt * r * m)

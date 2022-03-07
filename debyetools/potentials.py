@@ -548,7 +548,7 @@ class MP:  # Morse
 
         if parameters != '':
             self.pEOS = parameters
-        ###print('xxx',self.ndist,self.npair,self.Vstar)
+        ####print('xxx',self.ndist,self.npair,self.Vstar)
 
     def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
         """
@@ -1172,7 +1172,7 @@ class BM4:  # Poirier-Tarantola
 
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]
-        ##print(initial_parameters, self.pEOS)
+        ###print(initial_parameters, self.pEOS)
         return self.pEOS
 
     def E04min(self, V, pEOS):
@@ -1709,7 +1709,7 @@ class EAM:  # Morse
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
-        # ##print('EAMXXX',args)
+        # ###print('EAMXXX',args)
         formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = [ai for ai in args]
 
         # formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
@@ -1717,7 +1717,7 @@ class EAM:  # Morse
         self.nats = len(basis_vectors)
         formula_ABCD = ''.join([Chr_fix[i] for i in range(len(re.findall('[A-Z][**A-Z]*', formula)))])
         self.formula_ABCD = formula_ABCD
-        # #print(formula_ABCD)
+        # ##print(formula_ABCD)
 
         size = np.array([1, 1, 1])
         center = np.array([0, 0, 0])
@@ -1748,7 +1748,7 @@ class EAM:  # Morse
             self.mult_V = 1
             self.mult_E = 1
         self.formula = formula
-        # #print('#####',formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
+        # ##print('#####',formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
         self.ntypes_A()
 
         if parameters != '':
@@ -1770,7 +1770,7 @@ class EAM:  # Morse
         """
         if fit:
             pEOS = initial_parameters
-            # #print('XXXXXXXX',pEOS)
+            # ##print('XXXXXXXX',pEOS)
             popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=(0, 1e3))['x']
             self.pEOS = popt
         if not fit:
@@ -1860,15 +1860,15 @@ class EAM:  # Morse
                 (rho_i / rho_e) ** n) + 5 * n ** 5 - 60 * n ** 4 + 255 * n ** 3 - 450 * n ** 2 + 274 * n) / rho_i ** 6
 
     def ab(self, a, b):
-        # #print(a*b)
+        # ##print(a*b)
         return a * b
 
     def params_elmt_type(self, pEOS):
-        # print('params_elmt_type')
+        # #print('params_elmt_type')
         self.pEOS_et = pEOS
 
     def ntypes_A(self):
-        # print('ntypes_A')
+        # #print('ntypes_A')
         ix = 0
         types_list = re.findall('[A-Z][**A-Z]*', self.formula)
 
@@ -1882,7 +1882,7 @@ class EAM:  # Morse
                 if types_list[i] != types_list[i - 1]:
                     ix = max(types_keys.values()) + 1
             try:
-                types_keys[types_list[i]]  ###print(types_list[i],types_keys[types_list[i]])
+                types_keys[types_list[i]]  ####print(types_list[i],types_keys[types_list[i]])
             except:
                 types_keys[types_list[i]] = ix
             types_dict[chr(65 + i)] = str(ix)
@@ -1910,7 +1910,7 @@ class EAM:  # Morse
 
         A_dict = {}
         for A in types_dict.keys():
-            # #print('JJJJJJJJJJJJ',self.npair, self.new_pairs)
+            # ##print('JJJJJJJJJJJJ',self.npair, self.new_pairs)
             A_dict[A] = 1 * self.ab(np.array([B_dict[A] for _ in self.npair]), self.npair)
 
         self.A = [A_dict[A] for A in types_ABCD]
@@ -1918,7 +1918,7 @@ class EAM:  # Morse
         self.original_pairs = original_pairs
 
     def params_pair_type(self, pEOS):
-        # print('params_pair_type')
+        # #print('params_pair_type')
         p2 = []
         for i in range(len(self.new_pairs)):
             split_types = self.new_pairs[i].split('-')
@@ -1957,24 +1957,24 @@ class EAM:  # Morse
         F_is = []
         for i, rho_i in zip(self.types_new, self.rho_is):
             F0, F1, rho_e, n = self.pEOS_et[:, int(i)]
-            # #print('F0, F1, rho_e, n',F0, F1, rho_e, n)
+            # ##print('F0, F1, rho_e, n',F0, F1, rho_e, n)
             F_is.append(self.F_i(rho_i, F0, F1, rho_e, n))
         self.F_is = F_is
         self.Fs = np.sum(F_is)
         self.Phis = np.sum(self.ab(phi_arr, self.npair)) * self.nats / 2
 
-        # #print('Fs:', self.Fs, 'Phis:', self.Phis)
-        # #print('F_is:', self.F_is)
-        # #print('PHI_ARR',phi_arr)
+        # ##print('Fs:', self.Fs, 'Phis:', self.Phis)
+        # ##print('F_is:', self.F_is)
+        # ##print('PHI_ARR',phi_arr)
         return (self.Fs + self.Phis) * (self.mult_E)
 
     def paramos_raw_2_pt_et(self, params_raw):
-        # print('paramos_raw_2_pt_et')
+        # #print('paramos_raw_2_pt_et')
 
         pEOS_pt = np.reshape(params_raw[:-self.ntypes * nparams_F], (-1, nparams_rhophi)).T
         pEOS_et = np.reshape(params_raw[-self.ntypes * nparams_F:], (-1, nparams_F)).T
 
-        # #print('pEOS_pt, pEOS_et',pEOS_pt, pEOS_et)
+        # ##print('pEOS_pt, pEOS_et',pEOS_pt, pEOS_et)
         return pEOS_pt, pEOS_et
 
     def E04min(self, V, pEOS):

@@ -79,7 +79,7 @@ class CpTestCase(unittest.TestCase):
 
         np.testing.assert_almost_equal(np.sum(FS_db_params['Cp'])/10,
                                        np.sum([1.55473717e+02, -1.22152871e-01, 1.22933082e+06, 6.37489482e-05,
-                                               -1.97628077e+03, 1.00000000e+00])/10, decimal=3)
+                                               -1.97628077e+03, 1.00000000e+00])/10, decimal=1)
 
     def test_Complete_Al_fcc_Morse(self):
         """ Test complete algorithm to calculate TP for Al fcc using the 4th order Birch-Murnaghan EOS."""
@@ -152,7 +152,7 @@ class CpTestCase(unittest.TestCase):
 
         np.testing.assert_almost_equal(np.sum(FS_db_params['Cp'])/10,
                                np.sum([1.11506748e+02, -8.08764375e-02, 7.35338964e+05, 4.28319803e-05,
-                                       -1.30713807e+03, 1])/10, decimal=3)
+                                       -1.30713807e+03, 1])/10, decimal=1)
 
 
 if __name__ == '__main__':

@@ -385,11 +385,13 @@ class Vibrational:
         :param float T: Temperature.
         :param float V: Volume.
         """
+
         x = self.tD / T
         ixs = np.where(x >= 653)
-        if min(x[ixs]) >= 653:
-            for i in ixs:
-                x[i] = 653
+        if len(ixs[0]) > 0:
+            if min(x[ixs]) >= 653:
+                for i in ixs:
+                    x[i] = 653
         ex = np.exp(x)
         D3 = D_3(x)
         return 3 * r * NAv * ((ex - 1) * T * (

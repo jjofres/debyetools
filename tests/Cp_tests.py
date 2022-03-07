@@ -4,9 +4,10 @@ from debyetools.ndeb import nDeb
 from debyetools.aux_functions import gen_Ts
 import debyetools.potentials as potentials
 
+
 class CpTestCase(unittest.TestCase):
     def setUp(self):
-        #self.NL = PairAnalysisCalculator()
+        # self.NL = PairAnalysisCalculator()
         pass
 
     def test_Cp_Al_fcc(self):
@@ -28,7 +29,9 @@ class CpTestCase(unittest.TestCase):
 
         Tx, Vx = 9.3300000000000E+02, 1.07790131286e-05
 
-        np.testing.assert_almost_equal(ndeb_BM.eval_props(Tx,Vx,P=0)['Cp'], 3.32496610718e+01, decimal=3)
+        np.testing.assert_almost_equal(ndeb_BM.eval_props(Tx, Vx, P=0)['Cp'], 3.32496610718e+01,
+                                       decimal=3)
 
-if __name__=='__main__':
+
+if __name__ == '__main__':
     unittest.main()

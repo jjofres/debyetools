@@ -24,7 +24,7 @@ class CpTestCase(unittest.TestCase):
         EOS_BM = getattr(potentials, EOS_name)()
         EOS_BM.pEOS = p_EOS
         EOS_BM.V0 = p_EOS[1]
-        ndeb_BM = nDeb(nu, m, p_intanh, EOS_BM, p_electronic, p_defects, p_anh, EOS_name)
+        ndeb_BM = nDeb(nu, m, p_intanh, EOS_BM, p_electronic, p_defects, p_anh, EOS_name, mode='jj')
 
         Tx, Vx = 9.3300000000000E+02, 1.07790131286e-05
 

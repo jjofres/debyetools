@@ -1161,13 +1161,14 @@ class BM4:  # Poirier-Tarantola
         """
         if fit:
             pEOS = initial_parameters[:5]
-            pEOS[2] = -pEOS[2]
+            # pEOS[2] = -pEOS[2]
 
             popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
+            # popt[2] = -popt[2]
             self.pEOS = popt
         if not fit:
             self.pEOS = initial_parameters[:5]
-            self.pEOS[2] = -self.pEOS[2]
+            # self.pEOS[2] = -self.pEOS[2]
 
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]
@@ -1176,6 +1177,7 @@ class BM4:  # Poirier-Tarantola
 
     def E04min(self, V, pEOS):
         E0, V0, B0, Bp0, Bpp0 = pEOS
+        B0 = - B0
         return E0 - 861 * V0 * B0 * (1 / 128) + 261 * V0 * B0 * Bp0 * (1 / 128) - 27 * V0 * B0 ** 2 * Bpp0 * (
                     1 / 128) - 27 * V0 * B0 * Bp0 ** 2 * (1 / 128) - 1791 * V * B0 * (V0 / V) ** (7 / 3) * (
                            1 / 64) - 207 * B0 * V0 ** 3 * Bp0 / (32 * V ** 2) + 675 * V * B0 * (V0 / V) ** (
@@ -1206,6 +1208,7 @@ class BM4:  # Poirier-Tarantola
         :param float V: Volume.
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
+        B0 = - B0
         return -81 * (V0 / V) ** (7 / 3) * B0 ** 2 * Bpp0 * (1 / 64) - 27 * B0 * (V0 / V) ** (11 / 3) * Bp0 ** 2 * (
                     1 / 128) - 81 * B0 * (V0 / V) ** (7 / 3) * Bp0 ** 2 * (1 / 64) - 27 * (V0 / V) ** (
                            11 / 3) * B0 ** 2 * Bpp0 * (1 / 128) + 675 * B0 * (V0 / V) ** (7 / 3) * Bp0 * (
@@ -1232,6 +1235,7 @@ class BM4:  # Poirier-Tarantola
         :param float V: Volume.
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
+        B0 = - B0
         return -1393 * B0 * (V0 / V) ** (1 / 3) * V0 ** 2 / (16 * V ** 3) - 621 * B0 * V0 ** 3 * Bp0 / (
                     16 * V ** 4) + 81 * V0 ** 3 * B0 ** 2 * Bpp0 / (16 * V ** 4) + 81 * B0 * V0 ** 3 * Bp0 ** 2 / (
                            16 * V ** 4) - 1573 * B0 * (V0 / V) ** (5 / 3) * V0 ** 2 / (
@@ -1254,6 +1258,7 @@ class BM4:  # Poirier-Tarantola
         :param float V: Volume.
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
+        B0 = - B0
         return 55 * (V0 / V) ** (2 / 3) * B0 ** 2 * Bpp0 * V0 ** 3 / (16 * V ** 5) + 55 * B0 * (V0 / V) ** (
                     2 / 3) * Bp0 ** 2 * V0 ** 3 / (16 * V ** 5) - 385 * B0 * (V0 / V) ** (2 / 3) * Bp0 * V0 ** 3 / (
                            16 * V ** 5) + 189 * (V0 / V) ** (1 / 3) * B0 ** 2 * Bpp0 * V0 ** 2 / (
@@ -1287,6 +1292,7 @@ class BM4:  # Poirier-Tarantola
         :param float V: Volume.
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
+        B0 = - B0
         return -15 * B0 * Bp0 * V0 ** 4 / (4 * V ** 7 * (V0 / V) ** (7 / 3)) + 5 * B0 ** 2 * Bpp0 * V0 ** 4 / (
                     12 * V ** 7 * (V0 / V) ** (7 / 3)) - 7865 * B0 * (V0 / V) ** (2 / 3) * V0 ** 3 / (
                            18 * V ** 6) - 4179 * B0 * (V0 / V) ** (1 / 3) * V0 ** 2 / (4 * V ** 5) - 1573 * B0 * (
@@ -1331,6 +1337,7 @@ class BM4:  # Poirier-Tarantola
         :param float V: Volume.
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
+        B0 = - B0
         return -675 * B0 * Bp0 * V0 ** 3 / (4 * V ** 7 * (V0 / V) ** (4 / 3)) + 75 * B0 ** 2 * Bpp0 * V0 ** 3 / (
                     4 * V ** 7 * (V0 / V) ** (4 / 3)) + 75 * B0 * Bp0 ** 2 * V0 ** 3 / (
                            4 * V ** 7 * (V0 / V) ** (4 / 3)) + 8365 * B0 * V0 ** 5 / (
@@ -1387,6 +1394,7 @@ class BM4:  # Poirier-Tarantola
         :param float V: Volume.
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
+        B0 = - B0
         return -2835 * B0 * (V0 / V) ** (1 / 3) * Bp0 ** 2 * V0 ** 2 / (2 * V ** 7) + 10395 * B0 * (V0 / V) ** (
                     5 / 3) * Bp0 * V0 ** 2 / (2 * V ** 7) + 175 * B0 * Bp0 ** 2 * V0 ** 6 / (
                            54 * V ** 11 * (V0 / V) ** (13 / 3)) - 875 * B0 * Bp0 * V0 ** 6 / (
@@ -1464,7 +1472,7 @@ class MU2:  # Poirier-Tarantola
     def __init__(self, *args, units='J/mol', parameters=''):
         if parameters != '':
             self.pEOS = parameters[:5]
-            self.pEOS[2] = - self.pEOS[2]
+            # self.pEOS[2] = - self.pEOS[2]
 
     def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
         """
@@ -1478,7 +1486,7 @@ class MU2:  # Poirier-Tarantola
         """
         if fit:
             pEOS = initial_parameters[:5]
-            pEOS[2] = - pEOS[2]
+            # pEOS[2] = - pEOS[2]
             popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
             self.pEOS = popt
         if not fit:
@@ -1492,6 +1500,7 @@ class MU2:  # Poirier-Tarantola
 
     def E04min(self, V, pEOS):
         E0, V0, B0, Bp0, Bpp0 = pEOS
+        B0 = - B0
         return E0 - 861 * V0 * B0 * (1 / 128) + 261 * V0 * B0 * Bp0 * (1 / 128) - 27 * V0 * B0 ** 2 * Bpp0 * (
                     1 / 128) - 27 * V0 * B0 * Bp0 ** 2 * (1 / 128) - 1791 * V * B0 * (V0 / V) ** (7 / 3) * (
                            1 / 64) - 207 * B0 * V0 ** 3 * Bp0 / (32 * V ** 2) + 675 * V * B0 * (V0 / V) ** (
@@ -1522,7 +1531,7 @@ class MU2:  # Poirier-Tarantola
         :param float V: Volume.
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
-        K, Kp, Kpp = -B0, Bp0, Bpp0
+        K, Kp, Kpp = B0, Bp0, Bpp0
         return (1) * (-2 * K / (Kp * (
                     np.sqrt(-2 * K * Kpp + Kp ** 2) * ((V0 / V) ** np.sqrt(-2 * K * Kpp + Kp ** 2) + 1) / (
                         Kp * ((V0 / V) ** np.sqrt(-2 * K * Kpp + Kp ** 2) - 1)) - 1)))
@@ -1534,7 +1543,7 @@ class MU2:  # Poirier-Tarantola
         :param float V: Volume.
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
-        K, Kp, Kpp = -B0, Bp0, Bpp0
+        K, Kp, Kpp = B0, Bp0, Bpp0
         return (1) * (-8 * K * (V0 / V) ** np.sqrt(-2 * K * Kpp + Kp ** 2) * (Kpp * K - (1 / 2) * Kp ** 2) / (((
                                                                                                                            Kp - np.sqrt(
                                                                                                                        -2 * K * Kpp + Kp ** 2)) * (
@@ -1548,7 +1557,7 @@ class MU2:  # Poirier-Tarantola
         :param float V: Volume.
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
-        K, Kp, Kpp = -B0, Bp0, Bpp0
+        K, Kp, Kpp = B0, Bp0, Bpp0
         return (1) * ((16 * (((-(1 / 2) * Kp - 1 / 2) * np.sqrt(-2 * K * Kpp + Kp ** 2) - Kpp * K + (
                     1 / 2) * Kp ** 2 + (1 / 2) * Kp) * (V0 / V) ** (2 * np.sqrt(-2 * K * Kpp + Kp ** 2)) + (
                                          V0 / V) ** np.sqrt(-2 * K * Kpp + Kp ** 2) * (
@@ -1568,7 +1577,7 @@ class MU2:  # Poirier-Tarantola
         :param float V: Volume.
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
-        K, Kp, Kpp = -B0, Bp0, Bpp0
+        K, Kp, Kpp = B0, Bp0, Bpp0
         return (1) * (-32 * K * (((-(1 / 2) * Kp ** 3 - 3 * Kp ** 2 * (1 / 2) + (K * Kpp - 1) * Kp + 3 * Kpp * K * (
                     1 / 2)) * np.sqrt(-2 * K * Kpp + Kp ** 2) + (1 / 2) * Kp ** 4 + 3 * Kp ** 3 * (1 / 2) + (
                                               1 - 3 * Kpp * K * (
@@ -1590,7 +1599,7 @@ class MU2:  # Poirier-Tarantola
         :param float V: Volume.
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
-        K, Kp, Kpp = -B0, Bp0, Bpp0
+        K, Kp, Kpp = B0, Bp0, Bpp0
         return (1) * (-(64 * ((11 * (Kpp * K - (1 / 2) * Kp ** 2 + 1 / 2)) * Kpp * (
                     (-(1 / 2) * Kp - 9 / 11) * np.sqrt(-2 * K * Kpp + Kp ** 2) + Kpp * K - (
                         1 / 2) * Kp ** 2 - 9 * Kp * (1 / 11)) * K * (V0 / V) ** (
@@ -1633,7 +1642,7 @@ class MU2:  # Poirier-Tarantola
         :param float V: Volume.
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
-        K, Kp, Kpp = -B0, Bp0, Bpp0
+        K, Kp, Kpp = B0, Bp0, Bpp0
         return (1) * (-(128 * (-(26 * (Kpp * K - (1 / 2) * Kp ** 2 + 1 / 2)) * Kpp * K * ((-(Kp + 25 / 13) * Kpp * K + (
                     1 / 2) * Kp ** 3 + 25 * Kp ** 2 * (1 / 13) + 24 * Kp * (1 / 13)) * np.sqrt(
             -2 * K * Kpp + Kp ** 2) + K ** 2 * Kpp ** 2 - (1 / 2) * (3 * (

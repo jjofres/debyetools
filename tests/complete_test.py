@@ -19,7 +19,7 @@ class CpTestCase(unittest.TestCase):
     def test_Complete_Al_fcc_BM4(self):
         """ Test complete algorithm to calculate TP for Al fcc using the 4th order Birch-Murnaghan EOS."""
 
-        folder_name = './tests/inpt_files/Al_fcc'
+        folder_name = './inpt_files/Al_fcc'
         # EOS parametrization
         # =========================
         V_DFT, E_DFT = load_V_E(folder_name, folder_name + '/CONTCAR.5', units='J/mol')
@@ -74,7 +74,7 @@ class CpTestCase(unittest.TestCase):
         # FS comp db parameters
         # =========================
         FS_db_params = fit_FS(tprops_dict, T_from, T_to)
-        print('xxxx', FS_db_params['Cp'])
+        print('yyyy', FS_db_params['Cp'])
         # =========================
 
         np.testing.assert_almost_equal(np.sum(FS_db_params['Cp'])/10,
@@ -84,7 +84,7 @@ class CpTestCase(unittest.TestCase):
     def test_Complete_Al_fcc_Morse(self):
         """ Test complete algorithm to calculate TP for Al fcc using the 4th order Birch-Murnaghan EOS."""
 
-        folder_name = './tests/inpt_files/Al_fcc'
+        folder_name = './inpt_files/Al_fcc'
         # EOS parametrization
         # =========================
         V_DFT, E_DFT = load_V_E(folder_name, folder_name + '/CONTCAR.5', units='J/mol')

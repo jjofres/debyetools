@@ -16,7 +16,6 @@ script:
   - python -m unittest tests/min_F_tests.py
   - python -m unittest tests/pairanalysis_tests.py
   - python -m unittest tests/poissons_ratio_tests.py
-  - python -m unittest tests/complete_test.py
 
 deploy:
   provider: pypi

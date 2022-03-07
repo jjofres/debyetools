@@ -56,9 +56,7 @@ class BM:
         Internal energy.
 
         :param float V: Volume.
-
-        :return float: P0 + P1 / V ** (2 / 3) + P2 / V ** (4 / 3) + P3 * V ** (-6 / 3), where Pi are calculated
-        from E0, V0, B0, Bp0 parameters.
+        :return float: P0 + P1 / V ** (2 / 3) + P2 / V ** (4 / 3) + P3 * V ** (-6 / 3), where Pi are calculated from E0, V0, B0, Bp0 parameters.
         """
         return self.E04min(V, self.pEOS)
 

@@ -276,7 +276,7 @@ The function to evaluate, the heat capacity, is as follows:
         #=========================
         m = 0.02253677142857143
         ndeb_MU = nDeb(nu, m, p_intanh, eos_MU, p_electronic,
-                        p_defects, p_anh)
+                        p_defects, p_anh, mode='jj)
         T, V = ndeb_MU.min_G(T, p_EOS[1], P=0)
         #=========================
 

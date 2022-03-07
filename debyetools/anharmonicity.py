@@ -57,11 +57,10 @@ class Anharmonicity:
         """
         Fourth order volume derivative of A at fixed T.
 
-        :param float V: Volume
+        :param float V: Volume.
         :return: 0
-        :rtype: float
+        :rtype: float.
         """
-
         return 0
 
     def E(self, T, V):
@@ -266,7 +265,6 @@ class intAnharmonicity:
         :return: an_val*(d2Anh_val/dT2)_V/2
         :rtype: float
         """
-
         self.d3AnhdT3_V_val = (1 / 2) * self.an_val * self.d2AnhdT2_V_val
         return self.d3AnhdT3_V_val
 
@@ -275,7 +273,7 @@ class intAnharmonicity:
         Fourth order temperature derivative of the intrinsic anharmonicity correction of the Debye temperature,
         at fixed V.
 
-        :param float V: Volume
+        :param float V: Volume.
         :return: an_val*(d3Anh_val/dT3)_V/2
         :rtype: float
         """
@@ -323,8 +321,7 @@ class intAnharmonicity:
         Fourth order Volume derivative of the intrinsic anharmonicity correction of the Debye temperature, at fixed T.
 
         :param float V: Volume
-        :return: dAnhdV_T_val*(T^3*an_val^3*m0^3+12*T^2*an_val^2*m0^3 -
-        12*T^2*an_val^2*m0^2+28*T*an_val*m0^3-72*T*an_val*m0^2+44T*an_val*m0+8+m0^3-48*m0^2+88*m0-48)/(8*V^3)
+        :return: dAnhdV_T_val*(T^3*an_val^3*m0^3+12*T^2*an_val^2*m0^3 - 12*T^2*an_val^2*m0^2+28*T*an_val*m0^3-72*T*an_val*m0^2+44T*an_val*m0+8+m0^3-48*m0^2+88*m0-48)/(8*V^3)
         :rtype: float
         """
         self.d4AnhdT4_V_val = self.dAnhdV_T_val * (

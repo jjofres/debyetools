@@ -32,7 +32,7 @@ The code_ is freely available under the GNU Affero General Public License.
 .. figure::  ./source/api/images/tprops_gui.jpeg
    :align:   center
 
-   tProps v0.0
+   tProps v1.1
 
 - Using ``debyetools`` as a Python_ library. Example: Al fcc using Morse Potential:
 
@@ -135,6 +135,3 @@ Indices
 
 * :ref:`genindex`
 * :ref:`modindex`
-
-News
-====

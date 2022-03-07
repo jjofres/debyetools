@@ -28,7 +28,7 @@ class FminTestCase(unittest.TestCase):
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_BM.min_G(T,self.p_EOS[1],P=0)
 
-        self.assertAlmostEqual(35.166117790049896, ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'])
+        self.assertAlmostEqual(35.166201322251894, ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'])
 
     def test_Free_energy_minimization_Al_fcc_RV(self):
         """ Test V(T) calculation by free energy minimization. RV."""
@@ -42,7 +42,7 @@ class FminTestCase(unittest.TestCase):
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_BM.min_G(T,self.p_EOS[1],P=0)
 
-        self.assertAlmostEqual(37.96026289773106, ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'])
+        self.assertAlmostEqual(37.96968792900661, ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'])
 
     def test_Free_energy_minimization_Al_fcc_Morse(self):
         """ Test V(T) calculation by free energy minimization. Morse."""
@@ -65,28 +65,29 @@ class FminTestCase(unittest.TestCase):
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_Morse.min_G(T, self.p_EOS[1],P=0)
 
-        self.assertAlmostEqual(32.15669813382092, ndeb_Morse.eval_props(T[-1],V[-1],P=0)['Cp'])
+        self.assertAlmostEqual(32.156031783054054, ndeb_Morse.eval_props(T[-1],V[-1],P=0)['Cp'])
 
     def test_Free_energy_minimization_Al_fcc_EAM(self):
         """ Test V(T) calculation by free energy minimization. EAM."""
 
         EOS_name = 'EAM'
-        p_EOS = np.array([1.864283e-02, 1.087716e+00, 1.267761e+00, 1.016616e+00, 1.005353e+00, 2.981997e+00, 2.563705e-07, 1.105120e+00,1.815219e+00, 1.493627e+00])
+        p_EOS = np.array([3.647649855e-03, 1.643670214e+00, 1.201433529e-02, 2.110843838e-02, 2.099552421e-01, 1.110019124e+00, 9.353164553e-01, 2.032247973e-06, 1.432174178e-01, 1.213592440e+00])
+
         formula = 'AlAlAlAl'
         a = 4.0396918604
         primitive_cell = np.array([[a, 0, 0], [0, a, 0], [0, 0, a]])
         basis_vectors = np.array([[0,0,0],[0, .5,.5],[.5,0,.5],[.5,.5,0]])
         cutoff = 5.
-        number_of_neighbor_levels = 6
+        number_of_neighbor_levels = 3
         EOS_BM = getattr(potentials, EOS_name)(formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels, parameters=p_EOS)
         EOS_BM.V0 = 10E-6
-        ndeb_Morse = nDeb(self.nu, self.m, self.p_intanh, EOS_BM,
-                          self.p_electronic, self.p_defects, self.p_anh, EOS_name, formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
-
+        ndeb_Morse = nDeb(self.nu, self.m, self.p_intanh, EOS_BM, self.p_electronic, self.p_defects, self.p_anh,
+                          formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels, mode='jj')
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_Morse.min_G(T,self.p_EOS[1],P=0)
+        print(T, V)
 
-        self.assertAlmostEqual(36.127494489465, ndeb_Morse.eval_props(T[-1], V[-1],P=0)['Cp'])
+        self.assertAlmostEqual(32.769353623637116, ndeb_Morse.eval_props(T[-1], V[-1],P=0)['Cp'])
 
 
 if __name__=='__main__':

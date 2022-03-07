@@ -13,7 +13,7 @@ def fbrowser_fill_browser(window,event):
     window['--I_compound'].update(move_cursor_to='end')
     return str_folderbrowser
 #
-def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser):
+def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser,opened_EOS_dict,EOS_long_lst,EOS_str_lst,checked_EOS_dict):
 
     with open(window['--I_compound'].get() +contcar_str) as f:
         lines = f.readlines()
@@ -35,13 +35,70 @@ def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser):
     window['--I_p_anhxc'].update('0, 0, 0')
     window['--I_p_evac'].update('8')
     window['--I_p_svac'].update('2')
+    window['--I_Tm'].update('1000')
     window['--I_Ti'].update('0.1')
     window['--I_Pi'].update('0')
-    window['--I_Tm'].update('1000')
     window['--I_Tf'].update(window['--I_Tm'].get())
     window['--I_ntemps'].update(20)
     window['--I_Tm'].update(disabled=False)
     window['--I_mass'].update(disabled=False)
+    window['--M_minF_output'].update('')
+    window['--LBx_EOS_listbox'].set_value([False for k in window['--LBx_EOS_listbox'].get()])
+    add_EOS(window, opened_EOS_dict,EOS_long_lst)
+    for eos in EOS_str_lst:
+        window['--I_params_'+eos].update('0, 0, 0, 0')
+    window['--I_nu'].update('')
+    window['--I_p_el'].update('0, 0, 0, 0')
+    window['--I_p_evac'].update('8')
+    window['--I_p_svac'].update('2')
+    window['--I_Tm'].update('1000')
+    window['--I_p_intanh'].update('0, 1')
+    window['--Chk_el'].update(False)
+    window['--I_p_el'].update(disabled= not bool(window['--Chk_el'].get()))
+    window['||B_calc_el'].update(disabled= not bool(window['--Chk_el'].get()))
+    window['--Chk_def'].update(False)
+    window['--I_p_evac'].update(disabled= not bool(window['--Chk_def'].get()))
+    window['--I_p_svac'].update(disabled= not bool(window['--Chk_def'].get()))
+    window['--I_Tm'].update(disabled= not bool(window['--Chk_def'].get()))
+    window['--Chk_intanh'].update(False)
+    window['--I_p_intanh'].update(disabled= not bool(window['--Chk_intanh'].get()))
+    window['--Chk_anhxc'].update(False)
+    window['--I_p_anhxc'].update(disabled= not bool(window['--Chk_anhxc'].get()))
+
+    for k in EOS_str_lst:
+        window['--M_tprop_'+k].update('')
+        window['--Tab_'+k].update(visible=False)
+        window['--Tab_fs_'+k].update(visible=False)
+        window['--I_H298'+k].update('',disabled=True)
+        window['--I_S298'+k].update('',disabled=True)
+        for i in range(6):
+            window['--I_fsCp_P'+str(i)+k].update('',disabled=True)
+        for i in range(4):
+            window['--I_fsa_P'+str(i)+k].update('',disabled=True)
+        for i in range(4):
+            window['--I_fsK_P'+str(i)+k].update('',disabled=True)
+        for i in range(2):
+            window['--I_fsKp_P'+str(i)+k].update('',disabled=True)
+    window['--Tab_'].update(visible=True)
+    window['--Tab_'].select()
+    window['--Tab_fs_'].update(visible=True)
+    window['--Tab_fs_'].select()
+
+    window['--I_fs_Tfrom'].update('')
+    window['--I_fs_Tfrom'].update(disabled = True)
+    window['--I_fs_Tto'].update('')
+    window['--I_fs_Tto'].update(disabled = True)
+    window['||B_plotter'].update(disabled=True)
+    window['||B_plotter_tprops'].update(disabled=True)
+    window['||B_plotter_fsprop2plt'].update(disabled=True)
+    window['||B_eval_tprops'].update(disabled=True)
+    window['||B_run_fs_params'].update(disabled=True)
+
+    window['--IC_prop2plt'].update('')
+
+    checked_EOS_dict = update_diabled(window,opened_EOS_dict,EOS_str_lst,checked_EOS_dict)
+    return checked_EOS_dict
+
 #
 def chk_eos(window,opened_dict):
     for k in opened_dict.keys():
@@ -54,15 +111,26 @@ def chk_calc_params(window,event):
 def bool_chks(window,opened_dict):
     bool_dict_params_EOS = {stri:window['--Chk_calc_params_'+stri].get() for stri in opened_dict.keys()}
     bool_dict_EOS =  {stri:opened_dict[stri] for stri in opened_dict.keys()}
-    bool_run_eos_fitting = any([all([bool_dict_params_EOS[stri],bool_dict_EOS[stri]]) for stri in opened_dict.keys()])
+    bool_run_eos_fitting = any([all([True,bool_dict_EOS[stri]]) for stri in opened_dict.keys()])
+    bool_mode = any([window['--Chk_mode_'+stri].get() for stri in ['jj', 'DM', 'Sl', 'VZ', 'mfv']])
 
-    return bool_run_eos_fitting, bool_dict_params_EOS
+
+    return bool_run_eos_fitting, bool_dict_params_EOS, bool_mode
+def add_EOS(window, opened_EOS_dict,EOS_long_lst):
+    for k in opened_EOS_dict.keys():
+        opened_EOS_dict[k]=False
+    for k in window['--LBx_EOS_listbox'].get():
+        opened_EOS_dict[EOS_long_lst[k]]=True
+    # print(opened_EOS_dict)
+
+    chk_eos(window,opened_EOS_dict)
+
 #
 def update_diabled(window,opened_dict,eos_available,bool_dict_params_EOS):
-    bool_run_eos_fitting, bool_dict_params_EOS = bool_chks(window,opened_dict)
-    window['||B_run_eos_fitting'].update(disabled=not bool_run_eos_fitting)
+    bool_run_eos_fitting, bool_dict_params_EOS, bool_mode = bool_chks(window,opened_dict)
+    # window['||B_run_eos_fitting'].update(disabled=not bool_run_eos_fitting)
 
-    bool_minF = bool_run_eos_fitting and (True if window['--I_nu'].get()!='' else False)
+    bool_minF = bool_run_eos_fitting and (True if window['--I_nu'].get()!='' else False) and bool_mode
 
     window['||B_run_minF'].update(disabled=not bool_minF)
 
@@ -75,13 +143,15 @@ def update_diabled(window,opened_dict,eos_available,bool_dict_params_EOS):
         window['||B_plotter_fsprop2plt'+str_eos].update(disabled=True if window['--IC_fsprop2plt'+str_eos].get()== '' else False)
 
     window['||B_add_EOS'].update(disabled=True if window['--I_compound'].get()=='' else False)
+    window['||B_run_eos_fitting'].update(disabled=True if window['--I_compound'].get()=='' else False)
+    window['||B_PlotfittingEOS'].update(disabled=True if window['--I_compound'].get()=='' else False)
     window['--Chk_def'].update(disabled=True if window['--I_compound'].get()=='' else False)
     window['--Chk_intanh'].update(disabled=True if window['--I_compound'].get()=='' else False)
     window['--Chk_anhxc'].update(disabled=True if window['--I_compound'].get()=='' else False)
     window['--I_Ti'].update(disabled=True if window['--I_compound'].get()=='' else False)
     window['--I_Pi'].update(disabled=True if window['--I_compound'].get()=='' else False)
     window['--I_Tf'].update(disabled=True if window['--I_compound'].get()=='' else False)
-    window['--I_Tm'].update(disabled=True if window['--I_compound'].get()=='' else False)
+    #window['--I_Tm'].update(disabled=True if window['--I_compound'].get()=='' else False)
     window['--I_ntemps'].update(disabled=True if window['--I_compound'].get()=='' else False)
     window['||B_plotter_tprops'].update(disabled=True if window['--IC_prop2plt'].get()== '' else False)
     window['--I_cutoff_MP'].update(disabled=False)
@@ -99,6 +169,7 @@ def chk_el(window,event):
 def chk_def(window,event):
     window['--I_p_evac'].update(disabled= not bool(window[event].get()))
     window['--I_p_svac'].update(disabled= not bool(window[event].get()))
+    window['--I_Tm'].update(disabled= not bool(window[event].get()))
 ##
 def chk_intanh(window,event):
     window['--I_p_intanh'].update(disabled= not bool(window[event].get()))

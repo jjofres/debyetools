@@ -1,4 +1,5 @@
 import numpy as np
+np.seterr(divide='ignore')
 
 kB   = 0.138064852e-22
 NAv  = 0.6022140857e24
@@ -64,6 +65,8 @@ class Defects:
         return (T*kB+self.Evac(V))*NAv*np.exp(self.Svac(V)/kB - self.Evac(V)/(kB*T))/T
     def F(self,T,V):
         return -NAv*T*kB*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))
+    def dFdV_T(self, T, V):
+        return -NAv*(self.dSvacdV_T(V)*T-self.dEvacdV_T(V))*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))
     def d2FdT2_V(self,T,V):
         return -NAv*self.Evac(V)**2*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))/(T**3*kB)
     def d2FdV2_T(self,T,V):

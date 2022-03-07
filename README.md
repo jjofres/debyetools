@@ -18,7 +18,21 @@ pip install --upgrade debyetools
 ```
 
 ### Get started
-Example: heat capacity of Al fcc using 3rd order Birch-Murnaghan EOS
+
+To start getting familiar with the interface `tProps` you can download `examples input files`_.
+The GUI can be launched by executing the interface script from the debyetools repository main folder::
+
+```
+python gui.py
+```
+
+Or you can launch  inside python:
+```
+from debyetools.tpropsgui.gui import gui
+gui()
+```
+
+Debye tools can also be used as a library. Example: heat capacity of Al fcc using 3rd order Birch-Murnaghan EOS
 
 ```Python
 import numpy as np
@@ -44,6 +58,6 @@ result = ndeb_BM.eval_props(T,V)['Cp']
 
 To Do's:
 
-- Add Examples to Documentation
+- Add More Examples to Documentation
 - Improve error handling
 - Add 'Compatible input files formats'

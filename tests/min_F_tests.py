@@ -28,7 +28,7 @@ class FminTestCase(unittest.TestCase):
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_BM.min_G(T,self.p_EOS[1],P=0)
 
-        self.assertAlmostEqual(35.166201322251894, ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'])
+        self.assertAlmostEqual(35.1644970363464, ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'])
 
     def test_Free_energy_minimization_Al_fcc_RV(self):
         """ Test V(T) calculation by free energy minimization. RV."""
@@ -42,7 +42,7 @@ class FminTestCase(unittest.TestCase):
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_BM.min_G(T,self.p_EOS[1],P=0)
 
-        self.assertAlmostEqual(37.96968792900661, ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'])
+        self.assertAlmostEqual(37.969915123488086, ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'])
 
     def test_Free_energy_minimization_Al_fcc_Morse(self):
         """ Test V(T) calculation by free energy minimization. Morse."""
@@ -65,7 +65,7 @@ class FminTestCase(unittest.TestCase):
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_Morse.min_G(T, self.p_EOS[1],P=0)
 
-        self.assertAlmostEqual(32.156031783054054, ndeb_Morse.eval_props(T[-1],V[-1],P=0)['Cp'])
+        self.assertAlmostEqual(32.15661334353073, ndeb_Morse.eval_props(T[-1],V[-1],P=0)['Cp'])
 
     def test_Free_energy_minimization_Al_fcc_EAM(self):
         """ Test V(T) calculation by free energy minimization. EAM."""
@@ -85,9 +85,9 @@ class FminTestCase(unittest.TestCase):
                           formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels, mode='jj')
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_Morse.min_G(T,self.p_EOS[1],P=0)
-        print(T, V)
+        # print(T, V)
 
-        self.assertAlmostEqual(32.769353623637116, ndeb_Morse.eval_props(T[-1], V[-1],P=0)['Cp'])
+        self.assertAlmostEqual(32.76871151638857, ndeb_Morse.eval_props(T[-1], V[-1],P=0)['Cp'])
 
 
 if __name__=='__main__':

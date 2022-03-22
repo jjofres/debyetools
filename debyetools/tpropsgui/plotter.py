@@ -178,6 +178,7 @@ def pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_sett
             data4plot.popup_window.close()
 
 def pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,show=False):
+         # pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,show=False):
     print('pop_window_simple show',show)
     tabs = plotter.tabs(initial_tabs_multilinetxt)
     data4plot = plotter.dataplot()

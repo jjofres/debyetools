@@ -107,14 +107,14 @@ class nDeb:
         """
         V0i = initial_V
 
-        V = []
-        for Ti in T:
-            f2min = lambda Vi: self.G2min(Ti, Vi, P)
-            # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
-            V0i = fmin(f2min, x0=V0i, disp=False)[0]
-            V.append(V0i)
-
-        V0_DM = V[0]
+        # V = []
+        # for Ti in T:
+        #     f2min = lambda Vi: self.G2min(Ti, Vi, P)
+        #     # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
+        #     V0i = fmin(f2min, x0=V0i, disp=False)[0]
+        #     V.append(V0i)
+        #
+        # V0_DM = V[0]
         V = []
         for Ti in T[0:1]:
             f2min = lambda Vi: self.G(Ti, Vi, P)
@@ -130,6 +130,7 @@ class nDeb:
             f2min = lambda Vi: self.G(Ti, Vi, P)
             # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
             V0i = fmin(f2min, x0=V0i, disp=False)[0]
+            print('V0i',Ti, V0i)
             V.append(V0i)
 
         newV = np.array(V)  # V[0]*np.exp(self.integrl())

@@ -122,8 +122,11 @@ def gui():
                             EOS2params.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters)
                         else:
                             print(k, 'not fitted')
-                            EOS2params.pEOS = [float(pi) for pi in window['--I_params_'+k].get().split(', ')]
-                            EOS2params.V0=1e-5
+                            initial_parameters = np.array([float(pi) for pi in window['--I_params_'+k].get().split(', ')])
+                            print(initial_parameters)
+                            EOS2params.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters, fit=False)
+                            #EOS2params.pEOS = np.array([float(pi) for pi in window['--I_params_'+k].get().split(', ')])
+                            #EOS2params.V0=1e-5
 
                         # print(EOS2params.pEOS)
                         events.eos_write_params(window,k,EOS2params.pEOS)
@@ -221,6 +224,7 @@ def gui():
                         nDebs_dict[k]['ndeb'] = nDeb(nu, m, p_intanh, EOS2plot_dict[k], p_electronic,
                                              p_defects, p_anh, mode=mode)
                         Tmin, Vmin = nDebs_dict[k]['ndeb'].min_G(T,nDebs_dict[k]['ndeb'].EOS.V0,Pressure)
+                        print('Tmin, Vmin',Tmin, Vmin)
                         #Tmin, Vmin = nDebs_dict[k]['ndeb'].min_G(T,nDebs_dict[k]['ndeb'].EOS.V0,Pressure, Vmin[0], a_DM, b_DM)
                         nDebs_dict[k]['T'] = np.array(Tmin)
                         nDebs_dict[k]['V'] = Vmin

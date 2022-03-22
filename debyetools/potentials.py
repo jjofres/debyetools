@@ -40,8 +40,9 @@ class BM:
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        bounds = [(min(Vdata) * .99, max(Vdata) * 1.01)]
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=bounds, tol=1e-10)
+        # bounds = [(min(Vdata) * .99, max(Vdata) * 1.01)]
+        # mV = minimize(self.E0, [np.mean(Vdata)], bounds=bounds, tol=1e-10)
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
 
         self.V0 = mV['x'][0]
 
@@ -802,6 +803,7 @@ class MU:  # Murnaghan
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
+        self.V0 = None
         if parameters != '':
             self.pEOS = parameters[:4]
 
@@ -1767,9 +1769,9 @@ class EAM:  # Morse
         :return list_of_floats: Optimal parameters.
         """
         if fit:
-            pEOS = initial_parameters
+            pEOS = [1 for _ in initial_parameters]
             # ##print('XXXXXXXX',pEOS)
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=(0, 1e3))['x']
+            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']#, bounds=(0, 1e2))['x']
             self.pEOS = popt
         if not fit:
             self.pEOS = initial_parameters
@@ -1780,6 +1782,7 @@ class EAM:  # Morse
         self.params_elmt_type(pEOS_et)
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))])
         self.V0 = mV['x'][0]
+        print('xxxxx')
 
         return self.pEOS
 

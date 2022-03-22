@@ -273,7 +273,8 @@ def plot_tprops(window,minF_header):
                             'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':window['--IC_prop2plt'].get(),'labelxsize':13,
                             'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
                             'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12}
-    plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)
+    # plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)
+    plot.pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)
 #
 def plot_fsprops(window,event,fs_params,Tfrom,Tto,TPs_calculated_dict):
     str_eos = event.replace('||B_plotter_fsprop2plt','')

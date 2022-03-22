@@ -313,7 +313,7 @@ class Vibrational:
         d2E0dV2_T = self.EOS.d2E0dV2_T(V)
         # dE0dV_T_0 = self.EOS.dE0dV_T(V0_DM)
         if type(V) == np.ndarray:
-            if d2E0dV2_T_0 < 0: return 1
+            if d2E0dV2_T_0 < 0: return 1e10
         kv = self.kv
         m = self.m
 
@@ -333,10 +333,11 @@ class Vibrational:
         D3 = D_3(x)
         # print(tD/T, tD, T)
         if type(V) is not np.ndarray:
-            if x < 0.07: return 1
+            if x < 0.07: return 1e10
         return 3 * r * NAv * kB * (tD0 * 3 / 8 + T * np.log(1 - np.exp(-x)) - D3 * T / 3)
 
     def F(self, T, V):
+
         """
         Vibration Helmholtz free energy.
 
@@ -353,7 +354,7 @@ class Vibrational:
         d2E0dV2_T = self.EOS.d2E0dV2_T(V)
         if type(V) == np.ndarray:
             if min(d2E0dV2_T) < 0:
-                return 1
+                return 1e10
         kv = self.kv
         m = self.m
 
@@ -371,11 +372,13 @@ class Vibrational:
         tD = xD * vD * Anh * DM
 
         x = tD / T
+        self.xxxxx = x  ###
         D3 = D_3(x)
         # print(tD/T, tD, T)
         if type(V) is not np.ndarray:
-            if x < 0.07:
-                return 1
+            if x < 0.04:
+                print('xxxx',self.kv, tD, T, V)
+                return 1e10
         return 3 * r * NAv * kB * (tD * 3 / 8 + T * np.log(1 - np.exp(-x)) - D3 * T / 3)
 
     def d2FdT2_V(self, T, V):

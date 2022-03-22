@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import fmin
+from scipy import optimize
 
 from debyetools.anharmonicity import Anharmonicity, intAnharmonicity
 from debyetools.electronic import Electronic
@@ -106,20 +107,11 @@ class nDeb:
 
         """
         V0i = initial_V
-
-        # V = []
-        # for Ti in T:
-        #     f2min = lambda Vi: self.G2min(Ti, Vi, P)
-        #     # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
-        #     V0i = fmin(f2min, x0=V0i, disp=False)[0]
-        #     V.append(V0i)
-        #
-        # V0_DM = V[0]
         V = []
         for Ti in T[0:1]:
             f2min = lambda Vi: self.G(Ti, Vi, P)
-            # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
-            V0i = fmin(f2min, x0=V0i, disp=False)[0]
+            V0i = optimize.fmin(f2min, x0=1e-05, disp=False)[0]
+            # V0i = fmin(f2min, x0=V0i, disp=False)[0]
             V.append(V0i)
         if self.mode == '':
             pass
@@ -129,9 +121,9 @@ class nDeb:
         for Ti in T:
             f2min = lambda Vi: self.G(Ti, Vi, P)
             # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
-            V0i = fmin(f2min, x0=V0i, disp=False)[0]
-            print('V0i',Ti, V0i)
+            V0i = optimize.fmin(f2min, x0=1e-05, disp=False)[0]
             V.append(V0i)
+            print(Ti, self.EOS.E0(V0i),self.vib.F(Ti, V0i),self.anh.F(Ti, V0i),self.deff.F(Ti, V0i),self.vib.xxxxx)
 
         newV = np.array(V)  # V[0]*np.exp(self.integrl())
         del V

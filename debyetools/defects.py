@@ -16,6 +16,7 @@ class Defects:
     :param float V0: Equilibrium volume.
     """
     def __init__(self,Evac00,Svac00,Tm,a,P2,V0):
+        self.pdef = Evac00,Svac00,Tm,a,P2,V0
         self.Evac00 = Evac00
         self.Svac00 = Svac00
         self.Svac0 = Svac00*kB

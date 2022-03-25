@@ -381,6 +381,11 @@ class Vibrational:
                 return 1e10
         return 3 * r * NAv * kB * (tD * 3 / 8 + T * np.log(1 - np.exp(-x)) - D3 * T / 3)
 
+    def dFdV_T(self, T, V):
+        x = self.tD/T
+        D3 = D_3(x)
+        dD3 = dD_3dx(x, D3)
+        return 3*r*NAv*kB*(3*(self.dtDdV_T)*(1/8)+(self.dtDdV_T)*np.exp(-x)/(1-np.exp(-x))-(1/3)*dD3*(self.dtDdV_T))
     def d2FdT2_V(self, T, V):
         """
         (d2F(T, V)/dT2)_V

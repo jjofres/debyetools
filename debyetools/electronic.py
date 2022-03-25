@@ -11,6 +11,7 @@ class Electronic:
     :param float params: N(Ef)(V) function parameters.
     """
     def __init__(self,*params):
+        self.pel = params
         self.r=1
         for n,q in enumerate(params):
             setattr(self,'q'+str(n),q)

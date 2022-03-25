@@ -40,10 +40,10 @@ def D_3(x):
         return 1.5585456848144562e-07
     elif x>=1.579779e+01:
         return np.pi**4/(5*x**3)
-    ex=np.exp(x)
-    if x <=0.1111111111111111:
-        return 0.958950526584995
+    # if x <=0.1111111111111111:
+    #     return 0.958950526584995
     else:
+        ex=np.exp(x)
         d1, d2, d3, d4, d5, d6 = -np.pi**4/(5*x**3), -3*x*(1/4), np.real(+3*lncomplex(-ex+1)),np.real(+9*mp.fp.polylog(2,ex)/x), np.real(-18*mp.fp.polylog(3,ex)/x**2), np.real(+18*mp.fp.polylog(4,ex)/x**3)
         return d1+d2+d3+d4+d5+d6
 def dD_3dx(x, D3):

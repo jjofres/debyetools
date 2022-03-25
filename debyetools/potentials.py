@@ -40,14 +40,18 @@ class BM:
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        bounds = [(min(Vdata) * .99, max(Vdata) * 1.01)]
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=bounds, tol=1e-10)
+        # bounds = [(min(Vdata) * .99, max(Vdata) * 1.01)]
+        # mV = minimize(self.E0, [np.mean(Vdata)], bounds=bounds, tol=1e-10)
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
 
         self.V0 = mV['x'][0]
 
         return self.pEOS
 
     def E04min(self, V, pEOS):
+        E0, V0, B0, Bp0 = pEOS
+        if B0<0:
+            return 1
         P0, P1, P2, P3 = EVBBp_to_BMparams(pEOS)
         return P0 + P1 / V ** (2 / 3) + P2 / V ** (4 / 3) + P3 * V ** (-6 / 3)
 
@@ -160,6 +164,8 @@ class RV:  # Rose-Vinet
 
     def E04min(self, V, pEOS):
         E0, V0, B0, Bp0 = pEOS
+        if B0<0:
+            return 1
         return E0 - 2 * B0 * V0 * np.exp(-(1 / 2) * (3 * (Bp0 - 1)) * (-1 + (V / V0) ** (1 / 3))) * (
                     3 * (V / V0) ** (1 / 3) * Bp0 - 3 * Bp0 - 3 * (V / V0) ** (1 / 3) + 5) / (Bp0 - 1) ** 2 + (
                            4 * B0 * V0) / ((Bp0 - 1) ** 2)
@@ -291,6 +297,8 @@ class MG:  # Mie-Gruneisen
 
     def E04min(self, V, pEOS):
         E0, V0, B0, Bp0 = pEOS
+        if B0<0:
+            return 1
         return (9 * ((3 * (B0 * V0 + (1 / 3) * Bp0 * E0 - (7 / 9) * E0)) * (Bp0 - 8 / 3) * (V / V0) ** (
                     1 / 3) + B0 * V0 * ((V / V0) ** (8 / 3 - Bp0) - 3 * Bp0 + 7))) / (
                            (V / V0) ** (1 / 3) * (9 * Bp0 ** 2 - 45 * Bp0 + 56))
@@ -410,6 +418,10 @@ class TB:  # TB-SMA
         return self.pEOS
 
     def E04min(self, V, pEOS):
+
+        E0, V0, B0, Bp0 = pEOS
+        if B0<0:
+            return 1
         p0, p1, p2, p3 = EVBBp_to_TBparams(pEOS)
         return p0 * np.exp(-p2 * V ** (1. / 3.)) + p1 * np.exp(-p3 * V ** (1. / 3.))
 
@@ -802,6 +814,7 @@ class MU:  # Murnaghan
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
+        self.V0 = None
         if parameters != '':
             self.pEOS = parameters[:4]
 
@@ -829,6 +842,8 @@ class MU:  # Murnaghan
 
     def E04min(self, V, pEOS):
         E0, V0, B0, Bp0 = pEOS
+        if B0<0:
+            return 1
         return E0 + B0 * V0 * (1 / (Bp0 * (Bp0 - 1)) * (V / V0) ** (1 - Bp0) + 1 / Bp0 * V / V0 - 1 / (Bp0 - 1))
 
     def E0(self, V):
@@ -934,6 +949,9 @@ class BM3:  # Birch-Murnaghan
         return self.pEOS
 
     def E04min(self, V, pEOS):
+        E0, V0, B0, Bp0 = pEOS
+        if B0<0:
+            return 1
         P0, P1, P2, P3 = EVBBp_to_BMparams(pEOS)
         return P0 + P1 / V ** (2 / 3) + P2 / V ** (4 / 3) + P3 * V ** (-6 / 3)
 
@@ -1052,6 +1070,8 @@ class PT:  # Poirier-Tarantola
 
     def E04min(self, V, pEOS):
         E0, V0, B0, Bp0 = pEOS
+        if B0<0:
+            return 1
 
         # E0 + K/6*V0(ln(V/V0))^2 (3-(Kp-2)ln(V/V0))
         return E0 + (1 / 6) * B0 * V0 * np.log(V / V0) ** 2 * (3 - (Bp0 - 2) * np.log(
@@ -1175,6 +1195,8 @@ class BM4:  # Poirier-Tarantola
 
     def E04min(self, V, pEOS):
         E0, V0, B0, Bp0, Bpp0 = pEOS
+        if B0<0:
+            return 1
         B0 = - B0
         return E0 - 861 * V0 * B0 * (1 / 128) + 261 * V0 * B0 * Bp0 * (1 / 128) - 27 * V0 * B0 ** 2 * Bpp0 * (
                     1 / 128) - 27 * V0 * B0 * Bp0 ** 2 * (1 / 128) - 1791 * V * B0 * (V0 / V) ** (7 / 3) * (
@@ -1498,6 +1520,8 @@ class MU2:  # Poirier-Tarantola
 
     def E04min(self, V, pEOS):
         E0, V0, B0, Bp0, Bpp0 = pEOS
+        if B0<0:
+            return 1
         B0 = - B0
         return E0 - 861 * V0 * B0 * (1 / 128) + 261 * V0 * B0 * Bp0 * (1 / 128) - 27 * V0 * B0 ** 2 * Bpp0 * (
                     1 / 128) - 27 * V0 * B0 * Bp0 ** 2 * (1 / 128) - 1791 * V * B0 * (V0 / V) ** (7 / 3) * (
@@ -1767,9 +1791,9 @@ class EAM:  # Morse
         :return list_of_floats: Optimal parameters.
         """
         if fit:
-            pEOS = initial_parameters
+            pEOS = [1 for _ in initial_parameters]
             # ##print('XXXXXXXX',pEOS)
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=(0, 1e3))['x']
+            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']#, bounds=(0, 1e2))['x']
             self.pEOS = popt
         if not fit:
             self.pEOS = initial_parameters
@@ -1780,6 +1804,7 @@ class EAM:  # Morse
         self.params_elmt_type(pEOS_et)
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))])
         self.V0 = mV['x'][0]
+        print('xxxxx')
 
         return self.pEOS
 

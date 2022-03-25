@@ -9,6 +9,7 @@ class Anharmonicity:
     """
 
     def __init__(self, s0, s1, s2):
+        self.panh = s0, s1, s2
         self.s0 = s0
         self.s1 = s1
         self.s2 = s2
@@ -194,6 +195,7 @@ class intAnharmonicity:
         :param float m0: Pseudo-Gruneisen parameter of the intrinsic anharmonicity correction function.
         :param float V0: Equilibrium volume.
         """
+        self.pintanh = a0, m0, V0
         self.d3AnhdV2dT_val = None
         self.d3AnhdVdT2_val = None
         self.d2AnhdVdT_val = None

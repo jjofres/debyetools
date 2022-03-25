@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import fmin
+from scipy import optimize
 
 from debyetools.anharmonicity import Anharmonicity, intAnharmonicity
 from debyetools.electronic import Electronic
@@ -55,9 +56,9 @@ class nDeb:
         r = 1
         self.xDcte = hbar * 6 ** (1 / 3.) * (np.pi ** 2 * NAv * r) ** (1 / 3.)
 
-    def G(self, T, V, P):
+    def f2min(self, T, V, P):
         """
-        Helmholtz free energy.
+        free energy for minimization.
 
         :param float T: Temperature.
         :param float V: Volume.
@@ -65,34 +66,16 @@ class nDeb:
 
         :return float: Free energy.
         """
+        self.vib.set_int_anh(T, V)
+        self.vib.set_theta(T,V)
 
-        E_0 = self.EOS.E0(V)
-
-        Fvib = self.vib.F(T, V)  # 3*r*NAv*kB*(tD*3/8 + T*np.log(1-np.exp(-x))  - D3*T/3)
-        Fa = self.anh.F(T, V)
-        Fdef = self.deff.F(T, V)
-        Fel = self.el.F(T, V)
-        _F = E_0 + Fvib + Fel + Fdef + Fa
-        return _F + P * V
-
-    def G2min(self, T, V, P):
-        """
-        Helmholtz free energy.
-
-        :param float T: Temperature.
-        :param float V: Volume.
-        :param float P: Pressure.
-
-        :return float: Free energy.
-        """
-        E_0 = self.EOS.E0(V)
-
-        Fvib = self.vib.Fmin(T, V)  # 3*r*NAv*kB*(tD*3/8 + T*np.log(1-np.exp(-x))  - D3*T/3)
-        Fa = self.anh.F(T, V)
-        Fdef = self.deff.F(T, V)
-        Fel = self.el.F(T, V)
-        _F = E_0 + Fvib + Fel + Fdef + Fa
-        return _F + P * V
+        dE0dV_T = self.EOS.dE0dV_T(V)
+        dFvibdV_T = self.vib.dFdV_T(T,V)
+        dFeldV_T = self.el.dFdV_T(T,V)
+        dFdefdV_T = self.deff.dFdV_T(T,V)
+        dFadV_T = self.anh.dFdV_T(T,V)
+        dFdV_T = dE0dV_T + dFvibdV_T + dFeldV_T + dFdefdV_T + dFadV_T
+        return (dFdV_T + P)**2
 
     def min_G(self, T, initial_V, P):
         """
@@ -106,20 +89,11 @@ class nDeb:
 
         """
         V0i = initial_V
-
-        V = []
-        for Ti in T:
-            f2min = lambda Vi: self.G2min(Ti, Vi, P)
-            # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
-            V0i = fmin(f2min, x0=V0i, disp=False)[0]
-            V.append(V0i)
-
-        V0_DM = V[0]
         V = []
         for Ti in T[0:1]:
-            f2min = lambda Vi: self.G(Ti, Vi, P)
-            # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
-            V0i = fmin(f2min, x0=V0i, disp=False)[0]
+            f2min = lambda Vi: self.f2min(Ti, Vi, P)
+            V0i = optimize.fmin(f2min, x0=1e-05, disp=False)[0]
+            # V0i = fmin(f2min, x0=V0i, disp=False)[0]
             V.append(V0i)
         if self.mode == '':
             pass
@@ -127,10 +101,11 @@ class nDeb:
             self.vib.V0_DM = V[0]
         V = []
         for Ti in T:
-            f2min = lambda Vi: self.G(Ti, Vi, P)
+            f2min = lambda Vi: self.f2min(Ti, Vi, P)
             # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
-            V0i = fmin(f2min, x0=V0i, disp=False)[0]
+            V0i = optimize.fmin(f2min, x0=1e-05, disp=False)[0]
             V.append(V0i)
+
 
         newV = np.array(V)  # V[0]*np.exp(self.integrl())
         del V
@@ -149,6 +124,7 @@ class nDeb:
         :params float V: The volume in "units".
         :return dict: A dictionary with the following keys: 'T': temperature, 'V': volume, 'tD': Debye temperature, 'g': Gruneisen parameter, 'Kt': isothermal bulk modulus, 'Ktp': pressure derivative of the isothermal bulk modulus, 'Ktpp': second order pressure derivative of the isothermal bulk modulus, 'Cv': constant-volume heat capacity, 'a': thermal expansion, 'Cp': constant-pressure heat capacity, 'Ks': adiabatic bulk modulus , 'Ksp': pressure derivative of the adiabatic bulk modulus, 'G': Gibbs free energy, 'E': total internal energy, 'S': entropy, 'E0': 'cold' internal energy defined by the EOS, 'Fvib': vibrational free energy, 'Evib': vibrational internal energy, 'Svib': vibrational entropy, 'Cvvib': vibrational heat capacity, 'Pcold': 'cold' pressure, 'dPdT_V': (dP/dT)_V, 'G^2': Ktp**2-2*Kt*Ktpp, 'dSdP_T': (dS/dP)_T, 'dKtdT_P': (dKt/dT)_P, 'dadP_T': (da/dP)_T, 'dCpdP_T': (dCp/dP)_T, 'ddSdT_PdP_T': (d2S/dTdP).
         """
+        del P
         nu, r, m = self.nu, self.r, self.m
 
         kv = self.kv
@@ -156,30 +132,34 @@ class nDeb:
         self.vib.set_int_anh(T, V)
         self.vib.set_theta(T, V)
 
+        E0 = self.EOS.E0(V)
+
+        dE0dV_T   = self.EOS.dE0dV_T(V)
         d2E0dV2_T = self.EOS.d2E0dV2_T(V)
         d3E0dV3_T = self.EOS.d3E0dV3_T(V)
         d4E0dV4_T = self.EOS.d4E0dV4_T(V)
-
         d2E0dT2_V = 0
         d2E0dVdT = 0
         d3E0dV2dT = 0
         d3E0dVdT2 = 0
 
-        d2FvibdT2_V = self.vib.d2FdT2_V(T,
-                                        V)  # 3*r*NAv*((ex-1)*T*(T**2*d2tDdT2_V*tD-4*(dtDdT_V*T-tD)**2)*D3+3*tD*(d2tDdT2_V*tD*ex*T**2-T**2*d2tDdT2_V*tD+8*(dtDdT_V*T-tD)**2)*(1/8))*kB/(tD**2*(ex-1)*T**2)
-        d2FvibdV2_T = self.vib.d2FdV2_T(T,
-                                        V)  # 3*r*NAv*kB*(8*dtDdV_T**2*tD*dD3dx-8*dtDdV_T**2*D3*T+8*d2tDdV2_T*D3*tD*T+3*d2tDdV2_T*tD**2)/(8*tD**2)
-        d3FvibdV3_T = self.vib.d3FdV3_T(T,
-                                        V)  # 3*r*(T**2*(d3tDdV3_T*tD**2-3*dtDdV_T*d2tDdV2_T*tD+2*dtDdV_T**3)*D3+(3*dtDdV_T*d2tDdV2_T*T*tD**2-2*dtDdV_T**3*T*tD)*dD3dx+d2D3dx2*dtDdV_T**3*tD**2+3*d3tDdV3_T*tD**3*T*(1/8))*kB*NAv/(T*tD**3)
-        d4FvibdV4_T = self.vib.d4FdV4_T(T,
-                                        V)  # -12*r*(T**3*(-(1/4)*d4tDdV4_T*tD**3+(d3tDdV3_T*dtDdV_T+3*d2tDdV2_T**2*(1/4))*tD**2-3*dtDdV_T**2*d2tDdV2_T*tD+3*dtDdV_T**4*(1/2))*D3-tD*(T**2*((d3tDdV3_T*dtDdV_T+3*d2tDdV2_T**2*(1/4))*tD**2-3*dtDdV_T**2*d2tDdV2_T*tD+3*dtDdV_T**4*(1/2))*dD3dx+(1/32)*(3*((16*dtDdV_T**2*d2tDdV2_T*tD*T-8*dtDdV_T**4*T)*d2D3dx2+tD*(8*d3D3dx3*dtDdV_T**4*(1/3)+d4tDdV4_T*tD*T**2)))*tD))*kB*NAv/(T**2*tD**4)
-        d2FvibdVdT = self.vib.d2FdVdT(T,
-                                      V)  # 3*r*(dD3dx*(dtDdT_V/T-tD/T**2)*T+D3+3*dtDdT_V*(1/8))*kB*dtDdV_T*NAv/tD+3*r*(D3*T+3*tD*(1/8))*kB*d2tDdVdT*NAv/tD-3*r*(D3*T+3*tD*(1/8))*kB*dtDdV_T*NAv*dtDdT_V/tD**2
-        d3FvibdV2dT = self.vib.d3FdV2dT(T,
-                                        V)  # -3*r*(T**2*((-T*d3tDdV2dT-d2tDdV2_T)*tD**2+(T*d2tDdV2_T*dtDdT_V+2*T*dtDdV_T*d2tDdVdT+dtDdV_T**2)*tD-2*T*dtDdT_V*dtDdV_T**2)*D3-tD*((-d2tDdV2_T*tD**2+(T*d2tDdV2_T*dtDdT_V+2*T*dtDdV_T*d2tDdVdT+dtDdV_T**2)*tD-2*T*dtDdT_V*dtDdV_T**2)*T*dD3dx+3*tD*(8*dtDdV_T**2*(T*dtDdT_V-tD)*d2D3dx2*(1/3)+tD*d3tDdV2dT*T**2)*(1/8)))*kB*NAv/(T**2*tD**3)
-        d3FvibdVdT2 = self.vib.d3FdVdT2(T,
-                                        V)  # -(6*(T**3*((-(1/2)*d3tDdVdT2*T-d2tDdVdT)*tD**2+(((1/2)*d2tDdT2_V*T+dtDdT_V)*dtDdV_T+dtDdT_V*d2tDdVdT*T)*tD-dtDdT_V**2*dtDdV_T*T)*D3-(T**2*(-tD**2*d2tDdVdT+(((1/2)*d2tDdT2_V*T+dtDdT_V)*dtDdV_T+dtDdT_V*d2tDdVdT*T)*tD-dtDdT_V**2*dtDdV_T*T)*dD3dx+(1/16)*(3*(8*dtDdV_T*(T*dtDdT_V-tD)**2*d2D3dx2*(1/3)+tD*d3tDdVdT2*T**3))*tD)*tD))*r*kB*NAv/(T**3*tD**3)
+        Evib = self.vib.E(T, V)
+        Svib = self.vib.S(T, V)
+        Fvib = self.vib.F(T, V)
 
+        dFvibdV_T = self.vib.dFdV_T(T,V)
+        d2FvibdT2_V = self.vib.d2FdT2_V(T,V)
+        d2FvibdV2_T = self.vib.d2FdV2_T(T,V)
+        d3FvibdV3_T = self.vib.d3FdV3_T(T,V)
+        d4FvibdV4_T = self.vib.d4FdV4_T(T,V)
+        d2FvibdVdT = self.vib.d2FdVdT(T,V)
+        d3FvibdV2dT = self.vib.d3FdV2dT(T,V)
+        d3FvibdVdT2 = self.vib.d3FdVdT2(T,V)
+
+        Eel = self.el.E(T, V)
+        Sel = self.el.S(T, V)
+
+        dFeldV_T = self.el.dFdV_T(T, V)
         d2FeldT2_V = self.el.d2FdT2_V(T, V)
         d2FeldV2_T = self.el.d2FdV2_T(T, V)
         d3FeldV3_T = self.el.d3FdV3_T(T, V)
@@ -188,6 +168,10 @@ class nDeb:
         d3FeldV2dT = self.el.d3FdV2dT(T, V)
         d3FeldVdT2 = self.el.d3FdVdT2(T, V)
 
+        Edef = self.deff.E(T, V)
+        Sdef = self.deff.S(T, V)
+
+        dFdefdV_T = self.deff.dFdV_T(T, V)
         d2FdefdT2_V = self.deff.d2FdT2_V(T, V)
         d2FdefdV2_T = self.deff.d2FdV2_T(T, V)
         d3FdefdV3_T = self.deff.d3FdV3_T(T, V)
@@ -196,6 +180,10 @@ class nDeb:
         d3FdefdV2dT = self.deff.d3FdV2dT(T, V)
         d3FdefdVdT2 = self.deff.d3FdVdT2(T, V)
 
+        Ea = self.anh.E(T, V)
+        Sa = self.anh.S(T, V)
+
+        dFadV_T = self.anh.dFdV_T(T, V)
         d2FadT2_V = self.anh.d2FdT2_V(T, V)
         d2FadV2_T = self.anh.d2FdV2_T(T, V)
         d3FadV3_T = self.anh.d3FdV3_T(T, V)
@@ -204,10 +192,11 @@ class nDeb:
         d3FadV2dT = self.anh.d3FdV2dT(T, V)
         d3FadVdT2 = self.anh.d3FdVdT2(T, V)
 
-        d2FdT2_V = d2E0dT2_V + d2FvibdT2_V + d2FeldT2_V + d2FdefdT2_V + d2FadT2_V
+        dFdV_T = dE0dV_T + dFvibdV_T + dFeldV_T + dFdefdV_T + dFadV_T
         d2FdV2_T = d2E0dV2_T + d2FvibdV2_T + d2FeldV2_T + d2FdefdV2_T + d2FadV2_T
         d3FdV3_T = d3E0dV3_T + d3FvibdV3_T + d3FeldV3_T + d3FdefdV3_T + d3FadV3_T
         d4FdV4_T = d4E0dV4_T + d4FvibdV4_T + d4FeldV4_T + d4FdefdV4_T + d4FadV4_T
+        d2FdT2_V = d2E0dT2_V + d2FvibdT2_V + d2FeldT2_V + d2FdefdT2_V + d2FadT2_V
         d2FdVdT = d2E0dVdT + d2FvibdVdT + d2FeldVdT + d2FdefdVdT + d2FadVdT
         d3FdV2dT = d3E0dV2dT + d3FvibdV2dT + d3FeldV2dT + d3FdefdV2dT + d3FadV2dT
         d3FdVdT2 = d3E0dVdT2 + d3FvibdVdT2 + d3FeldVdT2 + d3FdefdVdT2 + d3FadVdT2
@@ -239,24 +228,11 @@ class nDeb:
 
         dKsdP_T = dKsdV_T / dPdV_T
         Ksp = dKsdP_T
-        G = self.G(T, V, P)
 
-        Evib = self.vib.E(T, V)
-        Eel = self.el.E(T, V)
-        Edef = self.deff.E(T, V)
-        Ea = self.anh.E(T, V)
-        E0 = self.EOS.E0(V)
-        E = E0 + Evib + Eel + Edef + Ea
-
-        Svib = self.vib.S(T, V)
-        Sel = self.el.S(T, V)
-        Sdef = self.deff.S(T, V)
-        Sa = self.anh.S(T, V)
         S = Svib + Sel + Sdef + Sa
-
-        Fvib = self.vib.F(T, V)
-        Evib = self.vib.E(T, V)
-        Svib = self.vib.S(T, V)
+        E = E0 + Evib + Eel + Edef + Ea
+        F = E - T*S
+        G = F - dFdV_T*V
 
         Cvvib = -T * d2FvibdT2_V
         dE0dV_T = self.EOS.dE0dV_T(V)
@@ -284,4 +260,4 @@ class nDeb:
                 'G': G, 'E': E, 'S': S, 'E0': E0, 'Fvib': Fvib, 'Evib': Evib, 'Svib': Svib,
                 'Cvvib': Cvvib, 'Pcold': Pcold, 'dPdT_V': dPdT_V, 'G^2': Ktp ** 2 - 2 * Kt * Ktpp,
                 'dSdP_T': dSdP_T, 'dKtdT_P': dKtdT_P, 'dadP_T': dadP_T, 'dCpdP_T': dCpdP_T, 'ddSdT_PdP_T': ddSdT_PdP_T,
-                'DM': self.vib.DM}
+                'P': -dFdV_T}

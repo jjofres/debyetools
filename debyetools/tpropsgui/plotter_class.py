@@ -38,7 +38,7 @@ class dataplot:
             try:
                 getattr(self.lines,k)['settings'] =line_settings[k]
             except:
-                getattr(self.lines,k)['settings'] = {'plot':True,'label':0,'linestyle':'-','color':'gray','marker':'x','markerfacecolor':'gray','markeredgecolor':'cornflowerblue','linewidth':4,'markersize':8}
+                getattr(self.lines,k)['settings'] = {'plot':True,'label':0,'linestyle':'-','color':'gray','marker':'x','markerfacecolor':'gray','markeredgecolor':'cornflowerblue','linewidth':2,'markersize':8}
 
     def create_window(self,simple=False):
         if simple == True:

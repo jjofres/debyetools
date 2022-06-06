@@ -120,7 +120,8 @@ def plot_fig(saved_ins,lines,show=False):
         linei = getattr(lines,key)
         if linei['settings']['plot']:
             ls=linei['settings']
-            ax.plot(linei['x'],linei['y'],label =linei['label'], linestyle=ls['linestyle'],color=ls['color'],marker=ls['marker'],markerfacecolor=ls['markerfacecolor'],
+
+            ax.plot(linei['x'],linei['y'],label ='' if linei['label']=='XX' else linei['label'], linestyle=ls['linestyle'],color=ls['color'],marker=ls['marker'],markerfacecolor=ls['markerfacecolor'],
                     markeredgecolor=ls['markeredgecolor'],linewidth=ls['linewidth'],markersize=ls['markersize'])
 
     if saved_ins['use_title']:
@@ -135,7 +136,7 @@ def plot_fig(saved_ins,lines,show=False):
     if not saved_ins['auto_ylim']:
         ax.set_ylim(bottom=float(saved_ins['limymin']),top=float(saved_ins['limymax']),auto=not saved_ins['auto_ylim'])
     if saved_ins['use_legend']:
-        ax.legend(loc=saved_ins['legend_loc'],ncol=int(saved_ins['legendncol']),fontsize=float(saved_ins['legendfontsize']))
+        ax.legend(loc=saved_ins['legend_loc'],ncol=int(saved_ins['legendncol']),fontsize=float(saved_ins['legendfontsize']), handlelength=2,columnspacing=0.5)#,labelspacing=0.3,columnspacing=0.5,handletextpad=0.2)
     if saved_ins['use_grid']:
         ax.grid()
     fig.subplots_adjust(left=float(saved_ins['lmargin']), bottom=float(saved_ins['bmargin']), right=float(saved_ins['rmargin']), top=float(saved_ins['tmargin']), wspace=0, hspace=0)

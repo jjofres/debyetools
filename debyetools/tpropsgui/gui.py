@@ -147,6 +147,7 @@ def gui():
             try:
                 EM = EM = load_EM(str_folderbrowser+'/OUTCAR.eps')
                 nu = poisson_ratio(EM)
+                print(nu)
                 # print(nu)
                 window['--I_nu'].update('%.3f' % (nu))
             except Exception as e:
@@ -221,9 +222,10 @@ def gui():
 
                 for k in opened_EOS_dict.keys():
                     if opened_EOS_dict[k]:
+                        print(nu, m, p_intanh, EOS2plot_dict[k], p_electronic,p_defects, p_anh, mode)
                         nDebs_dict[k]['ndeb'] = nDeb(nu, m, p_intanh, EOS2plot_dict[k], p_electronic,
                                              p_defects, p_anh, mode=mode)
-                        Tmin, Vmin = nDebs_dict[k]['ndeb'].min_G(T,1e-5,Pressure)
+                        Tmin, Vmin = nDebs_dict[k]['ndeb'].min_G(T,0.5e-5,Pressure)
                         #Tmin, Vmin = nDebs_dict[k]['ndeb'].min_G(T,nDebs_dict[k]['ndeb'].EOS.V0,Pressure, Vmin[0], a_DM, b_DM)
                         nDebs_dict[k]['T'] = np.array(Tmin)
                         nDebs_dict[k]['V'] = Vmin

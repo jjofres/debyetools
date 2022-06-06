@@ -85,6 +85,8 @@ class Vibrational:
         :param float T: Temperature.
         :param float V: Volume.
         """
+        print(self.mode,self.b_DM,self.a_DM)
+
         self.Anh = self.intanh.Anh(T, V)
         self.dAnhdT_V = self.intanh.dAnhdT_V()
         self.dAnhdV_T = self.intanh.dAnhdV_T(T, V)
@@ -140,28 +142,14 @@ class Vibrational:
         vD = kv * V0_DM * vDsqrt
         xD = self.xDcte * (1 / V0_DM) ** (1 / 3.) / kB
         if self.mode == 'jj':
-            dvDdV = kv * vDsqrt - kv * V0_DM * d2P0dV2_0 / (2 * vDsqrt * r * m)
-            d2vDdV2 = -kv * d2P0dV2_0 / (vDsqrt * r * m) - kv * V0_DM * d2P0dV2_0 ** 2 / (
-                        4 * (vDPrm) ** (3 / 2) * r ** 2 * m ** 2) - kv * V0_DM * d3P0dV3_0 / (2 * vDsqrt * r * m)
-            d3vDdV3 = -3 * kv * d2P0dV2_0 ** 2 / (4 * (vDPrm) ** (3 / 2) * r ** 2 * m ** 2) - 3 * kv * d3P0dV3_0 / (
-                        2 * vDsqrt * r * m) - 3 * kv * V0_DM * d2P0dV2_0 ** 3 / (
-                                  8 * (vDPrm) ** (5 / 2) * r ** 3 * m ** 3) - 3 * kv * V0_DM * d2P0dV2_0 * d3P0dV3_0 / (
-                                  4 * (vDPrm) ** (3 / 2) * r ** 2 * m ** 2) - kv * V0_DM * d4P0dV4_0 / (
-                                  2 * vDsqrt * r * m)
-            d4vDdV4 = -3 * kv * (d2P0dV2_0) ** 3 / (2 * (-dP0dV_0 / (r * m)) ** (5 / 2) * r ** 3 * m ** 3) - 3 * kv * (
-                d2P0dV2_0) * (d3P0dV3_0) / ((-dP0dV_0 / (r * m)) ** (3 / 2) * r ** 2 * m ** 2) - 2 * kv * (
-                          d4P0dV4_0) / (np.sqrt(-dP0dV_0 / (r * m)) * r * m) - 15 * kv * V0_DM * (d2P0dV2_0) ** 4 / (
-                                  16 * (-dP0dV_0 / (r * m)) ** (7 / 2) * r ** 4 * m ** 4) - 9 * kv * V0_DM * (
-                          d2P0dV2_0) ** 2 * (d3P0dV3_0) / (
-                                  4 * (-dP0dV_0 / (r * m)) ** (5 / 2) * r ** 3 * m ** 3) - 3 * kv * V0_DM * (
-                          d3P0dV3_0) ** 2 / (4 * (-dP0dV_0 / (r * m)) ** (3 / 2) * r ** 2 * m ** 2) - kv * V0_DM * (
-                          d2P0dV2_0) * (d4P0dV4_0) / (
-                                  (-dP0dV_0 / (r * m)) ** (3 / 2) * r ** 2 * m ** 2) - kv * V0_DM * (d5P0dV5_0) / (
-                                  2 * np.sqrt(-dP0dV_0 / (r * m)) * r * m)
-            dxDdV = - self.xDcte / (3 * kB * V0_DM ** (4 / 3.))
-            d2xDdV2 = 4 * self.xDcte / (9 * kB * V0_DM ** (7 / 3.))
-            d3xDdV3 = -28 * self.xDcte / (27 * V0_DM ** (10 / 3) * kB)
-            d4xDdV4 = 280 * self.xDcte / (81 * V0_DM ** (13 / 3) * kB)
+            dvDdV = kv*vDsqrt-kv*V0_DM*d2P0dV2_0/(2*vDsqrt*r*m)
+            d2vDdV2 = -kv*d2P0dV2_0/(vDsqrt*r*m)-kv*V0_DM*d2P0dV2_0**2/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V0_DM*d3P0dV3_0/(2*vDsqrt*r*m)
+            d3vDdV3 = -3*kv*d2P0dV2_0**2/(4*(vDPrm)**(3/2)*r**2*m**2)-3*kv*d3P0dV3_0/(2*vDsqrt*r*m)-3*kv*V0_DM*d2P0dV2_0**3/(8*(vDPrm)**(5/2)*r**3*m**3)-3*kv*V0_DM*d2P0dV2_0*d3P0dV3_0/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V0_DM*d4P0dV4_0/(2*vDsqrt*r*m)
+            d4vDdV4 = -3*kv*(d2P0dV2_0)**3/(2*(-dP0dV_0/(r*m))**(5/2)*r**3*m**3)-3*kv*(d2P0dV2_0)*(d3P0dV3_0)/((-dP0dV_0/(r*m))**(3/2)*r**2*m**2)-2*kv*(d4P0dV4_0)/(np.sqrt(-dP0dV_0/(r*m))*r*m)-15*kv*V0_DM*(d2P0dV2_0)**4/(16*(-dP0dV_0/(r*m))**(7/2)*r**4*m**4)-9*kv*V0_DM*(d2P0dV2_0)**2*(d3P0dV3_0)/(4*(-dP0dV_0/(r*m))**(5/2)*r**3*m**3)-3*kv*V0_DM*(d3P0dV3_0)**2/(4*(-dP0dV_0/(r*m))**(3/2)*r**2*m**2)-kv*V0_DM*(d2P0dV2_0)*(d4P0dV4_0)/((-dP0dV_0/(r*m))**(3/2)*r**2*m**2)-kv*V0_DM*(d5P0dV5_0)/(2*np.sqrt(-dP0dV_0/(r*m))*r*m)
+            dxDdV = -self.xDcte/(3*kB*V0_DM**(4/3.))
+            d2xDdV2 = 4*self.xDcte/(9*kB*V0_DM**(7/3.))
+            d3xDdV3 = -28*self.xDcte/(27*V0_DM**(10/3)*kB)
+            d4xDdV4 = 280*self.xDcte/(81*V0_DM**(13/3)*kB)
         else:
             dvDdV = 0  # kv*vDsqrt - kv*V0_DM*d2P0dV2_0/(2*vDsqrt*r*m)
             d2vDdV2 = 0  # -kv*d2P0dV2_0/(vDsqrt*r*m)-kv*V0_DM*d2P0dV2_0**2/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V0_DM*d3P0dV3_0/(2*vDsqrt*r*m)
@@ -172,112 +160,23 @@ class Vibrational:
             d3xDdV3 = 0  # -28*self.xDcte/(27*V0_DM**(10/3)*kB)
             d4xDdV4 = 0  # 280*self.xDcte/(81*V0_DM**(13/3)*kB)
 
-        DM = (V * d2E0dV2_T / B0_DM) ** b_DM / (V / V0_DM) ** a_DM
+        DM = (V*d2E0dV2_T/B0_DM)**b_DM/(V/V0_DM)**a_DM
         self.DM = DM
-        dDMdV = (V * d2E0dV2_T / B0_DM) ** b_DM * b_DM * (d2E0dV2_T / B0_DM + V * (d3E0dV3_T) / B0_DM) * B0_DM / (
-                    V * d2E0dV2_T * (V / V0_DM) ** a_DM) - (V * d2E0dV2_T / B0_DM) ** b_DM * a_DM / (
-                            (V / V0_DM) ** a_DM * V)
-        d2DMdV2 = V0_DM ** a_DM * B0_DM ** (-b_DM) * (
-                    -2 * (d3E0dV3_T) * b_DM * d2E0dV2_T ** (b_DM - 1) * (-b_DM + a_DM) * V ** (
-                        b_DM - 1 - a_DM) + d2E0dV2_T ** b_DM * (-b_DM + 1 + a_DM) * (-b_DM + a_DM) * V ** (
-                                b_DM - 2 - a_DM) + V ** (b_DM - a_DM) * (
-                                d2E0dV2_T ** (b_DM - 1) * (d4E0dV4_T) + (d3E0dV3_T) ** 2 * d2E0dV2_T ** (b_DM - 2) * (
-                                    b_DM - 1)) * b_DM)
-        d3DMdV3 = -V0_DM ** a_DM * B0_DM ** (-b_DM) * (
-                    d2E0dV2_T ** b_DM * (-b_DM + 2 + a_DM) * (-b_DM + 1 + a_DM) * (-b_DM + a_DM) * V ** (
-                        b_DM - a_DM - 3) - 3 * b_DM * (-(
-                        d2E0dV2_T ** (b_DM - 1) * (d4E0dV4_T) + (d3E0dV3_T) ** 2 * d2E0dV2_T ** (b_DM - 2) * (
-                            b_DM - 1)) * (-b_DM + a_DM) * V ** (b_DM - 1 - a_DM) + (d3E0dV3_T) * d2E0dV2_T ** (
-                                                                   b_DM - 1) * (-b_DM + 1 + a_DM) * (
-                                                                   -b_DM + a_DM) * V ** (b_DM - 2 - a_DM) + (
-                                                                   1 / 3) * V ** (b_DM - a_DM) * (
-                                                                   d2E0dV2_T ** (b_DM - 1) * (d5E0dV5_T) + (
-                                                               d3E0dV3_T) * (3 * d2E0dV2_T ** (b_DM - 2) * (
-                                                               d4E0dV4_T) + (d3E0dV3_T) ** 2 * d2E0dV2_T ** (
-                                                                                         b_DM - 3) * (b_DM - 2)) * (
-                                                                               b_DM - 1))))
-        d4DMdV4 = (d2E0dV2_T ** b_DM * (-b_DM + a_DM) * (-b_DM + a_DM + 3) * (-b_DM + 2 + a_DM) * (
-                    -b_DM + 1 + a_DM) * V ** (b_DM - 4 - a_DM) + 6 * b_DM * ((d2E0dV2_T ** (b_DM - 1) * (d4E0dV4_T) + (
-            d3E0dV3_T) ** 2 * d2E0dV2_T ** (b_DM - 2) * (b_DM - 1)) * (-b_DM + a_DM) * (-b_DM + 1 + a_DM) * V ** (
-                                                                                         b_DM - 2 - a_DM) - (1 / 3) * (
-                                                                                         2 * (
-                                                                                             d2E0dV2_T ** (b_DM - 1) * (
-                                                                                         d5E0dV5_T) + (d3E0dV3_T) * (
-                                                                                                         3 * d2E0dV2_T ** (
-                                                                                                             b_DM - 2) * (
-                                                                                                             d4E0dV4_T) + (
-                                                                                                             d3E0dV3_T) ** 2 * d2E0dV2_T ** (
-                                                                                                                     b_DM - 3) * (
-                                                                                                                     b_DM - 2)) * (
-                                                                                                         b_DM - 1))) * (
-                                                                                         -b_DM + a_DM) * V ** (
-                                                                                         b_DM - 1 - a_DM) - 2 * (
-                                                                                 d3E0dV3_T) * d2E0dV2_T ** (
-                                                                                         b_DM - 1) * (
-                                                                                         -b_DM + 2 + a_DM) * (
-                                                                                         -b_DM + 1 + a_DM) * (
-                                                                                         -b_DM + a_DM) * V ** (
-                                                                                         b_DM - a_DM - 3) * (1 / 3) + (
-                                                                                         1 / 6) * (
-                                                                                         d2E0dV2_T ** (b_DM - 1) * (
-                                                                                     d6E0dV6_T) + (4 * (
-                                                                                     d3E0dV3_T) * d2E0dV2_T ** (
-                                                                                                               b_DM - 2) * (
-                                                                                                       d5E0dV5_T) + 3 * d2E0dV2_T ** (
-                                                                                                               b_DM - 2) * (
-                                                                                                       d4E0dV4_T) ** 2 + (
-                                                                                                               6 * d2E0dV2_T ** (
-                                                                                                                   b_DM - 3) * (
-                                                                                                                   d4E0dV4_T) + (
-                                                                                                                   d3E0dV3_T) ** 2 * d2E0dV2_T ** (
-                                                                                                                           b_DM - 4) * (
-                                                                                                                           b_DM - 3)) * (
-                                                                                                               b_DM - 2) * (
-                                                                                                       d3E0dV3_T) ** 2) * (
-                                                                                                     b_DM - 1)) * V ** (
-                                                                                         b_DM - a_DM))) * V0_DM ** a_DM * B0_DM ** (
-                      -b_DM)
+        dDMdV = (V*d2E0dV2_T/B0_DM)**b_DM*b_DM*(d2E0dV2_T/B0_DM+V*(d3E0dV3_T)/B0_DM)*B0_DM/(V*d2E0dV2_T*(V/V0_DM)**a_DM)-(V*d2E0dV2_T/B0_DM)**b_DM*a_DM/((V/V0_DM)**a_DM*V)
+        d2DMdV2 = V0_DM**a_DM*B0_DM**(-b_DM)*(-2*(d3E0dV3_T)*b_DM*d2E0dV2_T**(b_DM-1)*(-b_DM+a_DM)*V**(b_DM-1-a_DM)+d2E0dV2_T**b_DM*(-b_DM+1+a_DM)*(-b_DM+a_DM)*V**(b_DM-2-a_DM)+V**(b_DM-a_DM)*(d2E0dV2_T**(b_DM-1)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-2)*(b_DM-1))*b_DM)
+        d3DMdV3 = -V0_DM**a_DM*B0_DM**(-b_DM)*(d2E0dV2_T**b_DM*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*(-b_DM+a_DM)*V**(b_DM-a_DM-3)-3*b_DM*(-(d2E0dV2_T**(b_DM-1)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-2)*(b_DM-1))*(-b_DM+a_DM)*V**(b_DM-1-a_DM)+(d3E0dV3_T)*d2E0dV2_T**(b_DM-1)*(-b_DM+1+a_DM)*(-b_DM+a_DM)*V**(b_DM-2-a_DM)+(1/3)*V**(b_DM-a_DM)*(d2E0dV2_T**(b_DM-1)*(d5E0dV5_T)+(d3E0dV3_T)*(3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-3)*(b_DM-2))*(b_DM-1))))
+        d4DMdV4 = (d2E0dV2_T**b_DM*(-b_DM+a_DM)*(-b_DM+a_DM+3)*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*V**(b_DM-4-a_DM)+6*b_DM*((d2E0dV2_T**(b_DM-1)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-2)*(b_DM-1))*(-b_DM+a_DM)*(-b_DM+1+a_DM)*V**(b_DM-2-a_DM)-(1/3)*(2*(d2E0dV2_T**(b_DM-1)*(d5E0dV5_T)+(d3E0dV3_T)*(3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-3)*(b_DM-2))*(b_DM-1)))*(-b_DM+a_DM)*V**(b_DM-1-a_DM)-2*(d3E0dV3_T)*d2E0dV2_T**(b_DM-1)*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*(- b_DM +a_DM)*V**(b_DM-a_DM-3)*(1/3)+(1/6)*(d2E0dV2_T**(b_DM-1)*(d6E0dV6_T)+(4*(d3E0dV3_T)*d2E0dV2_T**(b_DM-2)*(d5E0dV5_T)+3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)**2+(6*d2E0dV2_T**(b_DM-3)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-4)*(b_DM-3))*(b_DM-2)*(d3E0dV3_T)**2)*(b_DM-1))*V**(b_DM-a_DM)))*V0_DM**a_DM*B0_DM**(-b_DM)
 
-        self.tD = xD * vD * DM * self.Anh
-        self.dtDdV_T = dxDdV * vD * DM * self.Anh + xD * dvDdV * DM * self.Anh + xD * vD * dDMdV * self.Anh + xD * vD * DM * self.dAnhdV_T
-        self.dtDdT_V = xD * vD * DM * self.dAnhdT_V
-        self.d2tDdV2_T = xD * vD * self.d2AnhdV2_T * DM + xD * vD * self.Anh * d2DMdV2 + xD * d2vDdV2 * self.Anh * DM + d2xDdV2 * vD * self.Anh * DM + (
-                    2 * vD * xD * dDMdV + 2 * DM * (dxDdV * vD + xD * dvDdV)) * self.dAnhdV_T + (
-                                     2 * ((dxDdV * vD + xD * dvDdV) * dDMdV + DM * dvDdV * dxDdV)) * self.Anh
+        self.tD = xD*vD*DM*self.Anh
+        self.dtDdV_T = dxDdV*vD*DM*self.Anh+xD*dvDdV*DM*self.Anh+xD*vD*dDMdV*self.Anh+xD*vD*DM*self.dAnhdV_T
+        self.dtDdT_V = xD*vD*DM*self.dAnhdT_V
+        self.d2tDdV2_T =xD*vD*self.d2AnhdV2_T*DM+xD*vD*self.Anh*d2DMdV2+xD*d2vDdV2*self.Anh*DM+d2xDdV2*vD*self.Anh*DM+(2*vD*xD*dDMdV+2*DM*(dxDdV*vD+xD*dvDdV))*self.dAnhdV_T+(2*((dxDdV*vD+xD*dvDdV)*dDMdV+DM*dvDdV*dxDdV))*self.Anh
         self.d2tDdT2_V = xD * vD * DM * self.d2AnhdT2_V
-        self.d2tDdVdT = xD * vD * self.d2AnhdVdT * DM + (
-                    vD * xD * dDMdV + DM * (dxDdV * vD + xD * dvDdV)) * self.dAnhdT_V
-        self.d3tDdV3_T = xD * vD * self.d3AnhdV3_T * DM + xD * vD * self.Anh * d3DMdV3 + xD * d3vDdV3 * self.Anh * DM + d3xDdV3 * vD * self.Anh * DM + (
-                    3 * vD * xD * dDMdV + 3 * DM * (dxDdV * vD + xD * dvDdV)) * self.d2AnhdV2_T + (
-                                     3 * self.dAnhdV_T * vD * xD + 3 * self.Anh * (
-                                         dxDdV * vD + xD * dvDdV)) * d2DMdV2 + (
-                                     3 * self.dAnhdV_T * DM * xD + 3 * self.Anh * (
-                                         DM * dxDdV + xD * dDMdV)) * d2vDdV2 + (
-                                     3 * self.dAnhdV_T * DM * vD + 3 * self.Anh * (
-                                         DM * dvDdV + vD * dDMdV)) * d2xDdV2 + ((
-                                                                                            6 * dxDdV * vD + 6 * xD * dvDdV) * dDMdV + 6 * DM * dvDdV * dxDdV) * self.dAnhdV_T + 6 * dxDdV * dvDdV * self.Anh * dDMdV
-        self.d3tDdV2dT = xD * vD * self.d3AnhdV2dT * DM + (
-                    2 * vD * xD * dDMdV + 2 * DM * (dxDdV * vD + xD * dvDdV)) * self.d2AnhdVdT + (
-                                     d2DMdV2 * vD * xD + d2vDdV2 * DM * xD + d2xDdV2 * DM * vD + (
-                                         2 * dxDdV * vD + 2 * xD * dvDdV) * dDMdV + 2 * DM * dvDdV * dxDdV) * self.dAnhdT_V
-        self.d3tDdVdT2 = xD * vD * self.d3AnhdVdT2 * DM + (
-                    vD * xD * dDMdV + DM * (dxDdV * vD + xD * dvDdV)) * self.d2AnhdT2_V
-        self.d4tDdV4_T = xD * vD * self.d4AnhdV4_T * DM + xD * vD * self.Anh * d4DMdV4 + xD * d4vDdV4 * self.Anh * DM + d4xDdV4 * vD * self.Anh * DM + (
-                    4 * vD * xD * dDMdV + 4 * DM * (dxDdV * vD + xD * dvDdV)) * self.d3AnhdV3_T + (
-                                     4 * self.dAnhdV_T * vD * xD + 4 * self.Anh * (
-                                         dxDdV * vD + xD * dvDdV)) * d3DMdV3 + (
-                                     4 * self.dAnhdV_T * DM * xD + 4 * self.Anh * (
-                                         DM * dxDdV + xD * dDMdV)) * d3vDdV3 + (
-                                     4 * self.dAnhdV_T * DM * vD + 4 * self.Anh * (
-                                         DM * dvDdV + vD * dDMdV)) * d3xDdV3 + (
-                                     6 * d2DMdV2 * vD * xD + 6 * d2vDdV2 * DM * xD + 6 * d2xDdV2 * DM * vD + (
-                                         12 * dxDdV * vD + 12 * xD * dvDdV) * dDMdV + 12 * DM * dvDdV * dxDdV) * self.d2AnhdV2_T + (
-                                     6 * d2vDdV2 * xD * self.Anh + 6 * d2xDdV2 * vD * self.Anh + (
-                                         12 * dxDdV * vD + 12 * xD * dvDdV) * self.dAnhdV_T + 12 * self.Anh * dvDdV * dxDdV) * d2DMdV2 + (
-                                     6 * d2xDdV2 * DM * self.Anh + (
-                                         12 * DM * dxDdV + 12 * xD * dDMdV) * self.dAnhdV_T + 12 * self.Anh * dDMdV * dxDdV) * d2vDdV2 + (
-                                     (
-                                                 12 * DM * dvDdV + 12 * vD * dDMdV) * self.dAnhdV_T + 12 * self.Anh * dDMdV * dvDdV) * d2xDdV2 + 24 * dxDdV * dvDdV * self.dAnhdV_T * dDMdV
+        self.d2tDdVdT = xD*vD*self.d2AnhdVdT*DM+(vD*xD*dDMdV+DM*(dxDdV*vD+xD*dvDdV))*self.dAnhdT_V
+        self.d3tDdV3_T = xD*vD*self.d3AnhdV3_T*DM+xD*vD*self.Anh*d3DMdV3+xD*d3vDdV3*self.Anh*DM+d3xDdV3*vD*self.Anh*DM+(3*vD*xD*dDMdV+3*DM*(dxDdV*vD+xD*dvDdV))*self.d2AnhdV2_T+(3*self.dAnhdV_T*vD*xD+3*self.Anh*(dxDdV*vD+xD*dvDdV))*d2DMdV2+(3*self.dAnhdV_T*DM*xD+3*self.Anh*(DM*dxDdV+xD*dDMdV))*d2vDdV2+(3*self.dAnhdV_T*DM*vD+3*self.Anh*(DM*dvDdV+vD*dDMdV))*d2xDdV2+((6*dxDdV*vD+6*xD*dvDdV)*dDMdV+6*DM*dvDdV*dxDdV)*self.dAnhdV_T+6*dxDdV*dvDdV*self.Anh*dDMdV
+        self.d3tDdV2dT =xD*vD*self.d3AnhdV2dT*DM+(2*vD*xD*dDMdV+2*DM*(dxDdV*vD+xD*dvDdV))*self.d2AnhdVdT+(d2DMdV2*vD*xD+d2vDdV2*DM*xD+d2xDdV2*DM*vD+(2*dxDdV*vD+2*xD*dvDdV)*dDMdV+2*DM*dvDdV*dxDdV)*self.dAnhdT_V
+        self.d3tDdVdT2 = xD*vD*self.d3AnhdVdT2*DM+(vD*xD*dDMdV+DM*(dxDdV*vD+xD*dvDdV))*self.d2AnhdT2_V
+        self.d4tDdV4_T = xD*vD*self.d4AnhdV4_T*DM+xD*vD*self.Anh*d4DMdV4+xD*d4vDdV4*self.Anh*DM+d4xDdV4*vD*self.Anh*DM+(4*vD*xD*dDMdV+4*DM*(dxDdV*vD+xD*dvDdV))*self.d3AnhdV3_T+(4*self.dAnhdV_T*vD*xD+4*self.Anh*(dxDdV*vD+xD*dvDdV))*d3DMdV3+(4*self.dAnhdV_T*DM*xD+4*self.Anh*(DM*dxDdV+xD*dDMdV))*d3vDdV3+(4*self.dAnhdV_T*DM*vD+4*self.Anh*(DM*dvDdV+vD*dDMdV))*d3xDdV3+(6*d2DMdV2*vD*xD+6*d2vDdV2*DM*xD+6*d2xDdV2*DM*vD+(12*dxDdV*vD+12*xD*dvDdV)*dDMdV+12*DM*dvDdV*dxDdV)*self.d2AnhdV2_T +(6*d2vDdV2*xD*self.Anh+6*d2xDdV2*vD*self.Anh+(12*dxDdV*vD+12*xD*dvDdV)*self.dAnhdV_T+12*self.Anh*dvDdV*dxDdV)*d2DMdV2+(6*d2xDdV2*DM*self.Anh+(12*DM*dxDdV+12*xD*dDMdV)*self.dAnhdV_T+12*self.Anh*dDMdV*dxDdV)*d2vDdV2+((12*DM*dvDdV+12*vD*dDMdV)*self.dAnhdV_T+12*self.Anh*dDMdV*dvDdV)*d2xDdV2+24*dxDdV*dvDdV*self.dAnhdV_T*dDMdV
 
     def E(self, T, V):
         x = self.tD / T
@@ -386,6 +285,27 @@ class Vibrational:
         D3 = D_3(x)
         dD3 = dD_3dx(x, D3)
         return 3*r*NAv*kB*(3*(self.dtDdV_T)*(1/8)+(self.dtDdV_T)*np.exp(-x)/(1-np.exp(-x))-(1/3)*dD3*(self.dtDdV_T))
+
+    def dFdT_V(self, T, V):
+        """
+        (d2F(T, V)/dT2)_V
+
+        :param float T: Temperature.
+        :param float V: Volume.
+        """
+
+        x = self.tD / T
+        ixs = np.where(x >= 653)
+        if len(ixs[0]) > 0:
+            if min(x[ixs]) >= 653:
+                for i in ixs:
+                    x[i] = 653
+        ex = np.exp(x)
+        D3 = D_3(x)
+        dD3dx = dD_3dx(x, D3)
+        #print(ex, D3, dD3dx, self.dtDdT_V, self.tD)
+        return 9*r*NAv*kB*(self.dtDdT_V)*(1/8) + 3*kB*r*NAv*np.log(1-np.exp(-x)) + 3*r*NAv*kB*(self.dtDdT_V)/(ex*(1-1/ex)) - 3*r*NAv*kB*self.tD/(T*ex*(1-1/ex)) - r*NAv*kB*dD3dx*(self.dtDdT_V) + r*NAv*kB*dD3dx*self.tD/T - r*NAv*kB*D3
+
     def d2FdT2_V(self, T, V):
         """
         (d2F(T, V)/dT2)_V

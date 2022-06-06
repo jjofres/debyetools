@@ -121,32 +121,28 @@ class Vibrational:
         :param float T: Temperature.
         :param float V: Volume.
         """
-        d2E0dV2_T_0 = self.EOS.d2E0dV2_T(V0_DM)
         d2E0dV2_T = self.EOS.d2E0dV2_T(V)
-        dE0dV_T_0 = self.EOS.dE0dV_T(V0_DM)
         if type(V) == np.ndarray:
-            if d2E0dV2_T_0<0:return 1
+            if d2E0dV2_T<0:return 1
         kv = self.kv
         m = self.m
 
-        dP0dV_0   = - d2E0dV2_T_0
+        dP0dV   = - d2E0dV2_T
 
-        B0_DM = V0_DM*self.EOS.d2E0dV2_T(V0_DM)
-        DM = (V*d2E0dV2_T/B0_DM)**b_DM/(V/V0_DM)**a_DM
+        DM = 1#(V*d2E0dV2_T/B0_DM)**b_DM/(V/V0_DM)**a_DM
         Anh         = self.intanh.Anh(T,V)
         xDcte = self.xDcte
-        xD0      = xDcte*(1/V0_DM)**(1/3.)/kB
-        vDPrm0  = - dP0dV_0/(r*m)
-        vDsqrt0 = np.sqrt( vDPrm0)
-        vD0      = kv*V0_DM*vDsqrt0
-        tD0        = xD0*vD0*Anh*DM
+        xD      = xDcte*(1/V)**(1/3.)/kB
+        vDPrm  = - dP0dV/(r*m)
+        vDsqrt = np.sqrt( vDPrm)
+        vD      = kv*V*vDsqrt
+        tD        = xD*vD*Anh*DM
 
-        x = tD0/T
+        x = tD/T
         D3 = D_3(x)
-        # print(tD/T, tD, T)
         if type(V) is not np.ndarray:
             if x<0.07:return 1
-        return 3*r*NAv*kB*(tD0*3/8 + T*np.log(1-np.exp(-x))  - D3*T/3)
+        return 3*r*NAv*kB*(tD*3/8 + T*np.log(1-np.exp(-x))  - D3*T/3)
 
     def F(self, T, V, V0_DM, a_DM, b_DM):
         """

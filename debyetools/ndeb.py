@@ -19,7 +19,7 @@ class nDeb:
     Instantiate an object that contains all the parameters for the evaluation of
     the thermodynamic properties of a certain element or compound. Also contains
     the method that implements an original Debye formalism for the calculation of
-    the thermodynamic properties
+    the thermodynamic properties.
 
     :param float nu: Poisson's ratio.
     :param float m: mass in Kg/mol-at

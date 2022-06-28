@@ -14,6 +14,7 @@ def gui():
     from debyetools.fs_compound_db import fit_FS
     import numpy as np
     from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+    import debyetools.tpropsgui.plotter_class as plotter
 
 
     sg.set_options(element_padding=(0, 0))
@@ -39,7 +40,7 @@ def gui():
     layout = layout(EOS_str_lst)
 
     #### Window creation
-    window = sg.Window('ThermoProps V1.1', layout=layout)
+    window1, window2, window3,window4,window5 = sg.Window('ThermoProps V1.1', layout=layout, finalize=True), None, None, None, None
 
     #### loop to wait for user action
     all_props={}
@@ -48,24 +49,49 @@ def gui():
                     5.3071034596e-04, -7.0100707467e-06]
     FS_db_params = {}
 
-
+    data4plot_dict = {}
+    window5_counter = 0
+    windows_ix = ''
     while True:
-        event, values = window.read()
+        window,event, values = sg.read_all_windows()
+        # print(window,event)
+        # print(window1, window2, window3,window4,window5)
         print(event)
+        try:
+            ips = event.index('ix')
+            ips2 = event[ips:].index('-')
+            windows_ix = event[ips+2:ips+ips2]
+            print(windows_ix)
+        except:
+            print(False)
 
         # #close window
-        if event in (sg.WIN_CLOSED, '--B_close'):
-            break
+        if event == sg.WIN_CLOSED or event == '--B_close':
+            window.close()
+            if window == window2:       # if closing win 2, mark as closed
+                window2 = None
+                continue
+            elif window == window3:       # if closing win 2, mark as closed
+                window3 = None
+                continue
+            elif window == window4:       # if closing win 2, mark as closed
+                window4 = None
+                continue
+            elif window == window5:       # if closing win 2, mark as closed
+                window5 = None
+                continue
+            elif window == window1:     # if closing win 1, exit program
+                break
         #
         # #file browser
-        if event == '--I_FILEBROWSE_':
+        elif event == '--I_FILEBROWSE_':
             try:
                 # opened_EOS_dict = events.fbrowser_resets(window, opened_EOS_dict)
                 str_folderbrowser = events.fbrowser_fill_browser(window, event)
                 checked_EOS_dict = events.fbrowser_update_fields(window, contcar_str, mws_dict, str_folderbrowser, opened_EOS_dict,EOS_long_lst,EOS_str_lst,checked_EOS_dict)
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
-        if event == '||B_add_EOS':
+        elif event == '||B_add_EOS':
             try:
                 events.add_EOS(window, opened_EOS_dict,EOS_long_lst)
             #     for k in opened_EOS_dict.keys():
@@ -79,7 +105,7 @@ def gui():
                 sg.popup_ok(traceback.format_exc())
 #
         #EOS calculation Checkbox
-        if '--Chk_calc_params_' in event:
+        elif '--Chk_calc_params_' in event:
             try:
                 events.chk_calc_params(window,event)
             except Exception as e:
@@ -87,7 +113,7 @@ def gui():
 
         #
         #EOS fitting button
-        if event == '||B_run_eos_fitting':
+        elif event == '||B_run_eos_fitting':
             try:
                 V_DFT, E_DFT = load_V_E(str_folderbrowser, str_folderbrowser+'/CONTCAR.5', units='J/mol')
                 for k in opened_EOS_dict:
@@ -137,13 +163,28 @@ def gui():
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
         # Plot the fitting
-        if event == '||B_PlotfittingEOS':
+        elif event == '||B_PlotfittingEOS':
             try:
-                events.plot_EvV(window, EOS2plot_dict, opened_EOS_dict)
+                if  window2 is not None:
+                    window2.close()
+                window2 = events.plot_EvV(window, EOS2plot_dict, opened_EOS_dict,window5_counter)
+                window5_counter+=1
+
+            except Exception as e:
+                sg.popup_ok(traceback.format_exc())
+        elif event == '--B_edit_fig':
+            try:
+                if  window3 is not None:
+                    window3.close()
+                data4plot_dict[str(window5_counter)] = events.plot_EvV_full(window, EOS2plot_dict, opened_EOS_dict,window5_counter)
+                window3 = data4plot_dict[str(window5_counter)].window
+                window5_counter+=1
+
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
 
-        if event == '||B_calc_nu':
+
+        elif event == '||B_calc_nu':
             try:
                 EM = EM = load_EM(str_folderbrowser+'/OUTCAR.eps')
                 nu = poisson_ratio(EM)
@@ -152,7 +193,7 @@ def gui():
                 window['--I_nu'].update('%.3f' % (nu))
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
-        if event == '||B_calc_el':
+        elif event == '||B_calc_el':
             try:
                 E, N, Ef = load_doscar(str_folderbrowser+'/DOSCAR.EvV.')
                 p_electronic = fit_electronic(V_DFT, p_el_initial,E,N,Ef)
@@ -164,7 +205,7 @@ def gui():
                 print(e.__class__)
                 sg.popup_ok(traceback.format_exc())
 
-        if event == '||B_run_minF':
+        elif event == '||B_run_minF':
             # mode=''
             try:
                 for k in EOS_str_lst:
@@ -247,14 +288,17 @@ def gui():
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
 
-        if event == '||B_plotter':
+        elif event == '||B_plotter':
             try:
-                events.plot_VvT(window)
+                if  window4 is not None:
+                    window4.close()
+                window4 = events.plot_VvT(window,window5_counter)
+                window5_counter +=1
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
 
 
-        if event == '||B_eval_tprops':
+        elif event == '||B_eval_tprops':
             try:
                 for o in opened_EOS_dict:
                     if opened_EOS_dict[o]:
@@ -302,43 +346,48 @@ def gui():
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
 
-        if event == '||B_plotter_tprops':
+        elif event == '||B_plotter_tprops':
             try:
                 keys_EOS = []
                 for o in opened_EOS_dict:
                     if opened_EOS_dict[o]:
                         keys_EOS.append(o)
-                events.plot_tprops(window,keys_EOS)
+                # if  window5 is not None:
+                #     window5.close()
+                data4plot_dict[str(window5_counter)] = events.plot_tprops(window,keys_EOS,window5_counter)
+                window5 = data4plot_dict[str(window5_counter)].window
+                window5_counter+=1
+                # print(window5)
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
 
         #electronic Checkbox
-        if event == '--Chk_el':
+        elif event == '--Chk_el':
             try:
                 events.chk_el(window,event)
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
         #intrinsic anharmonicity Checkbox
-        if event == '--Chk_def':
+        elif event == '--Chk_def':
             try:
                 events.chk_def(window,event)
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
         #intrinsic anharmonicity Checkbox
-        if event == '--Chk_intanh':
+        elif event == '--Chk_intanh':
             try:
                 events.chk_intanh(window,event)
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
 
-        if event == '--Chk_anhxc':
+        elif event == '--Chk_anhxc':
             try:
                 events.chk_anhxc(window,event)
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
         #
         # #parametrization of FS parameters button
-        if event == '||B_run_fs_params':
+        elif event == '||B_run_fs_params':
             try:
                 for o in opened_EOS_dict:
                     if opened_EOS_dict[o]:
@@ -373,12 +422,12 @@ def gui():
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
 
-        if '||B_plotter_fsprop2plt' in event:
+        elif '||B_plotter_fsprop2plt' in event:
             try:
-                events.plot_fsprops(window,event,FS_db_params, float(window['--I_fs_Tfrom'].get()),float(window['--I_fs_Tto'].get()), tprops_dict_all)
+                window6 = events.plot_fsprops(window,event,FS_db_params, float(window['--I_fs_Tfrom'].get()),float(window['--I_fs_Tto'].get()), tprops_dict_all)
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
-        if '--Chk_mode_' in event:
+        elif '--Chk_mode_' in event:
             window['--M_minF_output'].update('')
             l = ['jj', 'DM', 'Sl', 'VZ', 'mfv']
             l.remove(event.replace('--Chk_mode_',''))
@@ -398,4 +447,150 @@ def gui():
                 mode = 'xx'
             print(mode)
 
-        checked_EOS_dict = events.update_diabled(window,opened_EOS_dict,EOS_str_lst,checked_EOS_dict)
+
+        elif event in ['--B_ix'+windows_ix+'-figwidth_UP', '--B_ix'+windows_ix+'-figheight_UP', '--B_ix'+windows_ix+'-figwidth_DN', '--B_ix'+windows_ix+'-figheight_DN']:
+            data4plot_dict[windows_ix].increment_b_updn(event, values,0.1,1)
+            data4plot_dict[windows_ix].update_formats()
+            data4plot_dict[windows_ix].update_canvas(show=False)
+        elif event in ['--B_ix'+windows_ix+'-titlesize_UP','--B_ix'+windows_ix+'-labelxsize_UP','--B_ix'+windows_ix+'-labelysize_UP','--B_ix'+windows_ix+'-titlesize_DN','--B_ix'+windows_ix+'-labelxsize_DN','--B_ix'+windows_ix+'-labelysize_DN','--B_ix'+windows_ix+'-legendncol_UP','--B_ix'+windows_ix+'-legendncol_DN','--B_ix'+windows_ix+'-legendfontsize_UP','--B_ix'+windows_ix+'-legendfontsize_DN']:
+            data4plot_dict[windows_ix].increment_b_updn(event, values,1,None)
+            data4plot_dict[windows_ix].update_formats()
+            data4plot_dict[windows_ix].update_canvas(show=False)
+        elif event in ['--B_ix'+windows_ix+'-lmargin_UP','--B_ix'+windows_ix+'-rmargin_UP','--B_ix'+windows_ix+'-bmargin_UP','--B_ix'+windows_ix+'-tmargin_UP','--B_ix'+windows_ix+'-lmargin_DN','--B_ix'+windows_ix+'-rmargin_DN','--B_ix'+windows_ix+'-bmargin_DN','--B_ix'+windows_ix+'-tmargin_DN','--B_ix'+windows_ix+'-titlexpos_UP','--B_ix'+windows_ix+'-titlexpos_DN','--B_ix'+windows_ix+'-titleypos_UP','--B_ix'+windows_ix+'-titleypos_DN']:
+            data4plot_dict[windows_ix].increment_b_updn(event, values,0.01,2)
+            data4plot_dict[windows_ix].update_formats()
+            data4plot_dict[windows_ix].update_canvas(show=False)
+        elif event in ['--B_ix'+windows_ix+'-limxmax_UP','--B_ix'+windows_ix+'-limxmin_UP','--B_ix'+windows_ix+'-limxmax_DN','--B_ix'+windows_ix+'-limxmin_DN','--B_ix'+windows_ix+'-limymax_UP','--B_ix'+windows_ix+'-limymin_UP','--B_ix'+windows_ix+'-limymax_DN','--B_ix'+windows_ix+'-limymin_DN']:
+            data4plot_dict[windows_ix].increment_b_updn(event, values,.1,2)
+            data4plot_dict[windows_ix].update_formats()
+            data4plot_dict[windows_ix].update_canvas(show=False)
+        elif event in ['ix'+windows_ix+'-use_grid','ix'+windows_ix+'-use_legend','ix'+windows_ix+'-use_xlabel','ix'+windows_ix+'-use_ylabel','ix'+windows_ix+'-use_title','ix'+windows_ix+'-auto_xlim','ix'+windows_ix+'-auto_ylim']:
+            data4plot_dict[windows_ix].update_formats()
+            data4plot_dict[windows_ix].update_canvas(show=False)
+
+        elif ('++plot++' in event or '--B_ix'+windows_ix+'-refresh' in event):
+            data4plot_dict[windows_ix].update_lines_settings()
+            data4plot_dict[windows_ix].update_formats()
+            data4plot_dict[windows_ix].update_canvas(show=False)
+
+        elif ('++linewidth++'in event or '++markersize++'in event) :
+            data4plot_dict[windows_ix].increment_b_updn(event, values,1,None)
+            data4plot_dict[windows_ix].update_lines_settings()
+            data4plot_dict[windows_ix].update_formats()
+            data4plot_dict[windows_ix].update_canvas(show=False)
+        elif event == '--B_ix'+windows_ix+'-loaddata':
+            filename = sg.popup_get_file('Load Figure...')
+            try:
+                with open(filename,'r') as f:
+                    lines=f.readlines()
+                    setting_dict = {}
+                    for line in lines:
+                        if '->' in line[0:2] and '<-' in line[-3:-1]:
+                            setting_dict[line[2:-3]]={}
+                            last_keylvl0 = line[2:-3]
+                            lvl = 0
+                            continue
+                        elif '*>' in line[0:2] and '<*' in line[-3:-1]:
+                            setting_dict[last_keylvl0][line[2:-3]]={}
+                            last_keylvl1 = line[2:-3]
+                            lvl = 1
+                            continue
+                        if '*k>' in line[0:3]:
+                            if lvl == 0:
+                                ix0 = line.find('*k>')
+                                ix1 = line.find('<k*')
+                                jx0 = line.find('>|')
+                                jx1 = line.find('|<')
+                                val = line[jx0+2:jx1].replace('||newline','\n')
+                                if val == 'True':
+                                    val=True
+                                if val == 'False':
+                                    val=False
+                                setting_dict[last_keylvl0][line[ix0+3:ix1]] = val
+                            if lvl == 1:
+                                ix0 = line.find('*k>')
+                                ix1 = line.find('<k*')
+                                jx0 = line.find('>|')
+                                jx1 = line.find('|<')
+                                val = line[jx0+2:jx1].replace('||newline','\n')
+                                if val == 'True':
+                                    val=True
+                                if val == 'False':
+                                    val=False
+                                setting_dict[last_keylvl0][last_keylvl1][line[ix0+3:ix1]] = val
+
+            except Exception as e:
+                sg.popup_ok(traceback.format_exc())
+            data4plot_dict[windows_ix].window.close()
+            tabs = plotter.tabs(setting_dict['tabs_multilinetxt'])
+            data4plot_dict[windows_ix] = plotter.dataplot(windows_ix)
+            data4plot_dict[windows_ix].load_tab_data(tabs)
+            data4plot_dict[windows_ix].load_lines_settings(setting_dict['lines_settings'])
+
+            data4plot_dict[windows_ix].create_window()
+            data4plot_dict[windows_ix].fig_settings=setting_dict['figure_settings']
+            data4plot_dict[windows_ix].update_window(setting_dict['figure_settings'])
+            data4plot_dict[windows_ix].create_canvas(show=False)
+
+        elif event == '--B_ix'+windows_ix+'-savefig':
+
+            filename = sg.popup_get_file('Save Figure',save_as=True)
+            data4plot_dict[windows_ix].fig.savefig(filename+".pdf")
+
+            with open(filename+'.ftg','w') as f:
+                f.write('->figure_settings<-\n')
+                for k in data4plot_dict[windows_ix].fig_settings.keys():
+                    f.write('*k>'+k+'<k*'+">|"+str(data4plot_dict[windows_ix].window['ix'+windows_ix+'-'+k].get())+'|<\n')
+
+                f.write('->lines_settings<-\n')
+                for l in data4plot_dict[windows_ix].lines.keys_list:
+                    f.write('*>'+l+'<*\n')
+                    for k in getattr(data4plot_dict[windows_ix].lines,l)['settings'].keys():
+                        f.write('*k>'+k+'<k*'+">|"+str(getattr(data4plot_dict[windows_ix].lines,l)['settings'][k])+'|<\n')
+
+                f.write('->tabs_multilinetxt<-\n')
+                for i,l in enumerate(data4plot_dict[windows_ix].lines.keys_list):
+                    f.write('*>t'+str(i)+'<*\n')
+                    f.write('*k>'+'multiline<k*>|')
+                    f.write('#X '+getattr(data4plot_dict[windows_ix].lines,l)['label']+'||newline')
+                    sm_array = np.array([getattr(data4plot_dict[windows_ix].lines,l)['x'],getattr(data4plot_dict[windows_ix].lines,l)['y']]).T
+                    for line in sm_array:
+                        f.write(str(line[0])+' '+str(line[1])+'||newline')
+                    f.write('|<\n')
+
+        elif '--B_ix'+windows_ix+'-editdata' == event:
+            data4plot_dict[windows_ix].create_popupwindow()
+
+            while True:
+                event2, values2 = data4plot_dict[windows_ix].popup_window.read()
+                print(event2)
+                if event2 in ('--B_ok_w2',sg.WIN_CLOSED):
+                    print('ok')
+                    break
+
+                if event2 == '--B_addtab_w2':
+                    data4plot_dict[windows_ix].copy_multiline2dic(add=True)
+                    data4plot_dict[windows_ix].popup_window.close()
+                    data4plot_dict[windows_ix].create_popupwindow()
+                    data4plot_dict[windows_ix].popup_window['--Tab_data_'+data4plot_dict[windows_ix] .tabs.keys()[-1]].select()
+                    # print(data4plot.tabs.keys())
+
+                if '--B_remove_t' in event2:
+                    #print(event2.replace('_',' ').split()[2])
+                    delattr(data4plot_dict[windows_ix].tabs,event2.replace('_',' ').split()[2])
+                    data4plot_dict[windows_ix].copy_multiline2dic()
+                    data4plot_dict[windows_ix].popup_window.close()
+                    data4plot_dict[windows_ix].create_popupwindow()
+
+            data4plot_dict[windows_ix].copy_multiline2dic()
+            data4plot_dict[windows_ix].load_tab_data(data4plot_dict[windows_ix].tabs)
+
+            data4plot_dict[windows_ix].load_lines_settings(data4plot_dict[windows_ix].lines_settings)
+
+            data4plot_dict[windows_ix].window.close()
+            data4plot_dict[windows_ix].create_window()
+            data4plot_dict[windows_ix].update_window(data4plot_dict[windows_ix].fig_settings)
+            data4plot_dict[windows_ix].create_canvas(show=False)
+
+            data4plot_dict[windows_ix].popup_window.close()
+        checked_EOS_dict = events.update_diabled(window1,opened_EOS_dict,EOS_str_lst,checked_EOS_dict)

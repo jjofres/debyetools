@@ -24,7 +24,8 @@ class tabs:
         return list(self.__dict__.keys())
 
 class dataplot:
-    def __init__(self):
+    def __init__(self,jx):
+        self.jx = jx
         pass
     def load_tab_data(self,tabs):
         self.tabs = tabs
@@ -45,9 +46,9 @@ class dataplot:
             print('simple_layout')
             layout = fn.simple_layout(self.lines)
         else:
-            layout = fn.general_layout(self.lines)
+            layout = fn.general_layout(self.lines,self.jx)
         window = sg.Window('Plotting stuff...', layout, finalize=True)
-        self.window=window
+        self.window = window
 
     def create_popupwindow(self):
         layout = fn.popup_layout(self.tabs)
@@ -57,7 +58,7 @@ class dataplot:
     def update_window(self, fig_settings):
         self.fig_settings=fig_settings
         for k in fig_settings.keys():
-            self.window[k].update(fig_settings[k])
+            self.window['ix'+str(self.jx)+'-'+k].update(fig_settings[k])
 
     def create_canvas(self,show=False):
         print('create_canvas show',show)
@@ -86,14 +87,21 @@ class dataplot:
 
     def update_formats(self):
         for k in self.fig_settings.keys():
-            self.fig_settings[k]=self.window[k].get()
+            self.fig_settings[k]=self.window['ix'+str(self.jx)+'-'+k].get()
 
     def update_lines_settings(self):
         for l in list(self.window.key_dict.keys()):
+            ix_inx = l.find('ix')
+            newl = l[ix_inx:]
+            ix_inx2 = newl.find('-')
+            newl2 = newl[ix_inx2+1:]
+            #l=newl2
+            print(l,l.replace('++',' ').split())
             if l[:2]=='++':
                 prp = l.replace('++',' ').split()
+                print(self.lines.keys())
                 li = getattr(self.lines,prp[-1])['settings']
-                li[prp[0]]=self.window[l].get()
+                li[prp[0]]=self.window['ix'+str(self.jx)+'-'+l].get()
 
     def copy_multiline2dic(self,add=False):
         for l in list(self.popup_window.key_dict.keys()):

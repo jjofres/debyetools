@@ -96,12 +96,12 @@ class dataplot:
             ix_inx2 = newl.find('-')
             newl2 = newl[ix_inx2+1:]
             #l=newl2
-            print(l,l.replace('++',' ').split())
-            if l[:2]=='++':
-                prp = l.replace('++',' ').split()
+            print('AAAAA',l,l.replace('++',' ').split(),ix_inx,ix_inx==0,newl2[:2]=='++')
+            if ix_inx==0 and newl2[:2]=='++':#l[:2]=='++': #ix_inx==0:#
+                prp = newl2.replace('++',' ').split()
                 print(self.lines.keys())
                 li = getattr(self.lines,prp[-1])['settings']
-                li[prp[0]]=self.window['ix'+str(self.jx)+'-'+l].get()
+                li[prp[0]]=self.window[l].get()
 
     def copy_multiline2dic(self,add=False):
         for l in list(self.popup_window.key_dict.keys()):

@@ -81,17 +81,18 @@ class Vibrational:
             self.V0_DM = 1
             self.b_DM = 0
             self.a_DM = 0
-            self.lam = -1
+            self.lam = 0
         elif mode == 'jjfv':
             self.V0_DM = 1
             self.b_DM = 0
             self.a_DM = 0
-            self.lam = -1
+            self.lam = 1
 
         else:
             self.V0_DM = ''
             self.b_DM = ''
             self.a_DM = ''
+            self.lam = -1
 
     def set_int_anh(self, T, V):
         """

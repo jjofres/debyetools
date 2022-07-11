@@ -82,8 +82,8 @@ def layout(EOS_str_lst):
                ]
 
     lo_minF = [[elmt.T('P (Pa):','Pi'),elmt.dI('','Pi',4),elmt.T('initial T (K):','Ti'),elmt.dI('','Ti',4),elmt.T('final T (K):','Tf'),elmt.dI('','Tf',4),elmt.T('No. steps:','ntemps'),elmt.dI('','ntemps',4)],
-               [elmt.Chk('Full Debye', 'mode_jj')],
-               [elmt.Chk('Dugdale–McDonald', 'mode_DM'),elmt.Chk('Slater', 'mode_Sl'),elmt.Chk('Vaschenko–Zubarev', 'mode_VZ'),elmt.Chk('Mean free volume', 'mode_mfv')],
+               [elmt.Chk('Slater (lam=-1)', 'mode_jjsl'), elmt.Chk('Dugdale-MacDonald (lam=0)', 'mode_jjdm'),elmt.Chk('Free Volume (lam=1)', 'mode_jjfv')],
+               [elmt.Chk('Dugdale–McDonald', 'mode_DM'),elmt.Chk('Slater', 'mode_Sl'),elmt.Chk('Vaschenko–Zubarev', 'mode_VZ'),elmt.Chk('Free volume', 'mode_mfv')],
                [elmt.Bc('run minimization','run_minF',('gray','gray'))],
                [elmt.sCol([[elmt.M('','minF_output',100,7)]], 'minF_output', 480, 80)],
                [elmt.Bc('Plot V(T)','plotter',('gray','gray'))],]

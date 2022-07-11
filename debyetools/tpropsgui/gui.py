@@ -1,4 +1,5 @@
 #### imports
+hola
 def gui():
     import PySimpleGUI as sg
     from debyetools.tpropsgui.layout import layout
@@ -429,7 +430,7 @@ def gui():
                 sg.popup_ok(traceback.format_exc())
         elif '--Chk_mode_' in event:
             window['--M_minF_output'].update('')
-            l = ['jj', 'DM', 'Sl', 'VZ', 'mfv']
+            l = ['jjsl', 'jjdm', 'jjfv', 'DM', 'Sl', 'VZ', 'mfv']
             l.remove(event.replace('--Chk_mode_',''))
             for stri in l:
                 window['--Chk_mode_'+stri].update(False)

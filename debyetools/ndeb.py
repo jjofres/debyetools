@@ -69,13 +69,19 @@ class nDeb:
         self.vib.set_int_anh(T, V)
         self.vib.set_theta(T,V)
 
-        dE0dV_T = self.EOS.dE0dV_T(V)
-        dFvibdV_T = self.vib.dFdV_T(T,V)
-        dFeldV_T = self.el.dFdV_T(T,V)
-        dFdefdV_T = self.deff.dFdV_T(T,V)
-        dFadV_T = self.anh.dFdV_T(T,V)
-        dFdV_T = dE0dV_T + dFvibdV_T + dFeldV_T + dFdefdV_T + dFadV_T
-        return (dFdV_T + P)**2
+        # dE0dV_T = self.EOS.dE0dV_T(V)
+        # dFvibdV_T = self.vib.dFdV_T(T,V)
+        # dFeldV_T = self.el.dFdV_T(T,V)
+        # dFdefdV_T = self.deff.dFdV_T(T,V)
+        # dFadV_T = self.anh.dFdV_T(T,V)
+        # dFdV_T = dE0dV_T + dFvibdV_T + dFeldV_T + dFdefdV_T + dFadV_T
+        E0 = self.EOS.E0(V)
+        Fvib = self.vib.F(T,V)
+        Fel = self.el.F(T,V)
+        Fdef = self.deff.F(T,V)
+        Fa = self.anh.F(T,V)
+        F = E0 + Fvib + Fel + Fdef + Fa
+        return F+P*V#(dFdV_T + P)**2
 
     def min_G(self, T, initial_V, P):
         """

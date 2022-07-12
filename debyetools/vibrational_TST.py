@@ -145,19 +145,20 @@ class Vibrational:
         d4P0dV4 = - d5E0dV5_T
         d5P0dV5 = - d6E0dV6_T
 
-        vDPrm = - dP0dV/(r*m)
+        # vDPrm = - dP0dV/(r*m)
         vDPrm_DM = - dP0dV_DM/(r*m)
-        vDsqrt = np.sqrt(vDPrm)
-        vDsqrt_DM = np.sqrt(vDPrm_DM)
-        vD = kv*V*vDsqrt
-        vD_DM = kv*V0_DM*vDsqrt_DM
+        # vDnp.sqrt = np.sqrt(vDPrm)
+        vDnp.sqrt_DM = np.sqrt(vDPrm_DM)
+        # vD = kv*V*vDnp.sqrt
+        vD_DM = kv*V0_DM*vDnp.sqrt_DM
         xD = self.xDcte*(1/V)**(1/3.)/kB
         xD_DM = self.xDcte*(1/V0_DM)**(1/3.)/kB
 
-        dvDdV = kv*vDsqrt-kv*V*d2P0dV2/(2*vDsqrt*r*m)
-        d2vDdV2 = -kv*d2P0dV2/(vDsqrt*r*m)-kv*V*d2P0dV2**2/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V*d3P0dV3/(2*vDsqrt*r*m)
-        d3vDdV3 = -3*kv*d2P0dV2**2/(4*(vDPrm)**(3/2)*r**2*m**2)-3*kv*d3P0dV3/(2*vDsqrt*r*m)-3*kv*V*d2P0dV2**3/(8*(vDPrm)**(5/2)*r**3*m**3)-3*kv*V*d2P0dV2*d3P0dV3/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V*d4P0dV4/(2*vDsqrt*r*m)
-        d4vDdV4 = -3*kv*(d2P0dV2)**3/(2*(-dP0dV/(r*m))**(5/2)*r**3*m**3)-3*kv*(d2P0dV2)*(d3P0dV3)/((-dP0dV/(r*m))**(3/2)*r**2*m**2)-2*kv*(d4P0dV4)/(np.sqrt(-dP0dV/(r*m))*r*m)-15*kv*V*(d2P0dV2)**4/(16*(-dP0dV/(r*m))**(7/2)*r**4*m**4)-9*kv*V*(d2P0dV2)**2*(d3P0dV3)/(4*(-dP0dV/(r*m))**(5/2)*r**3*m**3)-3*kv*V*(d3P0dV3)**2/(4*(-dP0dV/(r*m))**(3/2)*r**2*m**2)-kv*V*(d2P0dV2)*(d4P0dV4)/((-dP0dV/(r*m))**(3/2)*r**2*m**2)-kv*V*(d5P0dV5)/(2*np.sqrt(-dP0dV/(r*m))*r*m)
+        vD = V*kv*np.sqrt((-V*dP0dV + 2/3*(lam + 1)*P0)/(V*m*r))#kv*V*vDnp.sqrt
+        dvDdV = kv*np.sqrt((-V*dP0dV + 2/3*(lam + 1)*P0)/(V*m*r))*(V**2*d2P0dV2 - 2/3*V*(lam + 1)*dP0dV + 2*V*dP0dV - 2/3*(lam + 1)*P0)/(2*(V*dP0dV - 2/3*(lam + 1)*P0))#kv*vDnp.sqrt-kv*V*d2P0dV2/(2*vDnp.sqrt*r*m)
+        d2vDdV2 = kv*np.sqrt((-V*dP0dV + 2/3*(lam + 1)*P0)/(V*m*r))*(4*(V*dP0dV - 2/3*(lam + 1)*P0)*(V**2*d2P0dV2 - 2/3*V*(lam + 1)*dP0dV + 2/3*(lam + 1)*P0) + 2*(V*dP0dV - 2/3*(lam + 1)*P0)*(V**3*d3P0dV3 - 2/3*V**2*(lam + 1)*d2P0dV2 + 4/3*V*(lam + 1)*dP0dV - 4/3*(lam + 1)*P0) - (V**2*d2P0dV2 - 2/3*V*(lam + 1)*dP0dV + 2/3*(lam + 1)*P0)**2)/(4*V*(V*dP0dV - 2/3*(lam + 1)*P0)**2)#-kv*d2P0dV2/(vDnp.sqrt*r*m)-kv*V*d2P0dV2**2/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V*d3P0dV3/(2*vDnp.sqrt*r*m)
+        d3vDdV3 = kv*np.sqrt((-V*dP0dV + 2/3*(lam + 1)*P0)/(V*m*r))*(12*(V*dP0dV - 2/3*(lam + 1)*P0)**2*(V**3*d3P0dV3 - 2/3*V**2*(lam + 1)*d2P0dV2 + 4/3*V*(lam + 1)*dP0dV - 4/3*(lam + 1)*P0) + 4*(V*dP0dV - 2/3*(lam + 1)*P0)**2*(V**4*d4P0dV4 - 2/3*V**3*(lam + 1)*d3P0dV3 + 2.0*V**2*(lam + 1)*d2P0dV2 - 4.0*V*(lam + 1)*dP0dV + 4.0*(lam + 1)*P0) - 6*(V*dP0dV - 2/3*(lam + 1)*P0)*(V**2*d2P0dV2 - 2/3*V*(lam + 1)*dP0dV + 2/3*(lam + 1)*P0)**2 - 6*(V*dP0dV - 2/3*(lam + 1)*P0)*(V**2*d2P0dV2 - 2/3*V*(lam + 1)*dP0dV + 2/3*(lam + 1)*P0)*(V**3*d3P0dV3 - 2/3*V**2*(lam + 1)*d2P0dV2 + 4/3*V*(lam + 1)*dP0dV - 4/3*(lam + 1)*P0) + 3*(V**2*d2P0dV2 - 2/3*V*(lam + 1)*dP0dV + 2/3*(lam + 1)*P0)**3)/(8*V**2*(V*dP0dV - 2/3*(lam + 1)*P0)**3)#-3*kv*d2P0dV2**2/(4*(vDPrm)**(3/2)*r**2*m**2)-3*kv*d3P0dV3/(2*vDnp.sqrt*r*m)-3*kv*V*d2P0dV2**3/(8*(vDPrm)**(5/2)*r**3*m**3)-3*kv*V*d2P0dV2*d3P0dV3/(4*(vDPrm)**(3/2)*r**2*m**2)-kv*V*d4P0dV4/(2*vDnp.sqrt*r*m)
+        d4vDdV4 = kv*np.sqrt((-V*dP0dV + 2/3*(lam + 1)*P0)/(V*m*r))*(32*(V*dP0dV - 2/3*(lam + 1)*P0)**3*(V**4*d4P0dV4 - 2/3*V**3*(lam + 1)*d3P0dV3 + 2.0*V**2*(lam + 1)*d2P0dV2 - 4.0*V*(lam + 1)*dP0dV + 4.0*(lam + 1)*P0) + 8*(V*dP0dV - 2/3*(lam + 1)*P0)**3*(V**5*d5P0dV5 - 2/3*V**4*(lam + 1)*d4P0dV4 + 8/3*V**3*(lam + 1)*d3P0dV3 - 8.0*V**2*(lam + 1)*d2P0dV2 + 16.0*V*(lam + 1)*dP0dV - 16.0*(lam + 1)*P0) - 48*(V*dP0dV - 2/3*(lam + 1)*P0)**2*(V**2*d2P0dV2 - 2/3*V*(lam + 1)*dP0dV + 2/3*(lam + 1)*P0)*(V**3*d3P0dV3 - 2/3*V**2*(lam + 1)*d2P0dV2 + 4/3*V*(lam + 1)*dP0dV - 4/3*(lam + 1)*P0) - 16*(V*dP0dV - 2/3*(lam + 1)*P0)**2*(V**2*d2P0dV2 - 2/3*V*(lam + 1)*dP0dV + 2/3*(lam + 1)*P0)*(V**4*d4P0dV4 - 2/3*V**3*(lam + 1)*d3P0dV3 + 2.0*V**2*(lam + 1)*d2P0dV2 - 4.0*V*(lam + 1)*dP0dV + 4.0*(lam + 1)*P0) - 64/3*(V*dP0dV - 2/3*(lam + 1)*P0)**2*(0.75*V**3*d3P0dV3 - 0.5*V**2*(lam + 1)*d2P0dV2 + V*(lam + 1)*dP0dV - (lam + 1)*P0)**2 + 24*(V*dP0dV - 2/3*(lam + 1)*P0)*(V**2*d2P0dV2 - 2/3*V*(lam + 1)*dP0dV + 2/3*(lam + 1)*P0)**3 + 36*(V*dP0dV - 2/3*(lam + 1)*P0)*(V**2*d2P0dV2 - 2/3*V*(lam + 1)*dP0dV + 2/3*(lam + 1)*P0)**2*(V**3*d3P0dV3 - 2/3*V**2*(lam + 1)*d2P0dV2 + 4/3*V*(lam + 1)*dP0dV - 4/3*(lam + 1)*P0) - 15*(V**2*d2P0dV2 - 2/3*V*(lam + 1)*dP0dV + 2/3*(lam + 1)*P0)**4)/(16*V**3*(V*dP0dV - 2/3*(lam + 1)*P0)**4)#-3*kv*(d2P0dV2)**3/(2*(-dP0dV/(r*m))**(5/2)*r**3*m**3)-3*kv*(d2P0dV2)*(d3P0dV3)/((-dP0dV/(r*m))**(3/2)*r**2*m**2)-2*kv*(d4P0dV4)/(np.sqrt(-dP0dV/(r*m))*r*m)-15*kv*V*(d2P0dV2)**4/(16*(-dP0dV/(r*m))**(7/2)*r**4*m**4)-9*kv*V*(d2P0dV2)**2*(d3P0dV3)/(4*(-dP0dV/(r*m))**(5/2)*r**3*m**3)-3*kv*V*(d3P0dV3)**2/(4*(-dP0dV/(r*m))**(3/2)*r**2*m**2)-kv*V*(d2P0dV2)*(d4P0dV4)/((-dP0dV/(r*m))**(3/2)*r**2*m**2)-kv*V*(d5P0dV5)/(2*np.sqrt(-dP0dV/(r*m))*r*m)
         dxDdV = -self.xDcte/(3*kB*V**(4/3.))
         d2xDdV2 = 4*self.xDcte/(9*kB*V**(7/3.))
         d3xDdV3 = -28*self.xDcte/(27*V**(10/3)*kB)

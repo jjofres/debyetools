@@ -74,11 +74,11 @@ Tmelting = 2183
 
 edef, sdef = 10,1
 
-# eos_obj = potentials.MU()
-# initial_parameters = [-8.680958045e+05, 8.124051364e-06, 1.757221171e+11, 3.712299840e+00]
+eos_obj = potentials.MU()
+initial_parameters = [-8.680958045e+05, 8.124051364e-06, 1.757221171e+11, 3.712299840e+00]
 
-eos_obj = potentials.BM()
-initial_parameters = [-8.682582466e+05, 8.117162960e-06, 1.801699496e+11, 3.818903293e+00]
+# eos_obj = potentials.BM()
+# initial_parameters = [-8.682582466e+05, 8.117162960e-06, 1.801699496e+11, 3.818903293e+00]
 #
 # eos_obj = potentials.BM4()
 # initial_parameters = [-8.682838818e+05, 8.115328159e-06, 1.810526161e+11, 3.855537799e+00, 2.498535685e-11]

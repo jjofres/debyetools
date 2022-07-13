@@ -42,7 +42,7 @@ class FminTestCase(unittest.TestCase):
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_BM.min_G(T,self.p_EOS[1],P=0)
 
-        self.assertAlmostEqual(37.96690007966743, ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'],places=2)
+        self.assertAlmostEqual(37.96026889055287 , ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'],places=2)
 
     def test_Free_energy_minimization_Al_fcc_Morse(self):
         """ Test V(T) calculation by free energy minimization. Morse."""

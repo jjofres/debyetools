@@ -3,12 +3,12 @@ from debyetools.ndeb import nDeb
 import numpy as np
 import debyetools.potentials as potentials
 
-def Cp_LiFePO4(T, params):
+def tprops_eval(T, params):
     edef, sdef = params
 
     p_defects = edef, sdef, Tmelting, 0.1
 
-    ndeb_MU = nDeb(nu, m, p_intanh, eos_MU, p_electronic,
+    ndeb_MU = nDeb(nu, m, p_intanh, eos_obj, p_electronic,
                     p_defects, p_anh, mode='jjsl')
     T, V = ndeb_MU.min_G(T, p_EOS[1], P=0)
     #=========================
@@ -34,7 +34,8 @@ def mutate(params, n_chidren, mrate, mvar):
     return res
 
 def evaluate(fc, T, pi, yexp):
-    return np.sqrt(np.sum((fc(T, pi)/T - yexp/T)**2))
+    eval_val = fc(T, pi)
+    return np.sqrt(np.sum(((eval_val - yexp)/eval_val)**2))
     try:
         return np.sqrt(np.sum((fc(T, pi)/T - yexp/T)**2))
     except:
@@ -67,36 +68,43 @@ def mate(params, ngen,mvar):
     return res
 
 
-m = 0.02253677142857143
-nu = 0.2747222272342077
-a0, m0 = 0, 1
-s0, s1, s2 = 0, 0, 0
+m = 0.0509415
+nu = 0.409
+Tmelting = 2183
 
-Tmelting = 800
-edef, sdef = 20,0
+edef, sdef = 10,1
 
-eos_MU = potentials.MU()
-eos_MU.fitEOS([6.405559904e-06], 0, initial_parameters=[-6.745375544e+05, 6.405559904e-06, 1.555283892e+11, 4.095209375e+00], fit=False)
-p_EOS = eos_MU.pEOS
-p_electronic = [0,0,0,0]
-p_intanh = a0, m0
-p_anh = s0, s1, s2
-T = np.array([126.9565217,147.826087,167.826087,186.9565217,207.826087,226.9565217,248.6956522,267.826087,288.6956522,306.9565217,326.9565217,349.5652174,366.9565217,391.3043478,408.6956522,428.6956522,449.5652174,467.826087,488.6956522,510.4347826,530.4347826,548.6956522,571.3043478,590.4347826,608.6956522,633.0434783,649.5652174,670.4347826,689.5652174,711.3043478,730.4347826,750.4347826,772.173913])
-C_exp = np.array([9.049180328,10.14519906,11.29742389,12.05620609,12.92740047,13.82669789,14.61358314,15.45667447,16.07494145,16.55269321,17.00234192,17.73302108,18.21077283,18.60421546,19.25058548,19.53161593,19.78454333,20.12177986,20.4028103,20.90866511,21.18969555,21.52693208,21.89227166,22.4824356,22.96018735,23.40983607,23.69086651,23.88758782,23.71896956,23.7470726,23.85948478,23.83138173,24.19672131])
+# eos_obj = potentials.MU()
+# initial_parameters = [-8.680958045e+05, 8.124051364e-06, 1.757221171e+11, 3.712299840e+00]
+
+eos_obj = potentials.BM()
+initial_parameters = [-8.682582466e+05, 8.117162960e-06, 1.801699496e+11, 3.818903293e+00]
+#
+# eos_obj = potentials.BM4()
+# initial_parameters = [-8.682838818e+05, 8.115328159e-06, 1.810526161e+11, 3.855537799e+00, 2.498535685e-11]
+
+
+eos_obj.fitEOS([initial_parameters[1]], 0, initial_parameters=initial_parameters, fit=False)
+p_EOS = eos_obj.pEOS
+p_electronic = [1.52435e+00, -6.79663e+04, 5.30710e-04, -7.01007e-06]
+p_intanh = 0, 1
+p_anh = 0, 0, 0
+T = np.array([63.305,143.885,216.42,294.25,323.815,382.4525,410.58,474.96,509.8475,572.14,615.07,686.2575,732.1925,795.935,850.86,1000,1200,1400,1600,1774.48,1926.88,2067.6225])
+C_exp = np.array([8.9525,18.95,22.345,24.55,24.6125,25.125,25.8775,25.8175,26.6125,26.7025,27.1225,27.525,27.315,28.1525,28.4875,30.2375,32.1925,34.4075,36.8225,39.01,40.5375,42.5775])
 
 
 ix = 0
 max_iter = 500
-mvar=[(edef,0.5), (sdef, 0.1)]
-parents_params = mutate(params = [edef, sdef], n_chidren = 2, mrate=0.7, mvar=mvar)
+mvar=[(edef,5), (sdef, 1)]
+parents_params = mutate(params = [edef, sdef], n_chidren = 2, mrate=0.8, mvar=mvar)
 
 counter_change = 0
 errs_old = 1
 while ix <= max_iter:
-    print('iter:',ix,counter_change,parents_params)
-    children_params = mate(parents_params, 10, mvar)
-    parents_params, errs_new = select_bests(Cp_LiFePO4, T, children_params,2, C_exp)
+    children_params = mate(parents_params, 20, mvar)
+    parents_params, errs_new = select_bests(tprops_eval, T, children_params,2, C_exp)
     edef, sdef = parents_params[0]
+    errs_new = np.round(errs_new,5)
     mvar=[(edef,0.5), (sdef, 0.1)]
 
     if errs_old == errs_new[0]:
@@ -105,10 +113,11 @@ while ix <= max_iter:
         counter_change=0
     ix+=1
     errs_old = errs_new[0]
+    print('iter:',ix,counter_change,errs_old, parents_params)
     if counter_change>=20: break
 
-T = np.arange(0.1,800.1,20)
-Cp1 = Cp_LiFePO4(T, parents_params[0])
+# T = np.arange(0.1,800.1,20)
+# Cp1 = tprops_eval(T, parents_params[0])
 
 best_params = parents_params[0]
 print(best_params)

@@ -82,7 +82,7 @@ class FminTestCase(unittest.TestCase):
         EOS_BM = getattr(potentials, EOS_name)(formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels, parameters=p_EOS)
         EOS_BM.V0 = 10E-6
         ndeb_Morse = nDeb(self.nu, self.m, self.p_intanh, EOS_BM, self.p_electronic, self.p_defects, self.p_anh,
-                          formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels, mode='jj')
+                          formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels, mode='jjsl')
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_Morse.min_G(T,self.p_EOS[1],P=0)
         # print(T, V)

@@ -31,7 +31,7 @@ class nDeb:
     :param string mode: Type of approximation of the Debye temperature (see vibrational contribution).
     """
 
-    def __init__(self, nu, m, p_intanh, EOS, p_electronic, p_defects, p_anh, *args, units='J/mol', mode='jj'):
+    def __init__(self, nu, m, p_intanh, EOS, p_electronic, p_defects, p_anh, *args, units='J/mol', mode='jjsl'):
 
         a0, m0 = p_intanh
         q0, q1, q2, q3 = p_electronic

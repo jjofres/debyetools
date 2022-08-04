@@ -291,9 +291,10 @@ def gui():
 
         elif event == '||B_plotter':
             try:
-                if  window4 is not None:
-                    window4.close()
-                window4 = events.plot_VvT(window,window5_counter)
+                # if  window4 is not None:
+                #     window4.close()
+                data4plot_dict[str(window5_counter)] = events.plot_VvT(window,window5_counter)
+                window4 = data4plot_dict[str(window5_counter)].window
                 window5_counter +=1
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
@@ -407,16 +408,24 @@ def gui():
                         window['--I_S298'+o].update(S298)
                         for i in range(len(FS_db_params[o]['Cp'])):
                             window['--I_fsCp_P'+str(i)+o].update(disabled=False)
-                            window['--I_fsCp_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['Cp'][i]))
+                            #window['--I_fsCp_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['Cp'][i]))
+                            window['--I_fsCp_P'+str(0)+o].update(' '.join(['%.7e' for i in FS_db_params[o]['Cp']])%tuple(FS_db_params[o]['Cp']))
                         for i in range(len(FS_db_params[o]['a'])):
                             window['--I_fsa_P'+str(i)+o].update(disabled=False)
-                            window['--I_fsa_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['a'][i]))
+                            # window['--I_fsa_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['a'][i]))
+                            window['--I_fsa_P'+str(0)+o].update(' '.join(['%.7e' for i in FS_db_params[o]['a']])%tuple(FS_db_params[o]['a']))
+
                         for i in range(len(FS_db_params[o]['1/Ks'])):
                             window['--I_fsK_P'+str(i)+o].update(disabled=False)
-                            window['--I_fsK_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['1/Ks'][i]))
+                            # window['--I_fsK_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['1/Ks'][i]))
+                            window['--I_fsK_P'+str(0)+o].update(' '.join(['%.7e' for i in FS_db_params[o]['1/Ks']])%tuple(FS_db_params[o]['1/Ks']))
+
                         for i in range(len(FS_db_params[o]['Ksp'])):
                             window['--I_fsKp_P'+str(i)+o].update(disabled=False)
-                            window['--I_fsKp_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['Ksp'][i]))
+                            # window['--I_fsKp_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['Ksp'][i]))
+                            window['--I_fsKp_P'+str(0)+o].update(' '.join(['%.7e' for i in FS_db_params[o]['Ksp']])%tuple(FS_db_params[o]['Ksp']))
+
+                        print('xxxxxx',window['--I_mass'].get(), o, nDebs_dict[o]['ndeb'].EOS.pEOS ,window['--I_nu'].get(), p_electronic, p_defects, p_anh, p_intanh, window['--I_Ti'].get(), window['--I_Tf'].get(), window['--I_ntemps'].get(), mode, window['--I_fs_Tfrom'].get(),window['--I_fs_Tto'].get(),H298,S298,' '.join(['%.7e' for i in FS_db_params[o]['Cp']])%tuple(FS_db_params[o]['Cp']), ' '.join(['%.7e' for i in FS_db_params[o]['a']])%tuple(FS_db_params[o]['a']), ' '.join(['%.7e' for i in FS_db_params[o]['1/Ks']])%tuple(FS_db_params[o]['1/Ks']), ' '.join(['%.7e' for i in FS_db_params[o]['Ksp']])%tuple(FS_db_params[o]['Ksp']))
 
 
                 window['--Tab_fs_'].update(visible=False)
@@ -425,7 +434,8 @@ def gui():
 
         elif '||B_plotter_fsprop2plt' in event:
             try:
-                window6 = events.plot_fsprops(window,event,FS_db_params, float(window['--I_fs_Tfrom'].get()),float(window['--I_fs_Tto'].get()), tprops_dict_all)
+                window6 = events.plot_fsprops(window,event,FS_db_params, float(window['--I_fs_Tfrom'].get()),float(window['--I_fs_Tto'].get()), tprops_dict_all,window5_counter)
+                window5_counter+=1
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
         elif '--Chk_mode_' in event:

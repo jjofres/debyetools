@@ -86,7 +86,7 @@ def general_layout(lines,jx):
                           sg.Text(' ',key='--T_edgecolor_'+k),sg.InputCombo(default_value=getattr(lines,k)['settings']['markeredgecolor'],values=colors_list, size=(12,1), key='ix'+str(jx)+'-'+'++markeredgecolor++'+k,tooltip='marker edge color'),\
                           markersize_spin[k][0],markersize_spin[k][1],markersize_spin[k][2],\
                           ] for k in lines.keys()]
-    layout_right = [[sg.Canvas(key='--CANVAS2-')],
+    layout_right = [[sg.Column([[sg.Canvas(key='--CANVAS2-')]], key='col_fig'), sg.Column([[sg.Text('Re-scale xdata:', key='--T_scaleX'),sg.Input('1',size=(6, 1), key='ix'+str(jx)+'-'+'scalex')],[sg.Text('Re-scale ydata:', key='--T_scaleY'),sg.Input('1',size=(6, 1), key='ix'+str(jx)+'-'+'scaley')]], key='col_scale')],
                     [sg.Button('Refresh figure',key='--B_'+'ix'+str(jx)+'-refresh'),sg.Button('Edit data',key='--B_'+'ix'+str(jx)+'-editdata'),sg.Button('Save figure..',key='--B_'+'ix'+str(jx)+'-savefig'),sg.Button('Load data...',key='--B_'+'ix'+str(jx)+'-loaddata')],
                      [sg.Column(layout_list_lines,size=(600,150), scrollable=True,key='--Col_list_lines')],
                     ]
@@ -121,7 +121,7 @@ def plot_fig(saved_ins,lines,show=False):
         if linei['settings']['plot']:
             ls=linei['settings']
 
-            ax.plot(linei['x'],linei['y'],label ='' if linei['label']=='XX' else linei['label'], linestyle=ls['linestyle'],color=ls['color'],marker=ls['marker'],markerfacecolor=ls['markerfacecolor'],
+            ax.plot(linei['x']*float(saved_ins['scalex']),linei['y']*float(saved_ins['scaley']),label ='' if linei['label']=='XX' else linei['label'], linestyle=ls['linestyle'],color=ls['color'],marker=ls['marker'],markerfacecolor=ls['markerfacecolor'],
                     markeredgecolor=ls['markeredgecolor'],linewidth=ls['linewidth'],markersize=ls['markersize'])
 
     if saved_ins['use_title']:

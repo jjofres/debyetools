@@ -35,11 +35,11 @@ def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser,opened_
     window['--I_p_anhxc'].update('0, 0, 0')
     window['--I_p_evac'].update('8')
     window['--I_p_svac'].update('2')
-    window['--I_Tm'].update('1000')
+    window['--I_Tm'].update('2000')
     window['--I_Ti'].update('0.1')
     window['--I_Pi'].update('0')
     window['--I_Tf'].update(window['--I_Tm'].get())
-    window['--I_ntemps'].update(20)
+    window['--I_ntemps'].update(100)
     window['--I_Tm'].update(disabled=False)
     window['--I_mass'].update(disabled=False)
     window['--M_minF_output'].update('')
@@ -51,7 +51,7 @@ def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser,opened_
     window['--I_p_el'].update('0, 0, 0, 0')
     window['--I_p_evac'].update('8')
     window['--I_p_svac'].update('2')
-    window['--I_Tm'].update('1000')
+    window['--I_Tm'].update('2000')
     window['--I_p_intanh'].update('0, 1')
     window['--Chk_el'].update(False)
     window['--I_p_el'].update(disabled= not bool(window['--Chk_el'].get()))
@@ -220,7 +220,7 @@ def plot_EvV(window, eosobj_dict, opened_EOS_dict,jx):
     initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
                             'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'Volume $\left[m^3/mol-at\\right]$','ylabel':'$E~\left[J/mol-at\\right]$','labelxsize':13,
                             'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
-                            'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.2,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12}
+                            'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.2,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12, 'scalex':1,'scaley':1}
 
     window = plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,jx)
 
@@ -258,7 +258,7 @@ def plot_EvV_full(window, eosobj_dict, opened_EOS_dict,jx):
     initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
                             'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'Volume $\left[m^3/mol-at\\right]$','ylabel':'$E~\left[J/mol-at\\right]$','labelxsize':13,
                             'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
-                            'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.2,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12}
+                            'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.2,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12, 'scalex':1,'scaley':1}
 
     data4plot = plot.pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,jx)
 
@@ -282,11 +282,11 @@ def plot_VvT(window,jx):
     initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
                             'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':'$V~\left[m^3/atom\\right]$','labelxsize':13,
                             'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
-                            'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12}
+                            'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12, 'scalex':1,'scaley':1}
 
-    window = plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,jx)
+    data4plot = plot.pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,jx)
 
-    return window
+    return data4plot
 #
 def plot_tprops(window,minF_header,jx):
     initial_tabs_multilinetxt = {'t0':{'multiline':[]}}
@@ -313,12 +313,12 @@ def plot_tprops(window,minF_header,jx):
     initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
                             'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':window['--IC_prop2plt'].get(),'labelxsize':13,
                             'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
-                            'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12}
+                            'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12, 'scalex':1,'scaley':1}
     # plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)
     data4plot = plot.pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,jx)
     return data4plot
 #
-def plot_fsprops(window,event,fs_params,Tfrom,Tto,TPs_calculated_dict):
+def plot_fsprops(window,event,fs_params,Tfrom,Tto,TPs_calculated_dict,jx):
     str_eos = event.replace('||B_plotter_fsprop2plt','')
     fs_params_Cp = fs_params[str_eos]['Cp']
     fs_params_alpha = fs_params[str_eos]['a']
@@ -371,8 +371,8 @@ def plot_fsprops(window,event,fs_params,Tfrom,Tto,TPs_calculated_dict):
     initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
                             'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':window['--IC_prop2plt'].get(),'labelxsize':13,
                             'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
-                            'legendncol':1,'legendfontsize':11,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12}
-    window = plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)
+                            'legendncol':1,'legendfontsize':11,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12, 'scalex':1,'scaley':1}
+    window = plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,jx)
     return window
 
 #

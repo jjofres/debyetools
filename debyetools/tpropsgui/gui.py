@@ -41,7 +41,7 @@ def gui() -> object:
     layout = layout(EOS_str_lst)
 
     #### Window creation
-    window1, window2, window3,window4,window5 = sg.Window('ThermoProps V1.1', layout=layout, finalize=True), None, None, None, None
+    window1, window2, window3,window4,window5, window7 = sg.Window('ThermoProps V1.1', layout=layout, finalize=True), None, None, None, None, None
 
     #### loop to wait for user action
     all_props={}
@@ -53,6 +53,7 @@ def gui() -> object:
     data4plot_dict = {}
     window5_counter = 0
     windows_ix = ''
+    bool_anh = False
     while True:
         window,event, values = sg.read_all_windows()
         # print(window,event)
@@ -83,13 +84,17 @@ def gui() -> object:
                 continue
             elif window == window1:     # if closing win 1, exit program
                 break
+            elif window == window7:
+                window7 = None
+                bool_anh = False
+                continue
         #
         # #file browser
         elif event == '--I_FILEBROWSE_':
             try:
                 # opened_EOS_dict = events.fbrowser_resets(window, opened_EOS_dict)
                 str_folderbrowser = events.fbrowser_fill_browser(window, event)
-                checked_EOS_dict = events.fbrowser_update_fields(window, contcar_str, mws_dict, str_folderbrowser, opened_EOS_dict,EOS_long_lst,EOS_str_lst,checked_EOS_dict)
+                checked_EOS_dict = events.fbrowser_update_fields(window, window7, contcar_str, mws_dict, str_folderbrowser, opened_EOS_dict,EOS_long_lst,EOS_str_lst,checked_EOS_dict, bool_anh)
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
         elif event == '||B_add_EOS':
@@ -348,6 +353,51 @@ def gui() -> object:
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
 
+        elif event == '||B_eval_anh':
+            if opened_EOS_dict['MU']==False:
+                sg.popup_ok('Please add the Murnaghan EOS to the calculation.')
+            elif len([o for o in opened_EOS_dict if opened_EOS_dict[o] == True])<2:
+                sg.popup_ok('Please add at least one EOS different from Murnaghan to evaluate its anharmonicity contribution.')
+
+            else:
+                anh_arr_MU = np.c_[tuple([tprops_dict_all['MU'][j] for j in keys_TPs])]
+                import debyetools.tpropsgui.elements as elmt
+                print('XXXXXXXXXXXXXXXXXXXXXXXXX')
+                lo_tabs_anh = [[elmt.Tab(eos_str,[[elmt.sCol([[elmt.M('','anh_'+eos_str,400,7)]], 'anh_'+eos_str, 470, 80)]],'anh_'+eos_str,False) for eos_str in ['','MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']]]
+
+                lo_anh = [[elmt.TG(lo_tabs_anh, 'tabs_anh')],
+                          [elmt.T('select property to plot:', 'anh2plt'),
+                           elmt.ICombo(['       ', '       ', '       ', '       '], 'anh2plt', 10, 1),
+                           elmt.Bc('Plot', 'plotter_anh', ('white', elmt.theme_background_color()))]]
+
+                data4plot_dict[str(window5_counter)] = sg.Window('Anh', lo_anh, finalize=True)
+                window7 = data4plot_dict[str(window5_counter)]
+                window5_counter += 1
+
+
+                for o in opened_EOS_dict:
+                    if opened_EOS_dict[o]:
+                        anh_arr = np.c_[tuple([tprops_dict_all[o][j] for j in keys_TPs])]
+                        for i in range(len(anh_arr_MU[:,0])):
+                            anh_arr_MU[i, 0] = 0
+
+                        anh_arr = anh_arr - anh_arr_MU
+
+                        anh_str = '#T          '+' '.join([(j+'            ') for j in list(keys_TPs)[1:]])+'\n'
+                        # TPs_arr = np.c_[tuple([tprops_dict_all[o][j] for j in keys_TPs])]
+                        for rowi in anh_arr:
+                            anh_str = anh_str + ' '.join(['%.11e' for i in rowi])%tuple(rowi)+'\n'
+                        window7['--M_anh_'+o].update(anh_str)
+                        window7['--IC_anh2plt'].update(values=list(keys_TPs)[1:])
+                        window7['--Tab_anh_' + o].update(visible=True)
+
+
+
+                        # print(anh_arr-anh_arr_MU)
+                window7['--Tab_anh_'].update(visible=False)
+                bool_anh = True
+                print('bool_anh', bool_anh)
+
         elif event == '||B_plotter_tprops':
             try:
                 keys_EOS = []
@@ -358,6 +408,20 @@ def gui() -> object:
                 #     window5.close()
                 data4plot_dict[str(window5_counter)] = events.plot_tprops(window,keys_EOS,window5_counter)
                 window5 = data4plot_dict[str(window5_counter)].window
+                window5_counter+=1
+                # print(window5)
+            except Exception as e:
+                sg.popup_ok(traceback.format_exc())
+        elif event == '||B_plotter_anh':
+            try:
+                keys_EOS = []
+                for o in opened_EOS_dict:
+                    if opened_EOS_dict[o]:
+                        keys_EOS.append(o)
+                # if  window5 is not None:
+                #     window5.close()
+                data4plot_dict[str(window5_counter)] = events.plot_anh(window7,keys_EOS,window5_counter)
+                window6 = data4plot_dict[str(window5_counter)].window
                 window5_counter+=1
                 # print(window5)
             except Exception as e:
@@ -408,24 +472,24 @@ def gui() -> object:
                         window['--I_S298'+o].update(S298)
                         for i in range(len(FS_db_params[o]['Cp'])):
                             window['--I_fsCp_P'+str(i)+o].update(disabled=False)
-                            #window['--I_fsCp_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['Cp'][i]))
-                            window['--I_fsCp_P'+str(0)+o].update(' '.join(['%.7e' for i in FS_db_params[o]['Cp']])%tuple(FS_db_params[o]['Cp']))
+                            window['--I_fsCp_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['Cp'][i]))
+                            #window['--I_fsCp_P'+str(0)+o].update(' '.join(['%.7e' for i in FS_db_params[o]['Cp']])%tuple(FS_db_params[o]['Cp']))
                         for i in range(len(FS_db_params[o]['a'])):
                             window['--I_fsa_P'+str(i)+o].update(disabled=False)
-                            # window['--I_fsa_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['a'][i]))
-                            window['--I_fsa_P'+str(0)+o].update(' '.join(['%.7e' for i in FS_db_params[o]['a']])%tuple(FS_db_params[o]['a']))
+                            window['--I_fsa_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['a'][i]))
+                            #window['--I_fsa_P'+str(0)+o].update(' '.join(['%.7e' for i in FS_db_params[o]['a']])%tuple(FS_db_params[o]['a']))
 
                         for i in range(len(FS_db_params[o]['1/Ks'])):
                             window['--I_fsK_P'+str(i)+o].update(disabled=False)
-                            # window['--I_fsK_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['1/Ks'][i]))
-                            window['--I_fsK_P'+str(0)+o].update(' '.join(['%.7e' for i in FS_db_params[o]['1/Ks']])%tuple(FS_db_params[o]['1/Ks']))
+                            window['--I_fsK_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['1/Ks'][i]))
+                            #window['--I_fsK_P'+str(0)+o].update(' '.join(['%.7e' for i in FS_db_params[o]['1/Ks']])%tuple(FS_db_params[o]['1/Ks']))
 
                         for i in range(len(FS_db_params[o]['Ksp'])):
                             window['--I_fsKp_P'+str(i)+o].update(disabled=False)
-                            # window['--I_fsKp_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['Ksp'][i]))
-                            window['--I_fsKp_P'+str(0)+o].update(' '.join(['%.7e' for i in FS_db_params[o]['Ksp']])%tuple(FS_db_params[o]['Ksp']))
+                            window['--I_fsKp_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['Ksp'][i]))
+                            #window['--I_fsKp_P'+str(0)+o].update(' '.join(['%.7e' for i in FS_db_params[o]['Ksp']])%tuple(FS_db_params[o]['Ksp']))
 
-                        print('xxxxxx',window['--I_mass'].get(), o, nDebs_dict[o]['ndeb'].EOS.pEOS ,window['--I_nu'].get(), p_electronic, p_defects, p_anh, p_intanh, window['--I_Ti'].get(), window['--I_Tf'].get(), window['--I_ntemps'].get(), mode, window['--I_fs_Tfrom'].get(),window['--I_fs_Tto'].get(),H298,S298,' '.join(['%.7e' for i in FS_db_params[o]['Cp']])%tuple(FS_db_params[o]['Cp']), ' '.join(['%.7e' for i in FS_db_params[o]['a']])%tuple(FS_db_params[o]['a']), ' '.join(['%.7e' for i in FS_db_params[o]['1/Ks']])%tuple(FS_db_params[o]['1/Ks']), ' '.join(['%.7e' for i in FS_db_params[o]['Ksp']])%tuple(FS_db_params[o]['Ksp']))
+                        #print('xxxxxx',window['--I_mass'].get(), o, nDebs_dict[o]['ndeb'].EOS.pEOS ,window['--I_nu'].get(), p_electronic, p_defects, p_anh, p_intanh, window['--I_Ti'].get(), window['--I_Tf'].get(), window['--I_ntemps'].get(), mode, window['--I_fs_Tfrom'].get(),window['--I_fs_Tto'].get(),H298,S298,' '.join(['%.7e' for i in FS_db_params[o]['Cp']])%tuple(FS_db_params[o]['Cp']), ' '.join(['%.7e' for i in FS_db_params[o]['a']])%tuple(FS_db_params[o]['a']), ' '.join(['%.7e' for i in FS_db_params[o]['1/Ks']])%tuple(FS_db_params[o]['1/Ks']), ' '.join(['%.7e' for i in FS_db_params[o]['Ksp']])%tuple(FS_db_params[o]['Ksp']))
 
 
                 window['--Tab_fs_'].update(visible=False)
@@ -604,4 +668,4 @@ def gui() -> object:
             data4plot_dict[windows_ix].create_canvas(show=False)
 
             data4plot_dict[windows_ix].popup_window.close()
-        checked_EOS_dict = events.update_diabled(window1,opened_EOS_dict,EOS_str_lst,checked_EOS_dict)
+        checked_EOS_dict = events.update_diabled(window1, window7,opened_EOS_dict,EOS_str_lst,checked_EOS_dict, bool_anh)

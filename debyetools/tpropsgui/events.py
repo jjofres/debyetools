@@ -13,7 +13,7 @@ def fbrowser_fill_browser(window,event):
     window['--I_compound'].update(move_cursor_to='end')
     return str_folderbrowser
 #
-def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser,opened_EOS_dict,EOS_long_lst,EOS_str_lst,checked_EOS_dict):
+def fbrowser_update_fields(window,window7,contcar_str,mws_dict,str_folderbrowser,opened_EOS_dict,EOS_long_lst,EOS_str_lst,checked_EOS_dict,bool_anh):
 
     with open(window['--I_compound'].get() +contcar_str) as f:
         lines = f.readlines()
@@ -35,11 +35,11 @@ def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser,opened_
     window['--I_p_anhxc'].update('0, 0, 0')
     window['--I_p_evac'].update('8')
     window['--I_p_svac'].update('2')
-    window['--I_Tm'].update('2000')
+    window['--I_Tm'].update('1000')
     window['--I_Ti'].update('0.1')
     window['--I_Pi'].update('0')
     window['--I_Tf'].update(window['--I_Tm'].get())
-    window['--I_ntemps'].update(100)
+    window['--I_ntemps'].update(10)
     window['--I_Tm'].update(disabled=False)
     window['--I_mass'].update(disabled=False)
     window['--M_minF_output'].update('')
@@ -51,7 +51,7 @@ def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser,opened_
     window['--I_p_el'].update('0, 0, 0, 0')
     window['--I_p_evac'].update('8')
     window['--I_p_svac'].update('2')
-    window['--I_Tm'].update('2000')
+    window['--I_Tm'].update('1000')
     window['--I_p_intanh'].update('0, 1')
     window['--Chk_el'].update(False)
     window['--I_p_el'].update(disabled= not bool(window['--Chk_el'].get()))
@@ -92,11 +92,12 @@ def fbrowser_update_fields(window,contcar_str,mws_dict,str_folderbrowser,opened_
     window['||B_plotter_tprops'].update(disabled=True)
     window['||B_plotter_fsprop2plt'].update(disabled=True)
     window['||B_eval_tprops'].update(disabled=True)
+    window['||B_eval_anh'].update(disabled=True)
     window['||B_run_fs_params'].update(disabled=True)
 
     window['--IC_prop2plt'].update('')
 
-    checked_EOS_dict = update_diabled(window,opened_EOS_dict,EOS_str_lst,checked_EOS_dict)
+    checked_EOS_dict = update_diabled(window,window7,opened_EOS_dict,EOS_str_lst,checked_EOS_dict, bool_anh)
     return checked_EOS_dict
 
 #
@@ -126,7 +127,7 @@ def add_EOS(window, opened_EOS_dict,EOS_long_lst):
     chk_eos(window,opened_EOS_dict)
 
 #
-def update_diabled(window,opened_dict,eos_available,bool_dict_params_EOS):
+def update_diabled(window,window7,opened_dict,eos_available,bool_dict_params_EOS, bool_anh):
     bool_run_eos_fitting, bool_dict_params_EOS, bool_mode = bool_chks(window,opened_dict)
     # window['||B_run_eos_fitting'].update(disabled=not bool_run_eos_fitting)
 
@@ -154,6 +155,10 @@ def update_diabled(window,opened_dict,eos_available,bool_dict_params_EOS):
     #window['--I_Tm'].update(disabled=True if window['--I_compound'].get()=='' else False)
     window['--I_ntemps'].update(disabled=True if window['--I_compound'].get()=='' else False)
     window['||B_plotter_tprops'].update(disabled=True if window['--IC_prop2plt'].get()== '' else False)
+    if bool_anh:
+        window7['||B_plotter_anh'].update(disabled=True if window7['--IC_anh2plt'].get() == '' else False)
+    else:
+        pass
     window['--I_cutoff_MP'].update(disabled=False)
     window['--I_ndists_MP'].update(disabled=False)
 
@@ -179,6 +184,7 @@ def chk_anhxc(window,event):
 def minF_enable_nexts(window):
     window['||B_plotter'].update(disabled=False)
     window['||B_eval_tprops'].update(disabled=False)
+    # window['||B_eval_anh'].update(disabled=False)
 #
 def tprops_enable_nexts(window):
     window['||B_run_fs_params'].update(disabled=False)
@@ -186,6 +192,7 @@ def tprops_enable_nexts(window):
     window['--I_fs_Tto'].update(window['--I_Tf'].get())
     window['--I_fs_Tfrom'].update(disabled=False)
     window['--I_fs_Tto'].update(disabled=False)
+    window['||B_eval_anh'].update(disabled=False)
     window['--Tab_'].update(visible=False)
 #
 def plot_EvV(window, eosobj_dict, opened_EOS_dict,jx):
@@ -312,6 +319,36 @@ def plot_tprops(window,minF_header,jx):
                               }
     initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
                             'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':window['--IC_prop2plt'].get(),'labelxsize':13,
+                            'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
+                            'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12, 'scalex':1,'scaley':1}
+    # plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)
+    data4plot = plot.pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,jx)
+    return data4plot
+
+def plot_anh(window,minF_header,jx):
+    initial_tabs_multilinetxt = {'t0':{'multiline':[]}}
+    for ix, k in enumerate(minF_header):
+        window['--M_anh_'+str(k)].get()
+        datas_dict = tbox.txt2dict(window['--M_anh_'+str(k)].get())
+        txt2M = '#T    '+k+'\n'
+        for valsi in np.c_[datas_dict['T'].T,datas_dict[window['--IC_anh2plt'].get()].T]:
+            txt2M = txt2M + '%.9e %.9e'%tuple(valsi)+'\n'
+        initial_tabs_multilinetxt['t'+str(ix)]={'multiline':txt2M}
+
+    initial_lines_settings = {
+                              'l0':{'plot':True,'label':0,'linestyle':'-','color':'mediumpurple','marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'mediumpurple','linewidth':2,'markersize':10},
+                              'l1':{'plot':True,'label':0,'linestyle':'-','color':'purple', 'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'deepskyblue','linewidth':2,'markersize':10},
+                              'l2':{'plot':True,'label':0,'linestyle':'-','color':'gray',        'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'aqua','linewidth':2,'markersize':10},
+                              'l3':{'plot':True,'label':0,'linestyle':'-','color':'orchid',        'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'gray','linewidth':2,'markersize':10},
+                              'l4':{'plot':True,'label':0,'linestyle':'-','color':'deepskyblue',          'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'C0','linewidth':2,'markersize':10},
+                              'l5':{'plot':True,'label':0,'linestyle':'-','color':'pink',          'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'C3','linewidth':2,'markersize':10},
+                              'l6':{'plot':True,'label':0,'linestyle':'-','color':'aqua',      'marker':'None',   'markerfacecolor':'None', 'markeredgecolor':'orange','linewidth':2,'markersize':10},
+                              'l7':{'plot':True,'label':0,'linestyle':'-','color':'cornflowerblue',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
+                              'l8':{'plot':True,'label':0,'linestyle':'-','color':'C0',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
+                              'l9':{'plot':True,'label':0,'linestyle':'-','color':'C1',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
+                              }
+    initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
+                            'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':window['--IC_anh2plt'].get(),'labelxsize':13,
                             'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
                             'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12, 'scalex':1,'scaley':1}
     # plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)

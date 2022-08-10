@@ -90,7 +90,7 @@ def layout(EOS_str_lst):
 
     lo_tabs_tprops = [[elmt.Tab(eos_str,[[elmt.sCol([[elmt.M('','tprop_'+eos_str,400,7)]], 'tprop_'+eos_str, 470, 80)]],eos_str,False) for eos_str in ['','MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']]]
 
-    lo_tprops = [[elmt.Bc('evaluate','eval_tprops',('gray','gray'))],
+    lo_tprops = [[elmt.Bc('evaluate','eval_tprops',('gray','gray')), elmt.Bc('evaluate anh','eval_anh',('gray','gray'))],
              [elmt.TG(lo_tabs_tprops,'tabs_tprops')],
              [elmt.T('select property to plot:','prop2plt'),elmt.ICombo(['       ','       ','       ','       '],'prop2plt',10,1),elmt.Bc('Plot','plotter_tprops',('white',elmt.theme_background_color()))]]
 

@@ -2,7 +2,7 @@ from debyetools.aux_functions import load_cell
 import numpy as np
 from debyetools.pairanalysis import pair_analysis
 
-folder_name = 'C:/Users/Paul/Documents/Javier/GitRepos/debyetools/tests/inpt_files/Al_fcc'
+folder_name = 'C:/Users/Javier/Documents/GitRepos/debyetools/tests/inpt_files/Al_fcc'
 formula, primitive_cell, basis_vectors = load_cell(folder_name+'/CONTCAR.5')
 supcell_size, cutoff, center = np.array([1, 1, 1]), 5, np.array([0, 0, 0])
 distances, num_bonds_per_formula, combs_types = pair_analysis(formula, supcell_size, cutoff, center, basis_vectors, primitive_cell)

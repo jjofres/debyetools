@@ -1,6 +1,6 @@
 #### imports
 # hola
-def gui():
+def gui() -> object:
     import PySimpleGUI as sg
     from debyetools.tpropsgui.layout import layout
     import debyetools.tpropsgui.events as events

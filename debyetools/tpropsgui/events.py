@@ -348,7 +348,7 @@ def plot_anh(window,minF_header,jx):
                               'l9':{'plot':True,'label':0,'linestyle':'-','color':'C1',        'marker':'None','markerfacecolor':'None', 'markeredgecolor':'None','linewidth':2,'markersize':10},
                               }
     initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
-                            'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':window['--IC_anh2plt'].get(),'labelxsize':13,
+                            'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':window['--IC_anh2plt'].get()+'$_{EOS}$'+'$-$'+window['--IC_anh2plt'].get()+'$_{Murnaghan}$','labelxsize':13,
                             'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
                             'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12, 'scalex':1,'scaley':1}
     # plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings)

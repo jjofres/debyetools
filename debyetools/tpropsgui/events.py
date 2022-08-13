@@ -43,6 +43,7 @@ def fbrowser_update_fields(window,window7,contcar_str,mws_dict,str_folderbrowser
     window['--I_Tm'].update(disabled=False)
     window['--I_mass'].update(disabled=False)
     window['--M_minF_output'].update('')
+    window['--LBx_EOS_listbox'].update(disabled=False)
     window['--LBx_EOS_listbox'].set_value([False for k in window['--LBx_EOS_listbox'].get()])
     add_EOS(window, opened_EOS_dict,EOS_long_lst)
     for eos in EOS_str_lst:

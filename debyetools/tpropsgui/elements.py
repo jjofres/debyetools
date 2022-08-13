@@ -61,4 +61,5 @@ def Ipad(txt, key, w, visible=True, enable_events=True, pad=None,disabled=True):
                     disabled_readonly_background_color = 'gray',enable_events=enable_events,visible=visible)
 
 def listbox(values,key):
-    return sg.Listbox(values=values,select_mode='extended',size=(20,8),enable_events=True,key='--LBx_'+key)
+    return sg.Listbox(values=values,select_mode='extended',size=(20,8),enable_events=True,key='--LBx_'+key, disabled=True)
+

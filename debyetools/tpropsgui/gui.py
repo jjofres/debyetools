@@ -1,10 +1,8 @@
-#### imports
-# hola
 def gui() -> object:
     import PySimpleGUI as sg
     from debyetools.tpropsgui.layout import layout
     import debyetools.tpropsgui.events as events
-    import debyetools.tpropsgui.toolbox as tbox
+    # import debyetools.tpropsgui.toolbox as tbox
     from debyetools.aux_functions import load_doscar, load_V_E, load_EM, load_cell
     import debyetools.potentials as potentials
     import traceback
@@ -14,7 +12,7 @@ def gui() -> object:
     from debyetools.aux_functions import gen_Ts
     from debyetools.fs_compound_db import fit_FS
     import numpy as np
-    from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+    # from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
     import debyetools.tpropsgui.plotter_class as plotter
 
 
@@ -25,17 +23,15 @@ def gui() -> object:
     plt.rcParams["mathtext.fontset"] = "dejavuserif"
 
 
-    EOS_long_lst = {'Morse':'MP','Birch-Murnaghan (3)':'BM','Rose-Vinet':'RV','Mie-Gruneisen':'MG','TB-SMA':'TB','Murnaghan (1)':'MU','Poirier-Tarantola':'PT','Birch-Murnaghan (4)':'BM4','Murnaghan (2)':'MU2','EAM':'EAM',
-                    }#'*Morse':'MP','*Birch-Murnaghan (3)':'*BM','*Rose-Vinet':'*RV','*Mie-Gruneisen':'*MG','*TB-SMA':'*TB','*Murnaghan (1)':'*MU','*Poirier-Tarantola':'*PT','*Birch-Murnaghan (4)':'*BM4','*Murnaghan (2)':'*MU2','*EAM':'*EAM'}
-    EOS_str_lst = ['MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM']#,'*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']
+    EOS_long_lst = {'Morse':'MP','Birch-Murnaghan (3)':'BM','Rose-Vinet':'RV','Mie-Gruneisen':'MG','TB-SMA':'TB','Murnaghan (1)':'MU','Poirier-Tarantola':'PT','Birch-Murnaghan (4)':'BM4','Murnaghan (2)':'MU2','EAM':'EAM'}
+    EOS_str_lst = ['MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM']
 
-    loc = '..'
+    # loc = '..'
     contcar_str = '/CONTCAR.5'
-    opened_EOS_dict = {str_i:False for str_i in EOS_str_lst}#{'MP':False,'BM':False,'RV':False,'MG':False,'TB':False,'MU':False,'BM3':False}
+    opened_EOS_dict = {str_i:False for str_i in EOS_str_lst}
     checked_EOS_dict = {str_i:True for str_i in EOS_str_lst}
     EOS2plot_dict = {str_i:'' for str_i in EOS_str_lst}
     mws_dict = {'Al3Ca_D022': 0.030255624999999998, 'H': 0.0010079, 'He': 0.0040026, 'Li': 0.006941, 'Be': 0.0090122, 'B': 0.010811, 'C': 0.0120107, 'N': 0.0140067, 'O': 0.0159994, 'F': 0.0189984, 'Ne': 0.020179700000000002, 'Na': 0.0229897, 'Mg': 0.024305, 'Al': 0.026981500000000002, 'Si': 0.0280855, 'P': 0.0309738, 'S': 0.032064999999999996, 'Cl': 0.035453000000000005, 'K': 0.0390983, 'Ar': 0.039948, 'Ca': 0.040078, 'Sc': 0.0449559, 'Ti': 0.047867, 'V': 0.0509415, 'Cr': 0.051996099999999996, 'Mn': 0.054938, 'Fe': 0.055845, 'Ni': 0.0586934, 'Co': 0.0589332, 'Cu': 0.063546, 'Zn': 0.06539, 'Ga': 0.069723, 'Ge': 0.07264, 'As': 0.0749216, 'Se': 0.07895999999999999, 'Br': 0.079904, 'Kr': 0.0838, 'Rb': 0.0854678, 'Sr': 0.08762, 'Y': 0.0889059, 'Zr': 0.091224, 'Nb': 0.0929064, 'Mo': 0.09594, 'Tc': 0.098, 'Ru': 0.10107, 'Rh': 0.1029055, 'Pd': 0.10642, 'Ag': 0.1078682, 'Cd': 0.112411, 'In': 0.114818, 'Sn': 0.11871, 'Sb': 0.12176000000000001, 'I': 0.1269045, 'Te': 0.1276, 'Xe': 0.131293, 'Cs': 0.13290549999999998, 'Ba': 0.137327, 'La': 0.1389055, 'Ce': 0.14011600000000002, 'Pr': 0.1409077, 'Nd': 0.14424, 'Pm': 0.145, 'Sm': 0.15036000000000002, 'Eu': 0.151964, 'Gd': 0.15725, 'Tb': 0.1589253, 'Dy': 0.1625, 'Ho': 0.1649303, 'Er': 0.167259, 'Tm': 0.1689342, 'Yb': 0.17304, 'Lu': 0.174967, 'Hf': 0.17849, 'Ta': 0.1809479, 'W': 0.18384, 'Re': 0.18620699999999998, 'Os': 0.19022999999999998, 'Ir': 0.19221700000000003, 'Pt': 0.195078, 'Au': 0.1969665, 'Hg': 0.20059, 'Tl': 0.2043833, 'Pb': 0.2072, 'Bi': 0.2089804, 'Po': 0.209, 'At': 0.21, 'Rn': 0.222, 'Fr': 0.223, 'Ra': 0.226, 'Ac': 0.227, 'Pa': 0.2310359, 'Th': 0.2320381, 'Np': 0.237, 'U': 0.2380289, 'Am': 0.243, 'Pu': 0.244, 'Cm': 0.247, 'Bk': 0.247, 'Cf': 0.251, 'Es': 0.252, 'Fm': 0.257, 'Md': 0.258, 'No': 0.259, 'Rf': 0.261, 'Lr': 0.262, 'Db': 0.262, 'Bh': 0.264, 'Sg': 0.266, 'Mt': 0.268, 'Rg': 0.272, 'Hs': 0.277}
-
 
     #### Window layout
     layout = layout(EOS_str_lst)
@@ -100,13 +96,6 @@ def gui() -> object:
         elif event == '||B_add_EOS':
             try:
                 events.add_EOS(window, opened_EOS_dict,EOS_long_lst)
-            #     for k in opened_EOS_dict.keys():
-            #         opened_EOS_dict[k]=False
-            #     for k in window['--LBx_EOS_listbox'].get():
-            #         opened_EOS_dict[EOS_long_lst[k]]=True
-            #     # print(opened_EOS_dict)
-            #
-            #     events.chk_eos(window,opened_EOS_dict)
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
 #
@@ -121,6 +110,38 @@ def gui() -> object:
         #EOS fitting button
         elif event == '||B_run_eos_fitting':
             try:
+                window['--M_minF_output'].update('')
+                for k in EOS_str_lst:
+                    window['--M_tprop_'+k].update('')
+                    window['--Tab_'+k].update(visible=False)
+                    window['--Tab_fs_'+k].update(visible=False)
+                    window['--I_H298'+k].update('',disabled=True)
+                    window['--I_S298'+k].update('',disabled=True)
+                    for i in range(6):
+                        window['--I_fsCp_P'+str(i)+k].update('',disabled=True)
+                    for i in range(4):
+                        window['--I_fsa_P'+str(i)+k].update('',disabled=True)
+                    for i in range(4):
+                        window['--I_fsK_P'+str(i)+k].update('',disabled=True)
+                    for i in range(2):
+                        window['--I_fsKp_P'+str(i)+k].update('',disabled=True)
+                window['--Tab_'].update(visible=True)
+                window['--Tab_'].select()
+                window['--Tab_fs_'].update(visible=True)
+                window['--Tab_fs_'].select()
+
+                window['--I_fs_Tfrom'].update('')
+                window['--I_fs_Tfrom'].update(disabled = True)
+                window['--I_fs_Tto'].update('')
+                window['--I_fs_Tto'].update(disabled = True)
+                window['||B_plotter'].update(disabled=True)
+                window['||B_plotter_tprops'].update(disabled=True)
+                window['||B_plotter_fsprop2plt'].update(disabled=True)
+                window['||B_eval_tprops'].update(disabled=True)
+                window['||B_run_fs_params'].update(disabled=True)
+
+                window['--IC_prop2plt'].update('')
+
                 V_DFT, E_DFT = load_V_E(str_folderbrowser, str_folderbrowser+'/CONTCAR.5', units='J/mol')
                 for k in opened_EOS_dict:
                     if opened_EOS_dict[k]:
@@ -192,7 +213,39 @@ def gui() -> object:
 
         elif event == '||B_calc_nu':
             try:
-                EM = EM = load_EM(str_folderbrowser+'/OUTCAR.eps')
+                window['--M_minF_output'].update('')
+                for k in EOS_str_lst:
+                    window['--M_tprop_'+k].update('')
+                    window['--Tab_'+k].update(visible=False)
+                    window['--Tab_fs_'+k].update(visible=False)
+                    window['--I_H298'+k].update('',disabled=True)
+                    window['--I_S298'+k].update('',disabled=True)
+                    for i in range(6):
+                        window['--I_fsCp_P'+str(i)+k].update('',disabled=True)
+                    for i in range(4):
+                        window['--I_fsa_P'+str(i)+k].update('',disabled=True)
+                    for i in range(4):
+                        window['--I_fsK_P'+str(i)+k].update('',disabled=True)
+                    for i in range(2):
+                        window['--I_fsKp_P'+str(i)+k].update('',disabled=True)
+                window['--Tab_'].update(visible=True)
+                window['--Tab_'].select()
+                window['--Tab_fs_'].update(visible=True)
+                window['--Tab_fs_'].select()
+
+                window['--I_fs_Tfrom'].update('')
+                window['--I_fs_Tfrom'].update(disabled = True)
+                window['--I_fs_Tto'].update('')
+                window['--I_fs_Tto'].update(disabled = True)
+                window['||B_plotter'].update(disabled=True)
+                window['||B_plotter_tprops'].update(disabled=True)
+                window['||B_plotter_fsprop2plt'].update(disabled=True)
+                window['||B_eval_tprops'].update(disabled=True)
+                window['||B_run_fs_params'].update(disabled=True)
+
+                window['--IC_prop2plt'].update('')
+
+                EM = load_EM(str_folderbrowser+'/OUTCAR.eps')
                 nu = poisson_ratio(EM)
                 print(nu)
                 # print(nu)
@@ -201,6 +254,37 @@ def gui() -> object:
                 sg.popup_ok(traceback.format_exc())
         elif event == '||B_calc_el':
             try:
+                window['--M_minF_output'].update('')
+                for k in EOS_str_lst:
+                    window['--M_tprop_'+k].update('')
+                    window['--Tab_'+k].update(visible=False)
+                    window['--Tab_fs_'+k].update(visible=False)
+                    window['--I_H298'+k].update('',disabled=True)
+                    window['--I_S298'+k].update('',disabled=True)
+                    for i in range(6):
+                        window['--I_fsCp_P'+str(i)+k].update('',disabled=True)
+                    for i in range(4):
+                        window['--I_fsa_P'+str(i)+k].update('',disabled=True)
+                    for i in range(4):
+                        window['--I_fsK_P'+str(i)+k].update('',disabled=True)
+                    for i in range(2):
+                        window['--I_fsKp_P'+str(i)+k].update('',disabled=True)
+                window['--Tab_'].update(visible=True)
+                window['--Tab_'].select()
+                window['--Tab_fs_'].update(visible=True)
+                window['--Tab_fs_'].select()
+
+                window['--I_fs_Tfrom'].update('')
+                window['--I_fs_Tfrom'].update(disabled = True)
+                window['--I_fs_Tto'].update('')
+                window['--I_fs_Tto'].update(disabled = True)
+                window['||B_plotter'].update(disabled=True)
+                window['||B_plotter_tprops'].update(disabled=True)
+                window['||B_plotter_fsprop2plt'].update(disabled=True)
+                window['||B_eval_tprops'].update(disabled=True)
+                window['||B_run_fs_params'].update(disabled=True)
+
+                window['--IC_prop2plt'].update('')
                 E, N, Ef = load_doscar(str_folderbrowser+'/DOSCAR.EvV.')
                 p_electronic = fit_electronic(V_DFT, p_el_initial,E,N,Ef)
 
@@ -363,7 +447,7 @@ def gui() -> object:
                 anh_arr_MU = np.c_[tuple([tprops_dict_all['MU'][j] for j in keys_TPs])]
                 import debyetools.tpropsgui.elements as elmt
                 print('XXXXXXXXXXXXXXXXXXXXXXXXX')
-                lo_tabs_anh = [[elmt.Tab(eos_str,[[elmt.sCol([[elmt.M('','anh_'+eos_str,400,7)]], 'anh_'+eos_str, 470, 80)]],'anh_'+eos_str,False) for eos_str in ['','MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']]]
+                lo_tabs_anh = [[elmt.Tab(eos_str,[[elmt.sCol([[elmt.M('','anh_'+eos_str,1000,7)]], 'anh_'+eos_str, 470, 80)]],'anh_'+eos_str,False) for eos_str in ['','MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']]]
 
                 lo_anh = [[elmt.TG(lo_tabs_anh, 'tabs_anh')],
                           [elmt.T('select property to plot:', 'anh2plt'),

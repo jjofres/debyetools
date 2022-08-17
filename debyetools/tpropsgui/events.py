@@ -230,9 +230,9 @@ def plot_EvV(window, eosobj_dict, opened_EOS_dict,jx):
                             'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
                             'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.2,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12, 'scalex':1,'scaley':1}
 
-    window = plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,jx)
+    data4plot = plot.pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,jx)
 
-    return window
+    return data4plot
 
 def plot_EvV_full(window, eosobj_dict, opened_EOS_dict,jx):
     pots_str_lst = [k for k in opened_EOS_dict if opened_EOS_dict[k]]
@@ -410,7 +410,7 @@ def plot_fsprops(window,event,fs_params,Tfrom,Tto,TPs_calculated_dict,jx):
                             'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'T $\left[K\\right]$','ylabel':window['--IC_prop2plt'].get(),'labelxsize':13,
                             'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
                             'legendncol':1,'legendfontsize':11,'use_grid':True,'lmargin':0.14,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12, 'scalex':1,'scaley':1}
-    window = plot.pop_window_simple(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,jx)
-    return window
+    data4plot = plot.pop_window(initial_tabs_multilinetxt,initial_lines_settings,initial_fig_settings,jx)
+    return data4plot
 
 #

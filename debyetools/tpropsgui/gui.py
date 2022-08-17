@@ -194,7 +194,8 @@ def gui() -> object:
             try:
                 if  window2 is not None:
                     window2.close()
-                window2 = events.plot_EvV(window, EOS2plot_dict, opened_EOS_dict,window5_counter)
+                data4plot_dict[str(window5_counter)] = events.plot_EvV(window, EOS2plot_dict, opened_EOS_dict,window5_counter)
+                window2 = data4plot_dict[str(window5_counter)].window
                 window5_counter+=1
 
             except Exception as e:
@@ -582,7 +583,8 @@ def gui() -> object:
 
         elif '||B_plotter_fsprop2plt' in event:
             try:
-                window6 = events.plot_fsprops(window,event,FS_db_params, float(window['--I_fs_Tfrom'].get()),float(window['--I_fs_Tto'].get()), tprops_dict_all,window5_counter)
+                data4plot_dict[str(window5_counter)] = events.plot_fsprops(window,event,FS_db_params, float(window['--I_fs_Tfrom'].get()),float(window['--I_fs_Tto'].get()), tprops_dict_all,window5_counter)
+                window8 = data4plot_dict[str(window5_counter)].window
                 window5_counter+=1
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())

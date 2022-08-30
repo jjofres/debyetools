@@ -6,7 +6,9 @@ from time import time
 from matplotlib import pyplot as plt
 from debyetools.ndeb import nDeb
 from debyetools.aux_functions import gen_Ts
-from debyetools.fs_compound_db import fit_FS, Cp2fit, alpha2fit, Ksinv2fit, Ksp2fit
+from debyetools.fs_compound_db \
+  import \
+  fit_FS, Cp2fit, alpha2fit, Ksinv2fit, Ksp2fit
 tic =  time()
 
 #################
@@ -21,14 +23,17 @@ supcell_size, cutoff, center = np.array([1, 1, 1]), 7, np.array([0, 0, 0])
 
 # i.ii. Pair analysis
 ######################
-distances, num_bonds_per_formula, combs_types = pair_analysis(formula, supcell_size, cutoff, center, basis_vectors, primitive_cell)
+distances, num_bonds_per_formula, \
+combs_types = pair_analysis(formula, supcell_size,
+                            cutoff, center, basis_vectors, primitive_cell)
 
 # i.iii. Print results
 #######################
 txt2print = 'distances  | # of pairs per type\n'
 combs_types = [ct.replace('x', '') for ct in combs_types]
 txt2print = txt2print + '           | ' + '  '.join(['%s' for _ in combs_types]) % tuple(combs_types) + '\n'
-for d, n in zip(distances, num_bonds_per_formula):
+for d, n in zip(distances,
+                num_bonds_per_formula):
   txt2print = txt2print + '%.6f  '%(d) + ' | ' + ' '.join(['%.2f' for _ in n]) % tuple(n) + '\n'
 print(txt2print)
 

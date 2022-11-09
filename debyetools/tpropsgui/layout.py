@@ -39,7 +39,7 @@ def layout(EOS_str_lst):
 
     lo_EOS = [[elmt.listbox(['Morse','EAM','Rose-Vinet','TB-SMA','Birch-Murnaghan (3)','Mie-Gruneisen','Murnaghan (1)','Poirier-Tarantola','Birch-Murnaghan (4)','Murnaghan (2)',
                              ],'EOS_listbox')],
-              [elmt.Bc('Add','add_EOS',('white', 'green'))]]
+              [elmt.Bc('Select EOSs','add_EOS',('white', 'green'))]]
 
     lo_EOS_collapes = [
                 [elmt.collapse(lo_options['MP'],'options_'+'MP')],
@@ -68,7 +68,7 @@ def layout(EOS_str_lst):
     lo_intanh = [[elmt.Chk('parameters:','intanh',disabled=True),elmt.dI('','p_intanh',10)]]
 
     lo_left = [[elmt.T('compound:','compound'),
-                elmt.I('','compound',30),
+                elmt.dI('','compound',30),
                 elmt.dI(txt='', key='FILEBROWSE_', w=0, disabled=False,enable_events=True,visible=False),
                 elmt.Br('compound')],
                [elmt.T('formula:','formula'),elmt.dI('','formula',6),elmt.T('structure:','strkt'),elmt.dI('','strkt',4)],
@@ -88,9 +88,9 @@ def layout(EOS_str_lst):
                [elmt.sCol([[elmt.M('','minF_output',100,7)]], 'minF_output', 480, 80)],
                [elmt.Bc('Plot V(T)','plotter',('gray','gray'))],]
 
-    lo_tabs_tprops = [[elmt.Tab(eos_str,[[elmt.sCol([[elmt.M('','tprop_'+eos_str,400,7)]], 'tprop_'+eos_str, 470, 80)]],eos_str,False) for eos_str in ['','MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']]]
+    lo_tabs_tprops = [[elmt.Tab(eos_str,[[elmt.sCol([[elmt.M('','tprop_'+eos_str,1000,7)]], 'tprop_'+eos_str, 470, 80)]],eos_str,False) for eos_str in ['','MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']]]
 
-    lo_tprops = [[elmt.Bc('evaluate','eval_tprops',('gray','gray'))],
+    lo_tprops = [[elmt.Bc('evaluate','eval_tprops',('gray','gray')), elmt.Bc('evaluate anh','eval_anh',('gray','gray'))],
              [elmt.TG(lo_tabs_tprops,'tabs_tprops')],
              [elmt.T('select property to plot:','prop2plt'),elmt.ICombo(['       ','       ','       ','       '],'prop2plt',10,1),elmt.Bc('Plot','plotter_tprops',('white',elmt.theme_background_color()))]]
 

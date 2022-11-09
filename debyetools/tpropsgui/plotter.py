@@ -198,7 +198,7 @@ class fig:
         self.initial_fig_settings = {'figwidth':6,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
                                 'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':xlabel,'ylabel':ylabel,'labelxsize':12,
                                 'labelysize':12,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
-                                'legendncol':1,'legendfontsize':10,'use_grid':True,'lmargin':0.11,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12}
+                                'legendncol':1,'legendfontsize':10,'use_grid':True,'lmargin':0.11,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12, 'scalex':1,'scaley':1}
 
         self.tabs = []
         self.types = []

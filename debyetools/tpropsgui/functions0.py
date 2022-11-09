@@ -19,52 +19,52 @@ def textSpinner(txt=None,init_val=None,width=None,key=None,tooltip=None):
     spinner = NewSpinner(init_val=init_val,width=width,key=key,tooltip=tooltip)
     return sg.Text(txt,key='--T_'+key), spinner[0], spinner[1]
 #
-def general_layout(lines):
-    figwidth_spin = textSpinner(txt='  w: ',init_val='6',width=3,key='figwidth')
-    figheight_spin = textSpinner(txt='  h: ',init_val='4',width=3,key='figheight')
+def general_layout(lines,jx):
+    figwidth_spin = textSpinner(txt='  w: ',init_val='6',width=3,key='ix'+str(jx)+'-'+'figwidth')
+    figheight_spin = textSpinner(txt='  h: ',init_val='4',width=3,key='ix'+str(jx)+'-'+'figheight')
     layout_figure = [[sg.Text('  Figure size: ',key='--T_figure_size'),
                       figwidth_spin[0],figwidth_spin[1],figwidth_spin[2], figheight_spin[0],figheight_spin[1],figheight_spin[2]]]
 
-    titlesize_spin = textSpinner(txt='  font size: ',init_val='10',width=3,key='titlesize')
-    titlexpos_spin = textSpinner(txt='  x: ',init_val='0.5',width=4,key='titlexpos')
-    titleypos_spin = textSpinner(txt='  y: ',init_val='0.98',width=4,key='titleypos')
-    layout_title = [[sg.Checkbox('use title', enable_events=True, key='use_title')],
-                    [sg.Text('  title: ',key='--T_title'),sg.Input(size=(14, 1), justification='right', key='title'),
+    titlesize_spin = textSpinner(txt='  font size: ',init_val='10',width=3,key='ix'+str(jx)+'-'+'titlesize')
+    titlexpos_spin = textSpinner(txt='  x: ',init_val='0.5',width=4,key='ix'+str(jx)+'-'+'titlexpos')
+    titleypos_spin = textSpinner(txt='  y: ',init_val='0.98',width=4,key='ix'+str(jx)+'-'+'titleypos')
+    layout_title = [[sg.Checkbox('use title', enable_events=True, key='ix'+str(jx)+'-'+'use_title')],
+                    [sg.Text('  title: ',key='--T_title'),sg.Input(size=(14, 1), justification='right', key='ix'+str(jx)+'-'+'title'),
                      titlesize_spin[0],titlesize_spin[1],titlesize_spin[2]],
                     [sg.Text('  Position: ',key='--T_pos_title'),
                      titlexpos_spin[0],titlexpos_spin[1],titlexpos_spin[2], titleypos_spin[0],titleypos_spin[1],titleypos_spin[2]]]
 
-    labelxsize_spin = textSpinner(txt='  font size: ',init_val='10',width=3,key='labelxsize')
-    labelysize_spin = textSpinner(txt='  font size: ',init_val='10',width=3,key='labelysize')
+    labelxsize_spin = textSpinner(txt='  font size: ',init_val='10',width=3,key='ix'+str(jx)+'-'+'labelxsize')
+    labelysize_spin = textSpinner(txt='  font size: ',init_val='10',width=3,key='ix'+str(jx)+'-'+'labelysize')
 
-    limxmin_spin = textSpinner(txt='  min: ',init_val='0',width=4,key='limxmin')
-    limymin_spin = textSpinner(txt='  min: ',init_val='0',width=4,key='limymin')
-    limxmax_spin = textSpinner(txt='  max: ',init_val='0',width=4,key='limxmax')
-    limymax_spin = textSpinner(txt='  max: ',init_val='0',width=4,key='limymax')
+    limxmin_spin = textSpinner(txt='  min: ',init_val='0',width=4,key='ix'+str(jx)+'-'+'limxmin')
+    limymin_spin = textSpinner(txt='  min: ',init_val='0',width=4,key='ix'+str(jx)+'-'+'limymin')
+    limxmax_spin = textSpinner(txt='  max: ',init_val='0',width=4,key='ix'+str(jx)+'-'+'limxmax')
+    limymax_spin = textSpinner(txt='  max: ',init_val='0',width=4,key='ix'+str(jx)+'-'+'limymax')
 
-    layout_axis = [[sg.Checkbox('use xlabel ', enable_events=True, key='use_xlabel'),sg.Checkbox('use ylabel ', enable_events=True, key='use_ylabel')],
-                   [sg.Text('  xlabel: ',key='--T_x_label'),sg.Input(size=(14, 1), justification='right', key='xlabel'),
+    layout_axis = [[sg.Checkbox('use xlabel ', enable_events=True, key='ix'+str(jx)+'-'+'use_xlabel'),sg.Checkbox('use ylabel ', enable_events=True, key='ix'+str(jx)+'-'+'use_ylabel')],
+                   [sg.Text('  xlabel: ',key='--T_x_label'),sg.Input(size=(14, 1), justification='right', key='ix'+str(jx)+'-'+'xlabel'),
                    labelxsize_spin[0],labelxsize_spin[1],labelxsize_spin[2]],
-                   [sg.Text('  ylabel: ',key='--T_y_label'),sg.Input(size=(14, 1), justification='right', key='ylabel'),
+                   [sg.Text('  ylabel: ',key='--T_y_label'),sg.Input(size=(14, 1), justification='right', key='ix'+str(jx)+'-'+'ylabel'),
                    labelysize_spin[0],labelysize_spin[1],labelysize_spin[2]],
-                   [sg.Checkbox('auto xlim ', enable_events=True, key='auto_xlim')],
+                   [sg.Checkbox('auto xlim ', enable_events=True, key='ix'+str(jx)+'-'+'auto_xlim')],
                    [sg.Text('  xlim: ',key='--T_xlim'),
                     limxmin_spin[0],limxmin_spin[1],limxmin_spin[2], limxmax_spin[0],limxmax_spin[1],limxmax_spin[2]],
-                   [sg.Checkbox('auto ylim ', enable_events=True, key='auto_ylim')],[
+                   [sg.Checkbox('auto ylim ', enable_events=True, key='ix'+str(jx)+'-'+'auto_ylim')],[
                     sg.Text('  ylim: ',key='--T_ylim'),
                     limymin_spin[0],limymin_spin[1],limymin_spin[2], limymax_spin[0],limymax_spin[1],limymax_spin[2]]]
 
-    legendncol_spin     = textSpinner(txt='  columns: ',init_val='2',width=3,key='legendncol')
-    legendfontsize_spin = textSpinner(txt='  font size: ',init_val='10',width=3,key='legendfontsize')
-    layout_legend = [[sg.Checkbox('use legend ', enable_events=True, key='use_legend'),sg.Text('  location: ',key='--T_legend_loc'),
-                      sg.InputCombo(values=legend_loc_list, size=(12,1), key='legend_loc')],
+    legendncol_spin     = textSpinner(txt='  columns: ',init_val='2',width=3,key='ix'+str(jx)+'-'+'legendncol')
+    legendfontsize_spin = textSpinner(txt='  font size: ',init_val='10',width=3,key='ix'+str(jx)+'-'+'legendfontsize')
+    layout_legend = [[sg.Checkbox('use legend ', enable_events=True, key='ix'+str(jx)+'-'+'use_legend'),sg.Text('  location: ',key='--T_legend_loc'),
+                      sg.InputCombo(values=legend_loc_list, size=(12,1), key='ix'+str(jx)+'-'+'legend_loc')],
                      [legendncol_spin[0],legendncol_spin[1],legendncol_spin[2], legendfontsize_spin[0],legendfontsize_spin[1],legendfontsize_spin[2]]]
-    layout_grid = [[sg.Checkbox('use grid ', enable_events=True, key='use_grid')]]
+    layout_grid = [[sg.Checkbox('use grid ', enable_events=True, key='ix'+str(jx)+'-'+'use_grid')]]
 
-    lmargin_spin = textSpinner(txt='  left: ',init_val='0.18',width=4,key='lmargin')
-    rmargin_spin = textSpinner(txt='  riht: ',init_val='0.98',width=4,key='rmargin')
-    bmargin_spin = textSpinner(txt='  bottom: ',init_val='0.12',width=4,key='bmargin')
-    tmargin_spin = textSpinner(txt='  top: ',init_val='0.95',width=4,key='tmargin')
+    lmargin_spin = textSpinner(txt='  left: ',init_val='0.18',width=4,key='ix'+str(jx)+'-'+'lmargin')
+    rmargin_spin = textSpinner(txt='  riht: ',init_val='0.98',width=4,key='ix'+str(jx)+'-'+'rmargin')
+    bmargin_spin = textSpinner(txt='  bottom: ',init_val='0.12',width=4,key='ix'+str(jx)+'-'+'bmargin')
+    tmargin_spin = textSpinner(txt='  top: ',init_val='0.95',width=4,key='ix'+str(jx)+'-'+'tmargin')
     layout_margins = [[lmargin_spin[0],lmargin_spin[1],lmargin_spin[2], rmargin_spin[0],rmargin_spin[1],rmargin_spin[2],
                        bmargin_spin[0],bmargin_spin[1],bmargin_spin[2], tmargin_spin[0],tmargin_spin[1],tmargin_spin[2]]]
 
@@ -75,24 +75,24 @@ def general_layout(lines):
                    [sg.Frame(title='Grid',layout=layout_grid,key='--Frame_grid')],
                    [sg.Frame(title='Margins',layout=layout_margins,key='--Frame_margins')]]
 
-    width_spin = {k:textSpinner(txt=' ',init_val=getattr(lines,k)['settings']['linewidth'],width=2,key='++linewidth++'+k,tooltip='line width') for k in lines.keys()}
-    markersize_spin = {k: textSpinner(txt=' ', init_val=getattr(lines,k)['settings']['markersize'],width=2,key='++markersize++'+k,tooltip='marker size') for k in lines.keys()}
-    layout_list_lines = [[sg.Checkbox(k, enable_events=True,key='++plot++'+k,default=getattr(lines,k)['settings']['plot']),\
-                          sg.Text(' line: ',key='--T_lstyle_'+k),sg.InputCombo(values=line_styles_list, size=(2,1), key='++linestyle++'+k,tooltip='line style',default_value=getattr(lines,k)['settings']['linestyle']),\
-                          sg.Text(' ',key='--T_color_'+k),sg.InputCombo(default_value=getattr(lines,k)['settings']['color'],values=colors_list, size=(12,1), key='++color++'+k,tooltip='line color'),\
+    width_spin = {k:textSpinner(txt=' ',init_val=getattr(lines,k)['settings']['linewidth'],width=2,key='ix'+str(jx)+'-'+'++linewidth++'+k,tooltip='line width') for k in lines.keys()}
+    markersize_spin = {k: textSpinner(txt=' ', init_val=getattr(lines,k)['settings']['markersize'],width=2,key='ix'+str(jx)+'-'+'++markersize++'+k,tooltip='marker size') for k in lines.keys()}
+    layout_list_lines = [[sg.Checkbox(k, enable_events=True,key='ix'+str(jx)+'-'+'++plot++'+k,default=getattr(lines,k)['settings']['plot']),\
+                          sg.Text(' line: ',key='--T_lstyle_'+k),sg.InputCombo(values=line_styles_list, size=(2,1), key='ix'+str(jx)+'-'+'++linestyle++'+k,tooltip='line style',default_value=getattr(lines,k)['settings']['linestyle']),\
+                          sg.Text(' ',key='--T_color_'+k),sg.InputCombo(default_value=getattr(lines,k)['settings']['color'],values=colors_list, size=(12,1), key='ix'+str(jx)+'-'+'++color++'+k,tooltip='line color'),\
                           width_spin[k][0],width_spin[k][1],width_spin[k][2],\
-                          sg.Text(' marker: ',key='--T_marker_'+k),sg.InputCombo(values=markers_list, size=(2,1), key='++marker++'+k,tooltip='marker style',default_value=getattr(lines,k)['settings']['marker']),\
-                          sg.Text(' ',key='--T_facecolor_'+k),sg.InputCombo(default_value=getattr(lines,k)['settings']['markerfacecolor'],values=colors_list, size=(12,1), key='++markerfacecolor++'+k,tooltip='marker face color'),\
-                          sg.Text(' ',key='--T_edgecolor_'+k),sg.InputCombo(default_value=getattr(lines,k)['settings']['markeredgecolor'],values=colors_list, size=(12,1), key='++markeredgecolor++'+k,tooltip='marker edge color'),\
+                          sg.Text(' marker: ',key='--T_marker_'+k),sg.InputCombo(values=markers_list, size=(2,1), key='ix'+str(jx)+'-'+'++marker++'+k,tooltip='marker style',default_value=getattr(lines,k)['settings']['marker']),\
+                          sg.Text(' ',key='--T_facecolor_'+k),sg.InputCombo(default_value=getattr(lines,k)['settings']['markerfacecolor'],values=colors_list, size=(12,1), key='ix'+str(jx)+'-'+'++markerfacecolor++'+k,tooltip='marker face color'),\
+                          sg.Text(' ',key='--T_edgecolor_'+k),sg.InputCombo(default_value=getattr(lines,k)['settings']['markeredgecolor'],values=colors_list, size=(12,1), key='ix'+str(jx)+'-'+'++markeredgecolor++'+k,tooltip='marker edge color'),\
                           markersize_spin[k][0],markersize_spin[k][1],markersize_spin[k][2],\
                           ] for k in lines.keys()]
-    layout_right = [[sg.Canvas(key='--CANVAS2-')],
-                    [sg.Button('Refresh figure',key='--B_refresh'),sg.Button('Edit data',key='--B_editdata'),sg.Button('Save figure..',key='--B_savefig'),sg.Button('Load data...',key='--B_loaddata')],
+    layout_right = [[sg.Column([[sg.Canvas(key='--CANVAS2-')]], key='col_fig'), sg.Column([[sg.Text('Re-scale xdata:', key='--T_scaleX'),sg.Input('1',size=(6, 1), key='ix'+str(jx)+'-'+'scalex')],[sg.Text('Re-scale ydata:', key='--T_scaleY'),sg.Input('1',size=(6, 1), key='ix'+str(jx)+'-'+'scaley')]], key='col_scale')],
+                    [sg.Button('Refresh figure',key='--B_'+'ix'+str(jx)+'-refresh'),sg.Button('Edit data',key='--B_'+'ix'+str(jx)+'-editdata'),sg.Button('Save figure..',key='--B_'+'ix'+str(jx)+'-savefig'),sg.Button('Load data...',key='--B_'+'ix'+str(jx)+'-loaddata')],
                      [sg.Column(layout_list_lines,size=(600,150), scrollable=True,key='--Col_list_lines')],
                     ]
 
     layout = [[sg.Column(layout_left),sg.Text('    ',key='--T_sep_cols'),sg.Column(layout_right,element_justification='center')],
-              [sg.Button('Close',key='--B_close')]]
+              [sg.Button('Close',key='--B_'+'ix'+str(jx)+'-close')]]
     return layout
 
 def simple_layout(lines):
@@ -120,7 +120,8 @@ def plot_fig(saved_ins,lines,show=False):
         linei = getattr(lines,key)
         if linei['settings']['plot']:
             ls=linei['settings']
-            ax.plot(linei['x'],linei['y'],label =linei['label'], linestyle=ls['linestyle'],color=ls['color'],marker=ls['marker'],markerfacecolor=ls['markerfacecolor'],
+
+            ax.plot(linei['x']*float(saved_ins['scalex']),linei['y']*float(saved_ins['scaley']),label ='' if linei['label']=='XX' else linei['label'], linestyle=ls['linestyle'],color=ls['color'],marker=ls['marker'],markerfacecolor=ls['markerfacecolor'],
                     markeredgecolor=ls['markeredgecolor'],linewidth=ls['linewidth'],markersize=ls['markersize'])
 
     if saved_ins['use_title']:
@@ -135,7 +136,7 @@ def plot_fig(saved_ins,lines,show=False):
     if not saved_ins['auto_ylim']:
         ax.set_ylim(bottom=float(saved_ins['limymin']),top=float(saved_ins['limymax']),auto=not saved_ins['auto_ylim'])
     if saved_ins['use_legend']:
-        ax.legend(loc=saved_ins['legend_loc'],ncol=int(saved_ins['legendncol']),fontsize=float(saved_ins['legendfontsize']))
+        ax.legend(loc=saved_ins['legend_loc'],ncol=int(saved_ins['legendncol']),fontsize=float(saved_ins['legendfontsize']), handlelength=2,columnspacing=0.5)#,labelspacing=0.3,columnspacing=0.5,handletextpad=0.2)
     if saved_ins['use_grid']:
         ax.grid()
     fig.subplots_adjust(left=float(saved_ins['lmargin']), bottom=float(saved_ins['bmargin']), right=float(saved_ins['rmargin']), top=float(saved_ins['tmargin']), wspace=0, hspace=0)

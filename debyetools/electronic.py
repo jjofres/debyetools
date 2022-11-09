@@ -46,6 +46,8 @@ class Electronic:
         return - (1/6)*np.pi**2*NAv*self.r*kB**2*T**2*self.NfV(V)/(0.160218e-18)
     def dFdV_T(self, T, V):
         return - (1/6)*np.pi**2*NAv*self.r*kB**2*T**2*self.dNfVdV_T(V)/(0.160218e-18)
+    def dFdT_V(self,T,V):
+        return - 2*T*np.pi**2*NAv*self.r*kB**2*self.NfV(V)*(1/6)/(0.160218e-18)
     def d2FdT2_V(self,T,V):
         return - 2*np.pi**2*NAv*self.r*kB**2*self.NfV(V)*(1/6)/(0.160218e-18)
     def d2FdV2_T(self,T,V):

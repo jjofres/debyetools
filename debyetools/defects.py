@@ -68,6 +68,9 @@ class Defects:
         return -NAv*T*kB*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))
     def dFdV_T(self, T, V):
         return -NAv*(self.dSvacdV_T(V)*T-self.dEvacdV_T(V))*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))
+
+    def dFdT_V(self,T,V):
+        return -NAv*kB*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))-NAv*T*kB*(self.Svac(V)/(T*kB)-(self.Svac(V)*T-self.Evac(V))/(T**2*kB))*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))
     def d2FdT2_V(self,T,V):
         return -NAv*self.Evac(V)**2*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))/(T**3*kB)
     def d2FdV2_T(self,T,V):

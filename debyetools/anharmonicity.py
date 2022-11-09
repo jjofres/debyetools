@@ -108,6 +108,17 @@ class Anharmonicity:
         """
         return -1 / 2 * self.dAdV_T(V) * T ** 2
 
+    def dFdT_V(self, T, V):
+        """
+        Temperature derivative of the free energy due the excess term, at fixed V.
+
+        :param float T: Temperature.
+        :param float V: Volume.
+        :return: -A(V)
+        :rtype: float
+        """
+        return -T*self.A(V)
+
     def d2FdT2_V(self, T, V):
         """
         Second order Temperature derivative of the free energy due the excess term, at fixed V.

@@ -11,6 +11,11 @@ from debyetools.fs_compound_db \
   fit_FS, Cp2fit, alpha2fit, Ksinv2fit, Ksp2fit
 tic =  time()
 
+from debyetools.debfunct import D_3
+
+for x in np.arange(0,.111,.01):
+    print(x, D_3(x))
+hola
 #################
 # I. Pair analysis #
 #################

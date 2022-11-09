@@ -1,16 +1,17 @@
 # debyetools
 
-A little library for the implementation of a Debye approximation tool for calculating self-consistent thermodynamic properties.The software presented here is based in the Debye approximation of the QHA using the crystal internal energetics parametrized at ground-state to project the thermodynamics properties at high temperatures. We present here how each contribution to the free energy are considered and a description of the architecture of the calculation engine and of the GUI.
+Implementation of a tool for calculating self-consistent thermodynamic properties that can take into account all kinds of contributions to the free energy inluding explicit anharmonicity. The software presented here is based in the Debye approximation within the QHA using the crystal internal energetics parametrized at ground-state to project the thermodynamics properties at high temperatures. 
+
+Made by Javier Jofre: javier.jofre@polymtl.ca
+Please cite.
 
 ### Requirements:
 - numpy
-- numpy
+- mpmath
 - scipy
 - PySimpleGUI
 - matplotlib
 
-Made by Javier Jofre: javier.jofre@polymtl.ca
-Please cite.
 
 ### Installation
 ```
@@ -19,8 +20,8 @@ pip install --upgrade debyetools
 
 ### Get started
 
-To start getting familiar with the interface `tProps` you can download `examples input files`_.
-The GUI can be launched by executing the interface script from the debyetools repository main folder::
+To start getting familiar with the interface `tProps` you can download `examples input files`.
+The GUI can be launched by executing the interface script from the debyetools repository main folder:
 
 ```
 python gui.py
@@ -61,3 +62,6 @@ To Do's:
 - Add More Examples to Documentation
 - Improve error handling
 - Add 'Compatible input files formats'
+- Improve Documentation
+- Add handling of anisotropic materials
+- Prediction of explicit anharmonicity parameters

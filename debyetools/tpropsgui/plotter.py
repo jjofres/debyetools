@@ -219,14 +219,14 @@ class fig:
         else:
             linestyle = 'None'
             if not mtype:
-                mmtype = self.markers[self.len]
+                mtype = self.markers[self.len]
         if not lcolor:
             lcolor = self.colors[self.len]
         if not mcolor:
             mcolor = self.colors[self.len]
         self.initial_lines_settings['l'+str(self.len)] = {'plot':True,'label':0,'linestyle':linestyle,'color':lcolor,        'marker':mtype,   'markerfacecolor':'None', 'markeredgecolor':mcolor,'linewidth':2,'markersize':10}
         self.len+=1
-    def plot(self,show=False):
+    def plot(self,jx,show=False):
         print('plot show',show)
         self.initial_tabs_multilinetxt = {'t'+str(i):{'multiline':self.tabs[i]} for i in range(len(self.tabs))}
-        pop_window_simple(self.initial_tabs_multilinetxt,self.initial_lines_settings,self.initial_fig_settings,show=show)
+        pop_window_simple(self.initial_tabs_multilinetxt,self.initial_lines_settings,self.initial_fig_settings,jx,show=show)

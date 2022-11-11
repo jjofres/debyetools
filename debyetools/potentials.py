@@ -558,7 +558,7 @@ class MP:  # Morse
 
         if parameters != '':
             self.pEOS = parameters
-        ####print('xxx',self.ndist,self.npair,self.Vstar)
+        #### pr0nt('xxx',self.ndist,self.npair,self.Vstar)
 
     def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
         """
@@ -1074,8 +1074,7 @@ class PT:  # Poirier-Tarantola
             return 1
 
         # E0 + K/6*V0(ln(V/V0))^2 (3-(Kp-2)ln(V/V0))
-        return E0 + (1 / 6) * B0 * V0 * np.log(V / V0) ** 2 * (3 - (Bp0 - 2) * np.log(
-            V / V0))  # (1/6)*B0*V0*(Bp0-2)*np.log(V0/V)**3-(1/2)*B0*V0*np.log(V0/V)**2+E0
+        return E0 + (1 / 6) * B0 * V0 * np.log(V / V0) ** 2 * (3 - (Bp0 - 2) * np.log(V / V0))  # (1/6)*B0*V0*(Bp0-2)*np.log(V0/V)**3-(1/2)*B0*V0*np.log(V0/V)**2+E0
 
     def E0(self, V):
         """
@@ -1190,7 +1189,7 @@ class BM4:  # Poirier-Tarantola
 
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]
-        ###print(initial_parameters, self.pEOS)
+        ### pr0nt(initial_parameters, self.pEOS)
         return self.pEOS
 
     def E04min(self, V, pEOS):
@@ -1731,7 +1730,7 @@ nparams_rhophi = 6
 #     """
 #
 #     def __init__(self, *args, units='J/mol', parameters=''):
-#         # ###print('EAMXXX',args)
+#         # ### pr0nt('EAMXXX',args)
 #         formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = [ai for ai in args]
 #
 #         # formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
@@ -1739,7 +1738,7 @@ nparams_rhophi = 6
 #         self.nats = len(basis_vectors)
 #         formula_ABCD = ''.join([Chr_fix[i] for i in range(len(re.findall('[A-Z][**A-Z]*', formula)))])
 #         self.formula_ABCD = formula_ABCD
-#         # ##print(formula_ABCD)
+#         # ## pr0nt(formula_ABCD)
 #
 #         size = np.array([1, 1, 1])
 #         center = np.array([0, 0, 0])
@@ -1770,7 +1769,7 @@ nparams_rhophi = 6
 #             self.mult_V = 1
 #             self.mult_E = 1
 #         self.formula = formula
-#         # ##print('#####',formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
+#         # ## pr0nt('#####',formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
 #         self.ntypes_A()
 #
 #         if parameters != '':
@@ -1792,7 +1791,7 @@ nparams_rhophi = 6
 #         """
 #         if fit:
 #             pEOS = [1 for _ in initial_parameters]
-#             # ##print('XXXXXXXX',pEOS)
+#             # ## pr0nt('XXXXXXXX',pEOS)
 #             popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']#, bounds=(0, 1e2))['x']
 #             self.pEOS = popt
 #         if not fit:
@@ -1804,7 +1803,7 @@ nparams_rhophi = 6
 #         self.params_elmt_type(pEOS_et)
 #         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))])
 #         self.V0 = mV['x'][0]
-#         # print('xxxxx')
+#         # pr0nt('xxxxx')
 #
 #         return self.pEOS
 #
@@ -1883,15 +1882,15 @@ nparams_rhophi = 6
 #                 (rho_i / rho_e) ** n) + 5 * n ** 5 - 60 * n ** 4 + 255 * n ** 3 - 450 * n ** 2 + 274 * n) / rho_i ** 6
 #
 #     def ab(self, a, b):
-#         # ##print(a*b)
+#         # ## pr0nt(a*b)
 #         return a * b
 #
 #     def params_elmt_type(self, pEOS):
-#         # #print('params_elmt_type')
+#         # # pr0nt('params_elmt_type')
 #         self.pEOS_et = pEOS
 #
 #     def ntypes_A(self):
-#         # #print('ntypes_A')
+#         # # pr0nt('ntypes_A')
 #         ix = 0
 #         types_list = re.findall('[A-Z][**A-Z]*', self.formula)
 #
@@ -1905,7 +1904,7 @@ nparams_rhophi = 6
 #                 if types_list[i] != types_list[i - 1]:
 #                     ix = max(types_keys.values()) + 1
 #             try:
-#                 types_keys[types_list[i]]  ####print(types_list[i],types_keys[types_list[i]])
+#                 types_keys[types_list[i]]  #### pr0nt(types_list[i],types_keys[types_list[i]])
 #             except:
 #                 types_keys[types_list[i]] = ix
 #             types_dict[chr(65 + i)] = str(ix)
@@ -1933,7 +1932,7 @@ nparams_rhophi = 6
 #
 #         A_dict = {}
 #         for A in types_dict.keys():
-#             # ##print('JJJJJJJJJJJJ',self.npair, self.new_pairs)
+#             # ## pr0nt('JJJJJJJJJJJJ',self.npair, self.new_pairs)
 #             A_dict[A] = 1 * self.ab(np.array([B_dict[A] for _ in self.npair]), self.npair)
 #
 #         self.A = [A_dict[A] for A in types_ABCD]
@@ -1941,7 +1940,7 @@ nparams_rhophi = 6
 #         self.original_pairs = original_pairs
 #
 #     def params_pair_type(self, pEOS):
-#         # #print('params_pair_type')
+#         # # pr0nt('params_pair_type')
 #         p2 = []
 #         for i in range(len(self.new_pairs)):
 #             split_types = self.new_pairs[i].split('-')
@@ -1980,24 +1979,24 @@ nparams_rhophi = 6
 #         F_is = []
 #         for i, rho_i in zip(self.types_new, self.rho_is):
 #             F0, F1, rho_e, n = self.pEOS_et[:, int(i)]
-#             # ##print('F0, F1, rho_e, n',F0, F1, rho_e, n)
+#             # ## pr0nt('F0, F1, rho_e, n',F0, F1, rho_e, n)
 #             F_is.append(self.F_i(rho_i, F0, F1, rho_e, n))
 #         self.F_is = F_is
 #         self.Fs = np.sum(F_is)
 #         self.Phis = np.sum(self.ab(phi_arr, self.npair)) * self.nats / 2
 #
-#         # ##print('Fs:', self.Fs, 'Phis:', self.Phis)
-#         # ##print('F_is:', self.F_is)
-#         # ##print('PHI_ARR',phi_arr)
+#         # ## pr0nt('Fs:', self.Fs, 'Phis:', self.Phis)
+#         # ## pr0nt('F_is:', self.F_is)
+#         # ## pr0nt('PHI_ARR',phi_arr)
 #         return (self.Fs + self.Phis) * (self.mult_E)
 #
 #     def paramos_raw_2_pt_et(self, params_raw):
-#         # #print('paramos_raw_2_pt_et')
+#         # # pr0nt('paramos_raw_2_pt_et')
 #
 #         pEOS_pt = np.reshape(params_raw[:-self.ntypes * nparams_F], (-1, nparams_rhophi)).T
 #         pEOS_et = np.reshape(params_raw[-self.ntypes * nparams_F:], (-1, nparams_F)).T
 #
-#         # ##print('pEOS_pt, pEOS_et',pEOS_pt, pEOS_et)
+#         # ## pr0nt('pEOS_pt, pEOS_et',pEOS_pt, pEOS_et)
 #         return pEOS_pt, pEOS_et
 #
 #     def E04min(self, V, pEOS):
@@ -2458,7 +2457,7 @@ class EAM:  #
         self.nats = len(basis_vectors)
         formula_ABCD = ''.join([Chr_fix[i] for i in range(len(re.findall('[A-Z][**A-Z]*', formula)))])
         self.formula_ABCD = formula_ABCD
-        # # ##print(formula_ABCD)
+        # # ## pr0nt(formula_ABCD)
         #
         size = np.array([1, 1, 1])
         center = np.array([0, 0, 0])
@@ -2489,7 +2488,7 @@ class EAM:  #
             self.mult_V = 1
             self.mult_E = 1
         self.formula = formula
-        # # ##print('#####',formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
+        # # ## pr0nt('#####',formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
         self.ntypes_A()
         #
         # if parameters != '':
@@ -2517,13 +2516,13 @@ class EAM:  #
         if not fit:
             self.pEOS = initial_parameters
     #
-    #     pEOS_pt, pEOS_et = self.paramos_raw_2_pt_et(self.pEOS)
-    #
-    #     self.params_pair_type(pEOS_pt)
-    #     self.params_elmt_type(pEOS_et)
+        pEOS_pt, pEOS_et = self.paramos_raw_2_pt_et(self.pEOS)
+
+        self.params_pair_type(pEOS_pt)
+        self.params_elmt_type(pEOS_et)
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))])
         self.V0 = mV['x'][0]
-        # print('xxxxx')
+        # pr0nt('xxxxx')
     #
         return self.pEOS
     #
@@ -2605,14 +2604,14 @@ class EAM:  #
                 (rho_i / rho_e) ** n) + 5 * n ** 5 - 60 * n ** 4 + 255 * n ** 3 - 450 * n ** 2 + 274 * n) / rho_i ** 6
     #
     def ab(self, a, b):
-    #     # ##print(a*b)
+    #     # ## pr0nt(a*b)
         return a * b
     #
     def params_elmt_type(self, pEOS):
         self.pEOS_et = pEOS
     #
     def ntypes_A(self):
-    #     # #print('ntypes_A')
+    #     # # pr0nt('ntypes_A')
         ix = 0
         types_list = re.findall('[A-Z][**A-Z]*', self.formula)
     #
@@ -2626,7 +2625,7 @@ class EAM:  #
                 if types_list[i] != types_list[i - 1]:
                     ix = max(types_keys.values()) + 1
             try:
-                types_keys[types_list[i]]  ####print(types_list[i],types_keys[types_list[i]])
+                types_keys[types_list[i]]  #### pr0nt(types_list[i],types_keys[types_list[i]])
             except:
                 types_keys[types_list[i]] = ix
             types_dict[chr(65 + i)] = str(ix)
@@ -2654,7 +2653,7 @@ class EAM:  #
     #
         A_dict = {}
         for A in types_dict.keys():
-    #         # ##print('JJJJJJJJJJJJ',self.npair, self.new_pairs)
+    #         # ## pr0nt('JJJJJJJJJJJJ',self.npair, self.new_pairs)
             A_dict[A] = 1 * self.ab(np.array([B_dict[A] for _ in self.npair]), self.npair)
     #
         self.A = [A_dict[A] for A in types_ABCD]
@@ -2662,7 +2661,7 @@ class EAM:  #
         self.original_pairs = original_pairs
     #
     def params_pair_type(self, pEOS):
-        # #print('params_pair_type')
+        # # pr0nt('params_pair_type')
         p2 = []
         for i in range(len(self.new_pairs)):
             split_types = self.new_pairs[i].split('-')
@@ -2699,7 +2698,7 @@ class EAM:  #
         F_is = []
         for i, rho_i in zip(self.types_new, self.rho_is):
             F0, F1, rho_e, n = self.pEOS_et[:, int(i)]
-            # ##print('F0, F1, rho_e, n',F0, F1, rho_e, n)
+            # ## pr0nt('F0, F1, rho_e, n',F0, F1, rho_e, n)
             F_is.append(self.F_i(rho_i, F0, F1, rho_e, n))
         self.F_is = F_is
         self.Fs = np.sum(self.F_is)
@@ -2708,12 +2707,12 @@ class EAM:  #
         return (self.Fs + self.Phis) * (self.mult_E)
     #
     def paramos_raw_2_pt_et(self, params_raw):
-        # #print('paramos_raw_2_pt_et')
+        # # pr0nt('paramos_raw_2_pt_et')
 
         pEOS_pt = np.reshape(params_raw[:-self.ntypes * nparams_F], (-1, nparams_rhophi)).T
         pEOS_et = np.reshape(params_raw[-self.ntypes * nparams_F:], (-1, nparams_F)).T
 
-        # ##print('pEOS_pt, pEOS_et',pEOS_pt, pEOS_et)
+        # ## pr0nt('pEOS_pt, pEOS_et',pEOS_pt, pEOS_et)
         return pEOS_pt, pEOS_et
     #
     def E04min(self, V, pEOS):

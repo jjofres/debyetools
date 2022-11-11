@@ -52,8 +52,8 @@ def gui() -> object:
     bool_anh = False
     while True:
         window,event, values = sg.read_all_windows()
-        # print(window,event)
-        # print(window1, window2, window3,window4,window5)
+        # pr0nt(window,event)
+        # pr0nt(window1, window2, window3,window4,window5)
         print(event)
         try:
             ips = event.index('ix')
@@ -171,17 +171,17 @@ def gui() -> object:
                                 pass
 
                         if checked_EOS_dict[k]:
-                            print(k, 'fitted')
                             EOS2params.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters)
+                            print(k, 'fitted')
                         else:
-                            print(k, 'not fitted')
                             initial_parameters = np.array([float(pi) for pi in window['--I_params_'+k].get().split(', ')])
-                            print(initial_parameters)
+                            # pr0nt(initial_parameters)
                             EOS2params.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters, fit=False)
+                            print(k, 'not fitted')
                             #EOS2params.pEOS = np.array([float(pi) for pi in window['--I_params_'+k].get().split(', ')])
                             #EOS2params.V0=1e-5
 
-                        # print(EOS2params.pEOS)
+                        # pr0nt(EOS2params.pEOS)
                         events.eos_write_params(window,k,EOS2params.pEOS)
 
                         EOS2plot_dict[k] = EOS2params
@@ -248,8 +248,6 @@ def gui() -> object:
 
                 EM = load_EM(str_folderbrowser+'/OUTCAR.eps')
                 nu = poisson_ratio(EM)
-                print(nu)
-                # print(nu)
                 window['--I_nu'].update('%.3f' % (nu))
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
@@ -332,16 +330,28 @@ def gui() -> object:
 
                 nu = float(window['--I_nu'].get())
                 m =float(window['--I_mass'].get())
-                p_electronic = [float(stri) for stri in window['--I_p_el'].get().replace(' ','').split(',')]
-                p_intanh = [float(stri) for stri in window['--I_p_intanh'].get().replace(' ','').split(',')]
-                p_anh = [float(stri) for stri in window['--I_p_anhxc'].get().replace(' ','').split(',')]
+
+
+
 
                 if window['--Chk_def'].get():
                     p_defects = float(window['--I_p_evac'].get()),float(window['--I_p_svac'].get()), float(window['--I_Tm'].get()), 0.1
                 else:
                     p_defects = 1e10, 0, float(window['--I_Tm'].get()), 0.1
-                # print('p_defects',p_defects)
+                if window['--Chk_anhxc'].get():
+                    p_anh = [float(stri) for stri in window['--I_p_anhxc'].get().replace(' ', '').split(',')]
+                else:
+                    p_anh = [0,0,0]
                 nDebs_dict = {}
+                if window['--Chk_intanh'].get():
+                    p_intanh = [float(stri) for stri in window['--I_p_intanh'].get().replace(' ', '').split(',')]
+                else:
+                    p_intanh = [0,1]
+                if window['--Chk_el'].get():
+                    p_electronic = [float(stri) for stri in window['--I_p_el'].get().replace(' ', '').split(',')]
+                else:
+                    p_electronic = [0,0,0,0]
+
                 for k in opened_EOS_dict.keys():
                     if opened_EOS_dict[k]:
                         nDebs_dict[k] = {'ndeb':'','T':'','V':'','tprops':''}
@@ -354,7 +364,7 @@ def gui() -> object:
 
                 for k in opened_EOS_dict.keys():
                     if opened_EOS_dict[k]:
-                        print(nu, m, p_intanh, EOS2plot_dict[k], p_electronic,p_defects, p_anh, mode)
+                        print(window['--I_formula'].get(), nu, m, p_intanh, EOS2plot_dict[k], p_electronic,p_defects, p_anh, mode)
                         nDebs_dict[k]['ndeb'] = nDeb(nu, m, p_intanh, EOS2plot_dict[k], p_electronic,
                                              p_defects, p_anh, mode=mode)
                         Tmin, Vmin = nDebs_dict[k]['ndeb'].min_G(T,EOS2plot_dict[k].V0,Pressure)
@@ -478,7 +488,7 @@ def gui() -> object:
 
 
 
-                        # print(anh_arr-anh_arr_MU)
+                        # pr0nt(anh_arr-anh_arr_MU)
                 window7['--Tab_anh_'].update(visible=False)
                 bool_anh = True
                 print('bool_anh', bool_anh)
@@ -494,7 +504,7 @@ def gui() -> object:
                 data4plot_dict[str(window5_counter)] = events.plot_tprops(window,keys_EOS,window5_counter)
                 window5 = data4plot_dict[str(window5_counter)].window
                 window5_counter+=1
-                # print(window5)
+                # pr0nt(window5)
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
         elif event == '||B_plotter_anh':
@@ -508,7 +518,7 @@ def gui() -> object:
                 data4plot_dict[str(window5_counter)] = events.plot_anh(window7,keys_EOS,window5_counter)
                 window6 = data4plot_dict[str(window5_counter)].window
                 window5_counter+=1
-                # print(window5)
+                # pr0nt(window5)
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
 
@@ -574,7 +584,7 @@ def gui() -> object:
                             window['--I_fsKp_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['Ksp'][i]))
                             #window['--I_fsKp_P'+str(0)+o].update(' '.join(['%.7e' for i in FS_db_params[o]['Ksp']])%tuple(FS_db_params[o]['Ksp']))
 
-                        #print('xxxxxx',window['--I_mass'].get(), o, nDebs_dict[o]['ndeb'].EOS.pEOS ,window['--I_nu'].get(), p_electronic, p_defects, p_anh, p_intanh, window['--I_Ti'].get(), window['--I_Tf'].get(), window['--I_ntemps'].get(), mode, window['--I_fs_Tfrom'].get(),window['--I_fs_Tto'].get(),H298,S298,' '.join(['%.7e' for i in FS_db_params[o]['Cp']])%tuple(FS_db_params[o]['Cp']), ' '.join(['%.7e' for i in FS_db_params[o]['a']])%tuple(FS_db_params[o]['a']), ' '.join(['%.7e' for i in FS_db_params[o]['1/Ks']])%tuple(FS_db_params[o]['1/Ks']), ' '.join(['%.7e' for i in FS_db_params[o]['Ksp']])%tuple(FS_db_params[o]['Ksp']))
+                        print('xxxxx', window['--I_formula'].get(), window['--I_strkt'].get(),o,mode,H298,S298,' '.join(['%.7e' for i in FS_db_params[o]['Cp']])%tuple(FS_db_params[o]['Cp']), ' '.join(['%.7e' for i in FS_db_params[o]['a']])%tuple(FS_db_params[o]['a']), ' '.join(['%.7e' for i in FS_db_params[o]['1/Ks']])%tuple(FS_db_params[o]['1/Ks']), ' '.join(['%.7e' for i in FS_db_params[o]['Ksp']])%tuple(FS_db_params[o]['Ksp']))
 
 
                 window['--Tab_fs_'].update(visible=False)
@@ -734,10 +744,10 @@ def gui() -> object:
                     data4plot_dict[windows_ix].popup_window.close()
                     data4plot_dict[windows_ix].create_popupwindow()
                     data4plot_dict[windows_ix].popup_window['--Tab_data_'+data4plot_dict[windows_ix] .tabs.keys()[-1]].select()
-                    # print(data4plot.tabs.keys())
+                    # pr0nt(data4plot.tabs.keys())
 
                 if '--B_remove_t' in event2:
-                    #print(event2.replace('_',' ').split()[2])
+                    # pr0nt(event2.replace('_',' ').split()[2])
                     delattr(data4plot_dict[windows_ix].tabs,event2.replace('_',' ').split()[2])
                     data4plot_dict[windows_ix].copy_multiline2dic()
                     data4plot_dict[windows_ix].popup_window.close()

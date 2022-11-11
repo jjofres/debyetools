@@ -2,7 +2,7 @@
 Pair Analysis Calculation
 =========================
 
-A pair analysis calculator was build where the atom position can be read from a POSCAR file or entered manually. The neighbor list and binning are calculated to build up the pairs list.
+A pair analysis calculator was implemented  where the atom position can be read from a POSCAR file or entered manually. The neighbor list and binning are calculated to build up the pairs list.
 
 Example
 =======

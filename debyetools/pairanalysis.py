@@ -17,7 +17,7 @@ def neighbor_list(size, cutoff, center, basis_vectors, primitive_cell):
     """
 
     basis_vectors = np.dot(basis_vectors,primitive_cell)
-    size_g = size + 2*cutoff  #change cutoff for some other word and add a cutoff distance.
+    size_g = size + 2*cutoff  #to do: change cutoff for some other word and add a cutoff distance.
                               # new_co= int(min(cutoff,....))
 
     cell_coords_centered = afn.generate_cells_coordinates(size, primitive_cell, center)

@@ -167,6 +167,11 @@ def update_diabled(window,window7,opened_dict,eos_available,bool_dict_params_EOS
 #
 def eos_write_params(window,EOSStr,pEOS):
         window['--I_params_'+EOSStr].update(', '.join(['%.9e' for i in pEOS])%tuple(pEOS))
+        pEOS2=pEOS
+        # if EOSStr not in ['EAM', 'MP']:
+        #     pEOS2[0]=pEOS2[0]/(0.160218e-18 * 6.02214e23)
+        #     pEOS2[1] = pEOS2[1] / (1e-30 * 6.02e23)
+        print(EOSStr,':',', '.join(['%.9e' for i in pEOS])%tuple(pEOS))
 ##
 def chk_el(window,event):
     window['--I_p_el'].update(disabled= not bool(window[event].get()))
@@ -226,7 +231,7 @@ def plot_EvV(window, eosobj_dict, opened_EOS_dict,jx):
                               'l15':{'plot':True,'label':0,'linestyle':'None','color':'aqua',          'marker':'+',   'markerfacecolor':'None', 'markeredgecolor':'aqua',             'linewidth':2,'markersize':10},
                               }
     initial_fig_settings = {'figwidth':5.5,'figheight':4.5,'use_title':False,'title':'','titlexpos':.7,'titleypos':.9,
-                            'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':'Volume $\left[m^3/mol-at\\right]$','ylabel':'$E~\left[J/mol-at\\right]$','labelxsize':13,
+                            'titlesize':12,'use_xlabel':True,'use_ylabel':True,'xlabel':r'Volume $\left[\frac{m^3}{mol-at}\right]$','ylabel':r'$E~\left[\frac{J}{mol-at}\right]$','labelxsize':13,
                             'labelysize':13,'auto_xlim':True,'auto_ylim':True,'limxmin':-0.5,'limxmax':110,'limymin':-1,'limymax':2,'use_legend':True,'legend_loc':'best',
                             'legendncol':2,'legendfontsize':14,'use_grid':True,'lmargin':0.2,'rmargin':0.98,'tmargin':0.95,'bmargin':0.12, 'scalex':1,'scaley':1}
 

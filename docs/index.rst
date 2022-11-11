@@ -52,7 +52,7 @@ EOS parametrization:
    cutoff = 5
    number_of_neighbor_levels = 3
 
-   eos_Morse = getattr(potentials,EOS_name)(formula, primitive_cell, sbasis_vectors, cutoff, number_of_neighbor_levels, units='J/mol')
+   eos_Morse = getattr(potentials,EOS_name)(formula, primitive_cell, sbasis_vectors, cutoff, number_of_neighbor_levels, units = 'J/mol')
 
    initial_parameters = np.array([0.35, 1, 3.5])
    eos_Morse.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters)

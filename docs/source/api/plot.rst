@@ -13,7 +13,7 @@ Plotting using the GUI
 EOS fittings
 ------------
 
-By right-clicking over the `fit EOS` button is it possible to trigger the pop up of the plot of the EOS fittings.
+After clicking the `fit EOS` button is it possible to trigger the pop up of the plot of the EOS fittings by hitting the "plot fitting" button.
 
 .. _tProps_EvV:
 .. figure::  ./images/E(V)_plot.jpeg

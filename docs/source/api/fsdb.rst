@@ -3,7 +3,7 @@ FactSage compound database parametrization
 ==========================================
 
 The calculated thermodynamic properties for each EOS selected are used to fit the models for heat capacity,
-thermal expansion, bulk modulus and pressure derivative of the bulk modulus.
+thermal expansion, bulk modulus and its pressure derivative.
 The resulting parameters can be used in FactSage as a compound database.
 
 Example

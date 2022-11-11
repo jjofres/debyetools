@@ -32,7 +32,7 @@ The interface:
 --------------
 
 .. _tProps:
-.. figure::  ./images/tprops_gui.jpeg
+.. figure::  ./images/tprops_gui.png
    :align:   center
 
    tProps v1.1
@@ -44,7 +44,7 @@ EOS Parametrization
 The parameters of all contributions are entered and/or calculated in this module.  Parameters will be fitted for the internal energy, for each selected EOS/potential (the user has the freedom to choose more than one EOS/potentials, simultaneously), if the 'fit' option is selected. The atom positions and energy as function of volume must be provided.
 
 .. _tProps_EOS_parametrization:
-.. figure::  ./images/tprops_EOS_params.jpeg
+.. figure::  ./images/tprops_EOS_params.png
    :align:   center
 
    Parametrization: this figure shows the selection of different potentials, their fits and parameters for the other contributions.
@@ -56,7 +56,7 @@ V(T)
 The calculation of the temperature dependent volume is carried out by minimizing the free energy at fixed temperatures from T=0.1 to melting temperature. The temperature are chosen from a equi-spaced list. The resulting volume and temperatures are returned and printed to the GUI accordingly.
 
 .. _tProps_F_min:
-.. figure::  ./images/tprops_F_min.jpeg
+.. figure::  ./images/tprops_F_min.png
    :align:   center
 
    Free energy minimization.
@@ -68,7 +68,7 @@ Thermodynamic Properties
 The thermodynamic functions are evaluated at the temperatures and volumes obtained in the minimization part and printed to a multiline text box in an individual tab for each corresponding EOS chosen.
 
 .. _tProps_eval:
-.. figure::  ./images/tprops_eval.jpeg
+.. figure::  ./images/tprops_eval.png
    :align:   center
 
    Evaluation of the thermodynamic properties.
@@ -79,7 +79,7 @@ FS compound database parameters.
 The calculated thermodynamic properties for each EOS selected are used to fit the models for heat capacity, thermal expansion,  bulk modulus and pressure derivative of the bulk modulus.   The resulting parameters are printed in the GUI to be used in FactSage as a compound database.
 
 .. _tProps_FSparams:
-.. figure::  ./images/tprops_FSparams.jpeg
+.. figure::  ./images/tprops_FSparams.png
    :align:   center
 
    FactSage compound database parameters.

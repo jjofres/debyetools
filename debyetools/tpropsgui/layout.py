@@ -33,13 +33,13 @@ def lo_fsparams(i):
 def layout(EOS_str_lst):
     lo_options = {EOSStr:[[elmt.T(EOSStr+' params.:','params_'+EOSStr),elmt.dI('0, 0, 0, 0','params_'+EOSStr,25),elmt.dChk('fit','calc_params_'+EOSStr,True)]] for EOSStr in EOS_str_lst}
     lo_options['MP'] = [[elmt.T('Morse cutoff:','cutoff_MP'),elmt.I('5.0','cutoff_MP',3),elmt.T('# of neigh. lvls.:','ndists_MP'),elmt.I('3','ndists_MP',3)],
-                     [elmt.T('Morse params.:','params_MP'),elmt.dI('0, 0, 0','params_MP',15),elmt.dChk('fit','calc_params_MP',True)]]
+                     [elmt.T('Morse params.:','params_MP'),elmt.dI('0, 0, 0','params_MP',25),elmt.dChk('fit','calc_params_MP',True)]]
     lo_options['EAM'] = [[elmt.T('EAM cutoff:','cutoff_EAM'),elmt.I('5.0','cutoff_EAM',3),elmt.T('# of neigh. lvls.:','ndists_EAM'),elmt.I('3','ndists_EAM',3)],
-                     [elmt.T('EAM params.:','params_EAM'),elmt.dI('0, 0, 0','params_EAM',15),elmt.dChk('fit','calc_params_EAM',True)]]
+                     [elmt.T('EAM params.:','params_EAM'),elmt.dI('0, 0, 0','params_EAM',25),elmt.dChk('fit','calc_params_EAM',True)]]
 
     lo_EOS = [[elmt.listbox(['Morse','EAM','Rose-Vinet','TB-SMA','Birch-Murnaghan (3)','Mie-Gruneisen','Murnaghan (1)','Poirier-Tarantola','Birch-Murnaghan (4)','Murnaghan (2)',
                              ],'EOS_listbox')],
-              [elmt.Bc('Add','add_EOS',('white', 'green'))]]
+              [elmt.Bc('Select EOSs','add_EOS',('white', 'green'))]]
 
     lo_EOS_collapes = [
                 [elmt.collapse(lo_options['MP'],'options_'+'MP')],
@@ -68,7 +68,7 @@ def layout(EOS_str_lst):
     lo_intanh = [[elmt.Chk('parameters:','intanh',disabled=True),elmt.dI('','p_intanh',10)]]
 
     lo_left = [[elmt.T('compound:','compound'),
-                elmt.I('','compound',30),
+                elmt.dI('','compound',30),
                 elmt.dI(txt='', key='FILEBROWSE_', w=0, disabled=False,enable_events=True,visible=False),
                 elmt.Br('compound')],
                [elmt.T('formula:','formula'),elmt.dI('','formula',6),elmt.T('structure:','strkt'),elmt.dI('','strkt',4)],
@@ -82,15 +82,15 @@ def layout(EOS_str_lst):
                ]
 
     lo_minF = [[elmt.T('P (Pa):','Pi'),elmt.dI('','Pi',4),elmt.T('initial T (K):','Ti'),elmt.dI('','Ti',4),elmt.T('final T (K):','Tf'),elmt.dI('','Tf',4),elmt.T('No. steps:','ntemps'),elmt.dI('','ntemps',4)],
-               [elmt.Chk('Full Debye', 'mode_jj')],
-               [elmt.Chk('Dugdale–McDonald', 'mode_DM'),elmt.Chk('Slater', 'mode_Sl'),elmt.Chk('Vaschenko–Zubarev', 'mode_VZ'),elmt.Chk('Mean free volume', 'mode_mfv')],
+               [elmt.Chk('Slater (lam=-1)', 'mode_jjsl'), elmt.Chk('Dugdale-MacDonald (lam=0)', 'mode_jjdm'),elmt.Chk('Free Volume (lam=1)', 'mode_jjfv')],
+               [elmt.Chk('Dugdale–McDonald', 'mode_DM'),elmt.Chk('Slater', 'mode_Sl'),elmt.Chk('Vaschenko–Zubarev', 'mode_VZ'),elmt.Chk('Free volume', 'mode_mfv')],
                [elmt.Bc('run minimization','run_minF',('gray','gray'))],
                [elmt.sCol([[elmt.M('','minF_output',100,7)]], 'minF_output', 480, 80)],
                [elmt.Bc('Plot V(T)','plotter',('gray','gray'))],]
 
-    lo_tabs_tprops = [[elmt.Tab(eos_str,[[elmt.sCol([[elmt.M('','tprop_'+eos_str,400,7)]], 'tprop_'+eos_str, 470, 80)]],eos_str,False) for eos_str in ['','MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']]]
+    lo_tabs_tprops = [[elmt.Tab(eos_str,[[elmt.sCol([[elmt.M('','tprop_'+eos_str,1000,7)]], 'tprop_'+eos_str, 470, 80)]],eos_str,False) for eos_str in ['','MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']]]
 
-    lo_tprops = [[elmt.Bc('evaluate','eval_tprops',('gray','gray'))],
+    lo_tprops = [[elmt.Bc('evaluate','eval_tprops',('gray','gray')), elmt.Bc('evaluate anh','eval_anh',('gray','gray'))],
              [elmt.TG(lo_tabs_tprops,'tabs_tprops')],
              [elmt.T('select property to plot:','prop2plt'),elmt.ICombo(['       ','       ','       ','       '],'prop2plt',10,1),elmt.Bc('Plot','plotter_tprops',('white',elmt.theme_background_color()))]]
 

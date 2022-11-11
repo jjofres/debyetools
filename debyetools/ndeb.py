@@ -1,13 +1,13 @@
 import numpy as np
-from scipy.optimize import fmin
+# from scipy.optimize import fmin
 from scipy import optimize
 
 from debyetools.anharmonicity import Anharmonicity, intAnharmonicity
 from debyetools.electronic import Electronic
 from debyetools.defects import Defects
-from debyetools.vibrational_TST import Vibrational
-import debyetools.potentials as pots
-from debyetools.debfunct import D_3, dD_3dx, d2D_3dx2, d3D_3dx3
+from debyetools.vibrational import Vibrational
+# import debyetools.potentials as pots
+from debyetools.debfunct import D_3#, dD_3dx, d2D_3dx2, d3D_3dx3
 
 hbar = 0.1054571800e-33
 NAv = 0.6022140857e24
@@ -31,7 +31,7 @@ class nDeb:
     :param string mode: Type of approximation of the Debye temperature (see vibrational contribution).
     """
 
-    def __init__(self, nu, m, p_intanh, EOS, p_electronic, p_defects, p_anh, *args, units='J/mol', mode='jj'):
+    def __init__(self, nu, m, p_intanh, EOS, p_electronic, p_defects, p_anh, *args, units='J/mol', mode='jjsl'):
 
         a0, m0 = p_intanh
         q0, q1, q2, q3 = p_electronic
@@ -69,13 +69,19 @@ class nDeb:
         self.vib.set_int_anh(T, V)
         self.vib.set_theta(T,V)
 
-        dE0dV_T = self.EOS.dE0dV_T(V)
-        dFvibdV_T = self.vib.dFdV_T(T,V)
-        dFeldV_T = self.el.dFdV_T(T,V)
-        dFdefdV_T = self.deff.dFdV_T(T,V)
-        dFadV_T = self.anh.dFdV_T(T,V)
-        dFdV_T = dE0dV_T + dFvibdV_T + dFeldV_T + dFdefdV_T + dFadV_T
-        return (dFdV_T + P)**2
+        # dE0dV_T = self.EOS.dE0dV_T(V)
+        # dFvibdV_T = self.vib.dFdV_T(T,V)
+        # dFeldV_T = self.el.dFdV_T(T,V)
+        # dFdefdV_T = self.deff.dFdV_T(T,V)
+        # dFadV_T = self.anh.dFdV_T(T,V)
+        # dFdV_T = dE0dV_T + dFvibdV_T + dFeldV_T + dFdefdV_T + dFadV_T
+        E0 = self.EOS.E0(V)
+        Fvib = self.vib.F(T,V)
+        Fel = self.el.F(T,V)
+        Fdef = self.deff.F(T,V)
+        Fa = self.anh.F(T,V)
+        F = E0 + Fvib + Fel + Fdef + Fa
+        return F+P*V#(dFdV_T + P)**2
 
     def min_G(self, T, initial_V, P):
         """
@@ -125,9 +131,9 @@ class nDeb:
         :return dict: A dictionary with the following keys: 'T': temperature, 'V': volume, 'tD': Debye temperature, 'g': Gruneisen parameter, 'Kt': isothermal bulk modulus, 'Ktp': pressure derivative of the isothermal bulk modulus, 'Ktpp': second order pressure derivative of the isothermal bulk modulus, 'Cv': constant-volume heat capacity, 'a': thermal expansion, 'Cp': constant-pressure heat capacity, 'Ks': adiabatic bulk modulus , 'Ksp': pressure derivative of the adiabatic bulk modulus, 'G': Gibbs free energy, 'E': total internal energy, 'S': entropy, 'E0': 'cold' internal energy defined by the EOS, 'Fvib': vibrational free energy, 'Evib': vibrational internal energy, 'Svib': vibrational entropy, 'Cvvib': vibrational heat capacity, 'Pcold': 'cold' pressure, 'dPdT_V': (dP/dT)_V, 'G^2': Ktp**2-2*Kt*Ktpp, 'dSdP_T': (dS/dP)_T, 'dKtdT_P': (dKt/dT)_P, 'dadP_T': (da/dP)_T, 'dCpdP_T': (dCp/dP)_T, 'ddSdT_PdP_T': (d2S/dTdP).
         """
         del P
-        nu, r, m = self.nu, self.r, self.m
+        # nu, r, m = self.nu, self.r, self.m
 
-        kv = self.kv
+        # kv = self.kv
 
         self.vib.set_int_anh(T, V)
         self.vib.set_theta(T, V)
@@ -158,8 +164,8 @@ class nDeb:
         d3FvibdV2dT = self.vib.d3FdV2dT(T,V)
         d3FvibdVdT2 = self.vib.d3FdVdT2(T,V)
 
-        Eel = self.el.E(T, V)
-        Sel = self.el.S(T, V)
+        # Eel = self.el.E(T, V)
+        # Sel = self.el.S(T, V)
         Fel = self.el.F(T, V)
         dFeldV_T = self.el.dFdV_T(T, V)
         dFeldT_V = self.el.dFdT_V(T, V)
@@ -171,8 +177,8 @@ class nDeb:
         d3FeldV2dT = self.el.d3FdV2dT(T, V)
         d3FeldVdT2 = self.el.d3FdVdT2(T, V)
 
-        Edef = self.deff.E(T, V)
-        Sdef = self.deff.S(T, V)
+        # Edef = self.deff.E(T, V)
+        # Sdef = self.deff.S(T, V)
         Fdef = self.deff.F(T, V)
         dFdefdV_T = self.deff.dFdV_T(T, V)
         dFdefdT_V = self.deff.dFdT_V(T, V)
@@ -184,8 +190,8 @@ class nDeb:
         d3FdefdV2dT = self.deff.d3FdV2dT(T, V)
         d3FdefdVdT2 = self.deff.d3FdVdT2(T, V)
 
-        Ea = self.anh.E(T, V)
-        Sa = self.anh.S(T, V)
+        # Ea = self.anh.E(T, V)
+        # Sa = self.anh.S(T, V)
         Fa = self.anh.F(T, V)
         dFadV_T = self.anh.dFdV_T(T, V)
         d2FadT2_V = self.anh.d2FdT2_V(T, V)
@@ -271,5 +277,5 @@ class nDeb:
                 'P': -dFdV_T,
                 'dtDdV_T':self.vib.dtDdV_T,'d2tDdV2_T':self.vib.d2tDdV2_T, 'D_3':D_3(tD/T),
                 'd2E0dV2_T':d2E0dV2_T, 'dPdV_T':dPdV_T,
-                'dE0dV_T':dE0dV_T, 'd3E0dV3_T':d3E0dV3_T
+                'dE0dV_T':dE0dV_T, 'd3E0dV3_T':d3E0dV3_T, 'Fa':Fa, 'Fdef':Fdef, 'Fel': Fel
                 }

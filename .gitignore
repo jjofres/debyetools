@@ -128,3 +128,4 @@ dmypy.json
 .idea/
 .travis.*
 /_local_usage/
+/_local_tst/

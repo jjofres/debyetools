@@ -4,7 +4,7 @@ from debyetools.ndeb import nDeb
 from debyetools.aux_functions import gen_Ts
 from debyetools.fs_compound_db import fit_FS
 import debyetools.potentials as potentials
-from debyetools.electronic import fit_electronic
+from debyetools.electronic import fit_electronic    
 from debyetools.poisson import poisson_ratio
 from debyetools.aux_functions import load_doscar, load_V_E, load_EM, load_cell
 
@@ -55,7 +55,7 @@ class CpTestCase(unittest.TestCase):
         # F minimization
         # =========================
         m = 0.026981500000000002
-        ndeb_BM4 = nDeb(nu, m, p_intanh, eos_BM4, p_electronic, p_defects, p_anh, mode='jj')
+        ndeb_BM4 = nDeb(nu, m, p_intanh, eos_BM4, p_electronic, p_defects, p_anh, mode='jjsl')
 
         T_initial, T_final, number_Temps = 0.1, 1000, 10
         T = gen_Ts(T_initial, T_final, number_Temps)

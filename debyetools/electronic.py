@@ -93,10 +93,8 @@ def fit_electronic(Vs, p_el,E,N,Ef):
     return P2
 
 def NfV_poly_fun(V, _A, _B, _C, _D):
-    #A, B, C = A*1e-1, B*(-1e4), C*1e-9
     return _A + _B*V + _C*V**2 + _D*V**3
 
 def NfV2m(P, Vdata, NfVdata):
     NfVcalc = [NfV_poly_fun(Vi, P[0], P[1], P[2], P[3]) for Vi in Vdata]
-    # print('NfVcalc', NfVcalc, 'NfVdata', NfVdata)
     return NfVcalc-NfVdata

@@ -24,7 +24,8 @@ class tabs:
         return list(self.__dict__.keys())
 
 class dataplot:
-    def __init__(self):
+    def __init__(self,jx):
+        self.jx = jx
         pass
     def load_tab_data(self,tabs):
         self.tabs = tabs
@@ -38,16 +39,16 @@ class dataplot:
             try:
                 getattr(self.lines,k)['settings'] =line_settings[k]
             except:
-                getattr(self.lines,k)['settings'] = {'plot':True,'label':0,'linestyle':'-','color':'gray','marker':'x','markerfacecolor':'gray','markeredgecolor':'cornflowerblue','linewidth':2,'markersize':8}
+                getattr(self.lines,k)['settings'] = {'plot':True,'label':0,'linestyle':'-','color':'gray','marker':'x','markerfacecolor':'gray','markeredgecolor':'cornflowerblue','linewidth':2,'markersize':8,'scalex':1,'scaley':1}
 
     def create_window(self,simple=False):
         if simple == True:
             print('simple_layout')
             layout = fn.simple_layout(self.lines)
         else:
-            layout = fn.general_layout(self.lines)
+            layout = fn.general_layout(self.lines,self.jx)
         window = sg.Window('Plotting stuff...', layout, finalize=True)
-        self.window=window
+        self.window = window
 
     def create_popupwindow(self):
         layout = fn.popup_layout(self.tabs)
@@ -57,7 +58,7 @@ class dataplot:
     def update_window(self, fig_settings):
         self.fig_settings=fig_settings
         for k in fig_settings.keys():
-            self.window[k].update(fig_settings[k])
+            self.window['ix'+str(self.jx)+'-'+k].update(fig_settings[k])
 
     def create_canvas(self,show=False):
         print('create_canvas show',show)
@@ -86,12 +87,19 @@ class dataplot:
 
     def update_formats(self):
         for k in self.fig_settings.keys():
-            self.fig_settings[k]=self.window[k].get()
+            self.fig_settings[k]=self.window['ix'+str(self.jx)+'-'+k].get()
 
     def update_lines_settings(self):
         for l in list(self.window.key_dict.keys()):
-            if l[:2]=='++':
-                prp = l.replace('++',' ').split()
+            ix_inx = l.find('ix')
+            newl = l[ix_inx:]
+            ix_inx2 = newl.find('-')
+            newl2 = newl[ix_inx2+1:]
+            #l=newl2
+            print('AAAAA',l,l.replace('++',' ').split(),ix_inx,ix_inx==0,newl2[:2]=='++')
+            if ix_inx==0 and newl2[:2]=='++':#l[:2]=='++': #ix_inx==0:#
+                prp = newl2.replace('++',' ').split()
+                print(self.lines.keys())
                 li = getattr(self.lines,prp[-1])['settings']
                 li[prp[0]]=self.window[l].get()
 

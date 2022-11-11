@@ -26,7 +26,7 @@ The EOS implemented are:
 - Fourth order Birch-Murnaghan (BM4)
 - Second order Murnaghan (Mu2)
 
-Two description of the internal energy through inter atomic potentials has been included as well:
+Two description of the internal energy through inter-atomic potentials has been included as well:
 
 - Morse
 - EAM

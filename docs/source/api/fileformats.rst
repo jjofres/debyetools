@@ -13,7 +13,7 @@ Folder structure
 ----------------
 
 The input files must be located in the same folder of a given compound and that folder have to be ideally be named by the formula followed by the space group, for example for Al2O3 R3c the folder name would be `Al2O3_R3c`.
-There is also a naming convention for the  input files. `SUMMARY.fcc` contains the output total energies for the NVT calculations. `CONTCAR.5` contain the cell coordinates and basis vectors of the crystal structure. `OUTCAR.eps` is the output of the calculations of the elastic properties and have the Elastic moduli tensor. 'DOSCAR.EvV.x' are a set of files containing the electronic DOS, and are outputs of the NVT calculations.
+There is also a naming rule for the  input files. `SUMMARY.fcc` contains the output total energies for the NVT calculations. `CONTCAR.5` contain the cell coordinates and basis vectors of the crystal structure. `OUTCAR.eps` is the output of the calculations of the elastic properties and have the Elastic moduli tensor. 'DOSCAR.EvV.x' are a set of files containing the electronic DOS, and are outputs of the NVT calculations.
 
 .. code-block:: python
 

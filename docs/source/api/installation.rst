@@ -23,7 +23,7 @@ Other recommended packages:
 Installation using pip
 ======================
 
-The simplest way to install Debye Tools is to use pip_ which will automatically get the source code from PyPI_::
+The simplest way to install ``debyetools`` is to use pip_ which will automatically get the source code from PyPI_::
 
     $ pip install --upgrade debyetools
 

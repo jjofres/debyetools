@@ -133,10 +133,10 @@ Thermodynamic properties with `tprops` GUI.
 
 The same calculations as the previous example were carried out using `tprops` GUI.
 
-.. figure::  ./images/Al_fcc_example.jpg
+.. figure::  ./images/Al_fcc_example.png
    :align:   center
 
-   `tprops v1.0`
+   `tprops v1.1`
 
 Genetic algorithm to fit Cp to experimental data.
 =================================================

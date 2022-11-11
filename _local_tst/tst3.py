@@ -15,7 +15,7 @@ from debyetools.debfunct import D_3
 
 for x in np.arange(0,.111,.01):
     print(x, D_3(x))
-hola
+
 #################
 # I. Pair analysis #
 #################

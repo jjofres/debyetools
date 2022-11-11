@@ -2,12 +2,8 @@ from debyetools.aux_functions import load_cell
 import numpy as np
 from debyetools.pairanalysis import pair_analysis
 
-# folder_name = 'C:/Users/Javier/Documents/GitRepos/debyetools/tests/inpt_files/Al_fcc'
-folder_name = 'C:/Users/Javier/Documents/GitRepos/debyetools/tests/inpt_files/Al3Ti_D022'
-# folder_name = 'C:/Users/Javier/Downloads/'
+folder_name = '../tests/inpt_files/Al3Ti_D022'
 formula, primitive_cell, basis_vectors = load_cell(folder_name+'/CONTCAR.5')
-print(formula)
-# formula, primitive_cell, basis_vectors = load_cell(folder_name+'/Al4Cr.POSCAR')
 
 supcell_size, cutoff, center = np.array([1, 1, 1]), 10, np.array([0, 0, 0])
 distances, num_bonds_per_formula, combs_types = pair_analysis(formula, supcell_size, cutoff, center, basis_vectors, primitive_cell)

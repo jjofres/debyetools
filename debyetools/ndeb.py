@@ -66,15 +66,11 @@ class nDeb:
 
         :return float: Free energy.
         """
+        # self.vib.set_int_anh_4minF(T, V)
+        # self.vib.set_theta_4minF(T,V)
         self.vib.set_int_anh(T, V)
-        self.vib.set_theta(T,V)
+        self.vib.set_theta(T, V)
 
-        # dE0dV_T = self.EOS.dE0dV_T(V)
-        # dFvibdV_T = self.vib.dFdV_T(T,V)
-        # dFeldV_T = self.el.dFdV_T(T,V)
-        # dFdefdV_T = self.deff.dFdV_T(T,V)
-        # dFadV_T = self.anh.dFdV_T(T,V)
-        # dFdV_T = dE0dV_T + dFvibdV_T + dFeldV_T + dFdefdV_T + dFadV_T
         E0 = self.EOS.E0(V)
         Fvib = self.vib.F(T,V)
         Fel = self.el.F(T,V)

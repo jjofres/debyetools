@@ -108,8 +108,11 @@ def gui() -> object:
 
         #
         #EOS fitting button
+
         elif event == '||B_run_eos_fitting':
+            # print(verb,'0')
             try:
+                # print(verb,'1')
                 window['--M_minF_output'].update('')
                 for k in EOS_str_lst:
                     window['--M_tprop_'+k].update('')
@@ -141,14 +144,20 @@ def gui() -> object:
                 window['||B_run_fs_params'].update(disabled=True)
 
                 window['--IC_prop2plt'].update('')
+                # print(verb,'02')
 
                 V_DFT, E_DFT = load_V_E(str_folderbrowser, str_folderbrowser+'/CONTCAR.5', units='J/mol')
+                # print(verb,'3')
+
                 for k in opened_EOS_dict:
                     if opened_EOS_dict[k]:
                         if k in ['MP','EAM']:
+                            # print(verb,'4')
+
                             cutoff, number_of_neighbor_levels = float(window['--I_cutoff_MP'].get()), int(window['--I_ndists_MP'].get())
                             formula, primitive_cell, basis_vectors = load_cell(str_folderbrowser+'/CONTCAR.5')
                             args = formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels
+                            # print(verb,'5')
 
                         else:
                             args = ''
@@ -162,6 +171,7 @@ def gui() -> object:
                             if np.sum(initial_parameters)==0:
                                 initial_parameters = [3.647649855e-03, 1.240435594e-02, 2.680203750e-04, 1.031741230e-02, 1.486608160e-01, 5.221433411e-02]*len(EOS2params.comb_types)+[2.254792255e+00, 6.613537850e-02, 3.011790966e-01, 5.312117043e-05]*EOS2params.ntypes
                         else:
+                            # print(verb,'6')
                             E0 = min(E_DFT)
                             V0 = V_DFT[np.where(E_DFT==E0)]
                             initial_parameters = [float(pi) for pi in window['--I_params_'+k].get().split(', ')]+[0]
@@ -171,6 +181,8 @@ def gui() -> object:
                                 pass
 
                         if checked_EOS_dict[k]:
+                            # print(verb,'7')
+                            initial_parameters = np.array(initial_parameters,dtype=object)
                             EOS2params.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters)
                             print(k, 'fitted')
                         else:
@@ -182,7 +194,10 @@ def gui() -> object:
                             #EOS2params.V0=1e-5
 
                         # pr0nt(EOS2params.pEOS)
+                        # print(verb,'8')
+
                         events.eos_write_params(window,k,EOS2params.pEOS)
+                        # print(verb,'9')
 
                         EOS2plot_dict[k] = EOS2params
                 EOS2plot_dict['V_DFT']=V_DFT
@@ -190,6 +205,8 @@ def gui() -> object:
             except Exception as e:
                 sg.popup_ok(traceback.format_exc())
         # Plot the fitting
+        #     print(verb,'10')
+
         elif event == '||B_PlotfittingEOS':
             try:
                 if  window2 is not None:
@@ -600,7 +617,9 @@ def gui() -> object:
                 sg.popup_ok(traceback.format_exc())
         elif '--Chk_mode_' in event:
             window['--M_minF_output'].update('')
-            l = ['jjsl', 'jjdm', 'jjfv', 'DM', 'Sl', 'VZ', 'mfv']
+            l = ['jjsl', 'jjdm', 'jjfv',
+                 # 'DM', 'Sl', 'VZ', 'mfv'
+                 ]
             l.remove(event.replace('--Chk_mode_',''))
             for stri in l:
                 window['--Chk_mode_'+stri].update(False)
@@ -765,3 +784,5 @@ def gui() -> object:
 
             data4plot_dict[windows_ix].popup_window.close()
         checked_EOS_dict = events.update_diabled(window1, window7,opened_EOS_dict,EOS_str_lst,checked_EOS_dict, bool_anh)
+
+        # print(verb,'11')

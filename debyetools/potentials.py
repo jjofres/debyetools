@@ -34,17 +34,25 @@ class BM:
         :rtype: list
         """
         if fit:
+            # print(verb, 0)
             pEOS = initial_parameters[:4]
+            # print(verb, 1)
+            # for x in [self.error2min, pEOS,Vdata, Edata]:
+            #     print(type(x))
             popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
+            # print(verb, 2)
             self.pEOS = popt
+            # print(verb, 3)
         if not fit:
             self.pEOS = initial_parameters[:4]
 
         # bounds = [(min(Vdata) * .99, max(Vdata) * 1.01)]
         # mV = minimize(self.E0, [np.mean(Vdata)], bounds=bounds, tol=1e-10)
+        # print(verb, 4)
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-
+        # print(verb, 5)
         self.V0 = mV['x'][0]
+        # print(verb, 6)
 
         return self.pEOS
 

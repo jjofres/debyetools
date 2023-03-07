@@ -37,7 +37,7 @@ def gui() -> object:
     layout = layout(EOS_str_lst)
 
     #### Window creation
-    window1, window2, window3,window4,window5, window7 = sg.Window('ThermoProps V1.1', layout=layout, finalize=True), None, None, None, None, None
+    window1, window2, window3,window4,window5, window7 = sg.Window('tProps V1.0.3', layout=layout, finalize=True), None, None, None, None, None
 
     #### loop to wait for user action
     all_props={}

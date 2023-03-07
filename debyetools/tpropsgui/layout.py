@@ -67,7 +67,7 @@ def layout(EOS_str_lst):
 
     lo_intanh = [[elmt.Chk('parameters:','intanh',disabled=True),elmt.dI('','p_intanh',10)]]
 
-    lo_left = [[elmt.T('compound:','compound'),
+    lo_left = [[elmt.T('path for input files:','compound'),
                 elmt.dI('','compound',30),
                 elmt.dI(txt='', key='FILEBROWSE_', w=0, disabled=False,enable_events=True,visible=False),
                 elmt.Br('compound')],

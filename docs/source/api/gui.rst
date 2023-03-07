@@ -35,7 +35,7 @@ The interface:
 .. figure::  ./images/tprops_gui.png
    :align:   center
 
-   tProps v1.1
+   tProps v1.0.3
 
 
 EOS Parametrization

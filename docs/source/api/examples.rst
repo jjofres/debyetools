@@ -136,7 +136,7 @@ The same calculations as the previous example were carried out using `tprops` GU
 .. figure::  ./images/Al_fcc_example.png
    :align:   center
 
-   `tprops v1.1`
+   `tprops v1.0.3`
 
 Genetic algorithm to fit Cp to experimental data.
 =================================================

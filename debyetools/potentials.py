@@ -534,6 +534,8 @@ class MP:  # Morse
     def __init__(self, *args, units='J/mol', parameters=''):
         formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = args
         # formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
+        self.formula, self.primitive_cell, self.basis_vectors = formula, primitive_cell, basis_vectors
+
         size = np.array([1, 1, 1])
         center = np.array([0, 0, 0])
         atom_types = formula * np.prod(size)

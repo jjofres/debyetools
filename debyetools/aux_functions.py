@@ -54,7 +54,7 @@ def gen_Ts(Ti,Tf,nTs):
     :retun list_of_floats: Values of temperatures between Ti and Tf, inclusive, plus room temperature.
     """
     minF_step = (Tf - Ti)/(nTs - 1.)
-    Ts = np.arange(Ti, Tf+1, minF_step)
+    Ts = np.arange(Ti, Tf+minF_step, minF_step)
     Ts = np.r_[Ts, [298.15]]
     Ts.sort()
     return Ts
@@ -73,12 +73,15 @@ def gen_Ps(Ti,Tf,nTs):
     Ts.sort()
     return Ts
 
-def load_doscar(filename_sufix):
+def load_doscar(filename_sufix, list_filetags = ['-0.10', '-0.09','-0.08','-0.07','-0.06','-0.05','-0.04','-0.03',
+                                                 '-0.02','-0.01','-0.00','0.01','0.02','0.03','0.04','0.05','0.06',
+                                                 '0.07','0.08','0.09','0.10']):
+    list_filetags = [str(li) for li in list_filetags]
     E = []
     N = []
     Ef = []
     nat = 0
-    for dosfile in ['-0.10', '-0.09','-0.08','-0.07','-0.06','-0.05','-0.04','-0.03','-0.02','-0.01','-0.00','0.01','0.02','0.03','0.04','0.05','0.06','0.07','0.08','0.09','0.10']:
+    for dosfile in list_filetags:
         countline = 0
         EN = []
 
@@ -94,6 +97,7 @@ def load_doscar(filename_sufix):
 
                     countline +=1
         ENAl = np.array(EN)
+        # print(dosfile, EN)
         E.append([float(s) for s in list(ENAl[:,0])])
         N.append([float(s)/nat for s in list(ENAl[:,1])])
 

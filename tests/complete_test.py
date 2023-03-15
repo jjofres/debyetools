@@ -48,7 +48,7 @@ class CpTestCase(unittest.TestCase):
 
         # Poisson's ratio
         # =========================
-        EM = EM = load_EM(folder_name + '/OUTCAR.eps')
+        EM = load_EM(folder_name + '/OUTCAR.eps')
         nu = poisson_ratio(EM)
         # =========================
 

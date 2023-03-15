@@ -585,7 +585,10 @@ class MP:  # Morse
         if not fit:
             self.pEOS = initial_parameters
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
+            #        for i in range(-20, 21):
+            #            print(Vdata[0]*(1+i/100) , self.E0(Vdata[0]*(1+i/100)))
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata) * .9, max(Vdata) * 1.1)], tol=1e-10)
+        # mV2 = self.minimize_bruteforce(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata)*.9, max(Vdata)*1.1)], tol=1e-10)
         self.V0 = mV['x'][0]
 
         return self.pEOS

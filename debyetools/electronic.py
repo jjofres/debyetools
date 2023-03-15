@@ -64,7 +64,7 @@ class Electronic:
     def d3FdVdT2(self,T,V):
         return -2*np.pi**2*NAv*self.r*kB**2*self.dNfVdV_T(V)*(1/6)/(0.160218e-18)
 
-def fit_electronic(Vs, p_el,E,N,Ef):
+def fit_electronic(Vs, p_el,E,N,Ef, ixss=8, ixse=-1):
     """
     Fitting procedure for the N(Ef)(V) function.
 
@@ -86,8 +86,8 @@ def fit_electronic(Vs, p_el,E,N,Ef):
     N1 = float(N[ix_V0][ixs[0]-1])
     N2 = float(N[ix_V0][ixs[0]])
     NfV0 = (EfV0 - E1)*(N2 - N1)/(E2 - E1) + N1
-    NfV = np.array([NfV0*np.sqrt(ef/EfV0) for ef in Ef][8:-1])
-    P2 = leastsq(NfV2m, p_el, args=(V[8:-1], NfV),maxfev=1000)
+    NfV = np.array([NfV0*np.sqrt(ef/EfV0) for ef in Ef][ixss:ixse])
+    P2 = leastsq(NfV2m, p_el, args=(V[ixss:ixse], NfV),maxfev=1000)
     P2 = P2[0]
 
     return P2

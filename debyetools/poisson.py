@@ -16,7 +16,7 @@ def poisson_ratio(EM, quiet=False):
     C55 = EM[4,4]*1e-1
     C66 = EM[5,5]*1e-1
 
-    if EM[0,4]*1e-1>0:
+    if EM[0,4]**2*1e-1>0:
         C15 = EM[0,4]*1e-1
         C25 = EM[1,4]*1e-1
         C35 = EM[2,4]*1e-1
@@ -44,7 +44,7 @@ def poisson_ratio(EM, quiet=False):
     Y = (9.*B*S)/(3.*B+S)
     nu = (3.*B-Y)/(6.*B)
     AU = 5*Sv/Sr+Bv/Br-6
-    print('Sv/Sr',Sv/Sr, 'Sv/Sr', Bv/Br)
+    print('Sv/Sr',Sv/Sr, 'Bv/Br', Bv/Br)
     print('C11, C12, C13, C15, C22, C23, C25, C33, C35, C44, C46, C55, C66, B, Y, S, AU, nu','\n',C11, C12, C13, C15, C22, C23, C25, C33, C35, C44, C46, C55, C66, B, Y, S, AU, nu)
 
     return nu

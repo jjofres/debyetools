@@ -534,6 +534,8 @@ class MP:  # Morse
     def __init__(self, *args, units='J/mol', parameters=''):
         formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = args
         # formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
+        self.formula, self.primitive_cell, self.basis_vectors = formula, primitive_cell, basis_vectors
+
         size = np.array([1, 1, 1])
         center = np.array([0, 0, 0])
         atom_types = formula * np.prod(size)
@@ -580,12 +582,17 @@ class MP:  # Morse
         """
         if fit:
             pEOS = initial_parameters
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
+            lstsq_sol = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=(0, np.inf))
+            popt = lstsq_sol['x']
             self.pEOS = popt
+            self.eos_residuals = lstsq_sol['fun']
         if not fit:
             self.pEOS = initial_parameters
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
+            #        for i in range(-20, 21):
+            #            print(Vdata[0]*(1+i/100) , self.E0(Vdata[0]*(1+i/100)))
+        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata) * .9, max(Vdata) * 1.1)], tol=1e-10)
+        # mV2 = self.minimize_bruteforce(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata)*.9, max(Vdata)*1.1)], tol=1e-10)
         self.V0 = mV['x'][0]
 
         return self.pEOS

@@ -582,8 +582,10 @@ class MP:  # Morse
         """
         if fit:
             pEOS = initial_parameters
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
+            lstsq_sol = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=(0, np.inf))
+            popt = lstsq_sol['x']
             self.pEOS = popt
+            self.eos_residuals = lstsq_sol['fun']
         if not fit:
             self.pEOS = initial_parameters
 

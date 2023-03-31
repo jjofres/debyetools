@@ -52,7 +52,7 @@ def neighbor_list(size, cutoff, center, basis_vectors, primitive_cell):
 
     return distances, Is[ix], Js[ix]
 
-def pair_analysis(atom_types, size, cutoff, center, basis_vectors, primitive_cell):
+def pair_analysis(atom_types, size, cutoff, center, basis_vectors, primitive_cell, prec=10):
     """
     run a pair analysis of a crystal structure of almost any type of symmetry.
 
@@ -66,7 +66,7 @@ def pair_analysis(atom_types, size, cutoff, center, basis_vectors, primitive_cel
     """
     cutoff = np.array([int(cutoff), int(cutoff), int(cutoff)]) ##<--- fix_here
     dAxBy, iAxBy, jAxBy  = neighbor_list(size, cutoff, center, basis_vectors, primitive_cell)
-
+    dAxBy = np.array([np.round(d,prec) for d in dAxBy])
     nat = np.prod(size)*len(basis_vectors)
 
     combs_types,types_all = afn.c_types(atom_types)

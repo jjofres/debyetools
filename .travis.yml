@@ -1,10 +1,8 @@
+dist: bionic
 language: python
 python:
   - 3.8.6
-addons:
-  apt:
-    packages:
-      - openssl=1.1.1
+
 # Update pip to the latest version
 before_install:
   - python --version

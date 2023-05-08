@@ -846,7 +846,7 @@ class MU:  # Murnaghan
         """
         if fit:
             pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
+            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata),bounds=([-np.inf, 0, 0, 0], [0, np.inf,np.inf,np.inf]))['x']
             self.pEOS = popt
         if not fit:
             self.pEOS = initial_parameters[:4]

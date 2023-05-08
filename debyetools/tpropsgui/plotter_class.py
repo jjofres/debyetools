@@ -43,7 +43,7 @@ class dataplot:
 
     def create_window(self,simple=False):
         if simple == True:
-            print('simple_layout')
+            # print('simple_layout')
             layout = fn.simple_layout(self.lines)
         else:
             layout = fn.general_layout(self.lines,self.jx)
@@ -61,7 +61,7 @@ class dataplot:
             self.window['ix'+str(self.jx)+'-'+k].update(fig_settings[k])
 
     def create_canvas(self,show=False):
-        print('create_canvas show',show)
+        # print('create_canvas show',show)
 
         self.fig = fn.plot_fig(self.fig_settings,self.lines,show=show)
         self.figure_canvas_agg = fn.draw_figure(self.window['--CANVAS2-'].TKCanvas, self.fig)
@@ -71,7 +71,7 @@ class dataplot:
         plt.close('all')
 
     def update_canvas(self,show=False):
-        print('update_canvas show',show)
+        # print('update_canvas show',show)
 
         self.delete_fig_agg()
         self.create_canvas(show=show)
@@ -96,10 +96,10 @@ class dataplot:
             ix_inx2 = newl.find('-')
             newl2 = newl[ix_inx2+1:]
             #l=newl2
-            print('AAAAA',l,l.replace('++',' ').split(),ix_inx,ix_inx==0,newl2[:2]=='++')
+            # print('AAAAA',l,l.replace('++',' ').split(),ix_inx,ix_inx==0,newl2[:2]=='++')
             if ix_inx==0 and newl2[:2]=='++':#l[:2]=='++': #ix_inx==0:#
                 prp = newl2.replace('++',' ').split()
-                print(self.lines.keys())
+                # print(self.lines.keys())
                 li = getattr(self.lines,prp[-1])['settings']
                 li[prp[0]]=self.window[l].get()
 

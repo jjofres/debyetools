@@ -38,6 +38,7 @@ def generate_cells_coordinates(size, primitive_cell,center):
     cell_coords = np.array(list((it.product(np.arange(size[0]),
                                             np.arange(size[1]),
                                             np.arange(size[2])))))
+
     cell_coords_centered = cell_coords + center
     cell_coords_centered = np.dot(cell_coords_centered, primitive_cell)
 

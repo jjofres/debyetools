@@ -86,4 +86,5 @@ def quiet_pa(EM):
     nu = (3.*B-Y)/(6.*B)
     AU = 5*Sv/Sr+Bv/Br-6
 
-    return B, Y, S, AU, nu
+    return BR, BV, B, GR, GV, S, AU, nu
+

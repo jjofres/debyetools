@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-#
+plt.switch_backend('TkAgg')
 import numpy as np
 # import addcopyfighandler
 #

@@ -173,7 +173,7 @@ def eos_write_params(window,EOSStr,pEOS):
         # if EOSStr not in ['EAM', 'MP']:
         #     pEOS2[0]=pEOS2[0]/(0.160218e-18 * 6.02214e23)
         #     pEOS2[1] = pEOS2[1] / (1e-30 * 6.02e23)
-        print(EOSStr,':',', '.join(['%.9e' for i in pEOS])%tuple(pEOS))
+        # print(EOSStr,':',', '.join(['%.9e' for i in pEOS])%tuple(pEOS))
 ##
 def chk_el(window,event):
     window['--I_p_el'].update(disabled= not bool(window[event].get()))
@@ -205,14 +205,14 @@ def tprops_enable_nexts(window):
 #
 def plot_EvV(window, eosobj_dict, opened_EOS_dict,jx):
     pots_str_lst = [k for k in opened_EOS_dict if opened_EOS_dict[k]]
-    print(pots_str_lst)
+    # print(pots_str_lst)
     V_DFT = eosobj_dict['V_DFT']
     E_DFT = eosobj_dict['E_DFT']
     tab3_str='#V          DFT         '+'          '.join(['%s' for i in pots_str_lst])%tuple(pots_str_lst)+'\n'
     for Vi, Ei in zip(V_DFT, E_DFT):
         Emi = [eosobj_dict[k].E0(Vi) for k in pots_str_lst]
         tab3_str= tab3_str + '%.10e   %.10e  '%(Vi,Ei) + '  '.join(['%.10e' for i in Emi])%tuple(Emi)+'\n'
-    print(tab3_str)
+    # print(tab3_str)
     initial_tabs_multilinetxt = {'t0':{'multiline':tab3_str}}
     initial_lines_settings = {
                               'l0': {'plot':True,'label':0,'linestyle':'None','color':'mediumpurple',  'marker':'o',   'markerfacecolor':'black', 'markeredgecolor':'mediumpurple',  'linewidth':2,'markersize':10},
@@ -243,14 +243,14 @@ def plot_EvV(window, eosobj_dict, opened_EOS_dict,jx):
 
 def plot_EvV_full(window, eosobj_dict, opened_EOS_dict,jx):
     pots_str_lst = [k for k in opened_EOS_dict if opened_EOS_dict[k]]
-    print(pots_str_lst)
+    # print(pots_str_lst)
     V_DFT = eosobj_dict['V_DFT']
     E_DFT = eosobj_dict['E_DFT']
     tab3_str='#V          DFT         '+'          '.join(['%s' for i in pots_str_lst])%tuple(pots_str_lst)+'\n'
     for Vi, Ei in zip(V_DFT, E_DFT):
         Emi = [eosobj_dict[k].E0(Vi) for k in pots_str_lst]
         tab3_str= tab3_str + '%.10e   %.10e  '%(Vi,Ei) + '  '.join(['%.10e' for i in Emi])%tuple(Emi)+'\n'
-    print(tab3_str)
+    # print(tab3_str)
     initial_tabs_multilinetxt = {'t0':{'multiline':tab3_str}}
     initial_lines_settings = {
                               'l0': {'plot':True,'label':0,'linestyle':'None','color':'mediumpurple',  'marker':'o',   'markerfacecolor':'black', 'markeredgecolor':'mediumpurple',  'linewidth':2,'markersize':10},

@@ -531,7 +531,7 @@ class MP:  # Morse
     :param list_of_floats parameters: Morse potential parameters.
     """
 
-    def __init__(self, *args, units='J/mol', parameters=''):
+    def __init__(self, *args, units='J/mol', parameters='', prec=10):
         formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = args
         # formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
         self.formula, self.primitive_cell, self.basis_vectors = formula, primitive_cell, basis_vectors
@@ -543,7 +543,8 @@ class MP:  # Morse
                                                                                                           size, cutoff,
                                                                                                           center,
                                                                                                           basis_vectors,
-                                                                                                          primitive_cell)
+                                                                                                          primitive_cell,
+                                                                                                          prec=prec)
 
         neigbor_distances_at_Vstar, number_of_pairs_per_distance = neigbor_distances_at_Vstar[
                                                                    :number_of_neighbor_levels], number_of_pairs_per_distance[
@@ -845,7 +846,7 @@ class MU:  # Murnaghan
         """
         if fit:
             pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
+            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata),bounds=([-np.inf, 0, 0, 0], [0, np.inf,np.inf,np.inf]))['x']
             self.pEOS = popt
         if not fit:
             self.pEOS = initial_parameters[:4]

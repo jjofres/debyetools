@@ -78,7 +78,7 @@ def fit_electronic(Vs, p_el,E,N,Ef, ixss=8, ixse=-1):
     """
 
     V = np.array(Vs)
-    ix_V0=10
+    ix_V0=4
     EfV0 = float(Ef[ix_V0])
     ixs=[i for i,x in enumerate(E[ix_V0]) if x>=Ef[ix_V0]]
     E1 = float(E[ix_V0][ixs[0]-1])
@@ -88,8 +88,13 @@ def fit_electronic(Vs, p_el,E,N,Ef, ixss=8, ixse=-1):
     NfV0 = (EfV0 - E1)*(N2 - N1)/(E2 - E1) + N1
     NfV = np.array([NfV0*np.sqrt(ef/EfV0) for ef in Ef][ixss:ixse])
     P2 = leastsq(NfV2m, p_el, args=(V[ixss:ixse], NfV),maxfev=1000)
+
     P2 = P2[0]
 
+    NfVcalc = [NfV_poly_fun(Vi, P2[0], P2[1], P2[2], P2[3]) for Vi in V[ixss:ixse]]
+    print('#V NfVdata NfVcalc')
+    for Vi, Ndatai, Ncalci in zip(V[ixss:ixse], NfV, NfVcalc):
+        print('%.5e %.5e %.5e' % (Vi, Ndatai, Ncalci))
     return P2
 
 def NfV_poly_fun(V, _A, _B, _C, _D):

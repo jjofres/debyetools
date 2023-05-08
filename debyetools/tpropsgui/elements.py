@@ -28,7 +28,7 @@ def collapse(layout, key):
     return sg.pin(sg.Column(layout, key='||Col_'+key,visible=False, vertical_alignment='top'))
 
 def Bc(txt,key,colors,right_click_menu=None):
-    print('||B_'+key)
+    # print('||B_'+key)
     return sg.Button(txt,key='||B_'+key,disabled=True,font=("Helvetica", 10),right_click_menu=right_click_menu,pad=(1,1))
 
 def Be(txt,key,colors,right_click_menu=None):

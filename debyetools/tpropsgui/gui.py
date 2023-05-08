@@ -1,4 +1,21 @@
-def gui() -> object:
+import sys
+from PySide6.QtWidgets import QApplication
+
+from debyetools.tpropsgui.mainwindow import mainWindow
+def interface():
+    app = QApplication(sys.argv)
+
+    widget = mainWindow(app=app)
+    # widget.app = app
+    widget.show()
+    sys.exit(app.exec())
+
+
+def gui():
+    from warnings import warn
+
+    warn('This is deprecated', DeprecationWarning, stacklevel=2)
+
     import PySimpleGUI as sg
     from debyetools.tpropsgui.layout import layout
     import debyetools.tpropsgui.events as events
@@ -54,12 +71,12 @@ def gui() -> object:
         window,event, values = sg.read_all_windows()
         # pr0nt(window,event)
         # pr0nt(window1, window2, window3,window4,window5)
-        print(event)
+        # print(event)
         try:
             ips = event.index('ix')
             ips2 = event[ips:].index('-')
             windows_ix = event[ips+2:ips+ips2]
-            print(windows_ix)
+            # print(windows_ix)
         except:
             print(False)
 
@@ -184,7 +201,7 @@ def gui() -> object:
                             # print(verb,'7')
                             initial_parameters = np.array(initial_parameters,dtype=object)
                             EOS2params.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters)
-                            print(k, 'fitted')
+                            # print(k, 'fitted')
                         else:
                             initial_parameters = np.array([float(pi) for pi in window['--I_params_'+k].get().split(', ')])
                             # pr0nt(initial_parameters)
@@ -308,7 +325,7 @@ def gui() -> object:
             except FileNotFoundError:
                 sg.popup_ok("DOSCAR files not found.\n\nIf you don't have any, try using your own parameter values or just without electronic contribution.")
             except Exception as e:
-                print(e.__class__)
+                # print(e.__class__)
                 sg.popup_ok(traceback.format_exc())
 
         elif event == '||B_run_minF':
@@ -381,7 +398,7 @@ def gui() -> object:
 
                 for k in opened_EOS_dict.keys():
                     if opened_EOS_dict[k]:
-                        print(window['--I_formula'].get(), nu, m, p_intanh, EOS2plot_dict[k], p_electronic,p_defects, p_anh, mode)
+                        # print(window['--I_formula'].get(), nu, m, p_intanh, EOS2plot_dict[k], p_electronic,p_defects, p_anh, mode)
                         nDebs_dict[k]['ndeb'] = nDeb(nu, m, p_intanh, EOS2plot_dict[k], p_electronic,
                                              p_defects, p_anh, mode=mode)
                         Tmin, Vmin = nDebs_dict[k]['ndeb'].min_G(T,EOS2plot_dict[k].V0,Pressure)
@@ -421,7 +438,7 @@ def gui() -> object:
             try:
                 for o in opened_EOS_dict:
                     if opened_EOS_dict[o]:
-                        print('Results for:',o)
+                        # print('Results for:',o)
                         tprops_dict_all[o] = nDebs_dict[o]['ndeb'].eval_props(nDebs_dict[o]['T'],nDebs_dict[o]['V'],Pressure)
 
                         window['--Tab_'+o].update(visible=True)
@@ -474,7 +491,7 @@ def gui() -> object:
             else:
                 anh_arr_MU = np.c_[tuple([tprops_dict_all['MU'][j] for j in keys_TPs])]
                 import debyetools.tpropsgui.elements as elmt
-                print('XXXXXXXXXXXXXXXXXXXXXXXXX')
+                # print('XXXXXXXXXXXXXXXXXXXXXXXXX')
                 lo_tabs_anh = [[elmt.Tab(eos_str,[[elmt.sCol([[elmt.M('','anh_'+eos_str,1000,7)]], 'anh_'+eos_str, 470, 80)]],'anh_'+eos_str,False) for eos_str in ['','MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']]]
 
                 lo_anh = [[elmt.TG(lo_tabs_anh, 'tabs_anh')],
@@ -508,7 +525,7 @@ def gui() -> object:
                         # pr0nt(anh_arr-anh_arr_MU)
                 window7['--Tab_anh_'].update(visible=False)
                 bool_anh = True
-                print('bool_anh', bool_anh)
+                # print('bool_anh', bool_anh)
 
         elif event == '||B_plotter_tprops':
             try:
@@ -601,7 +618,7 @@ def gui() -> object:
                             window['--I_fsKp_P'+str(i)+o].update('%.4e'%(FS_db_params[o]['Ksp'][i]))
                             #window['--I_fsKp_P'+str(0)+o].update(' '.join(['%.7e' for i in FS_db_params[o]['Ksp']])%tuple(FS_db_params[o]['Ksp']))
 
-                        print('xxxxx', window['--I_formula'].get(), window['--I_strkt'].get(),o,mode,H298,S298,' '.join(['%.7e' for i in FS_db_params[o]['Cp']])%tuple(FS_db_params[o]['Cp']), ' '.join(['%.7e' for i in FS_db_params[o]['a']])%tuple(FS_db_params[o]['a']), ' '.join(['%.7e' for i in FS_db_params[o]['1/Ks']])%tuple(FS_db_params[o]['1/Ks']), ' '.join(['%.7e' for i in FS_db_params[o]['Ksp']])%tuple(FS_db_params[o]['Ksp']))
+                        # print('xxxxx', window['--I_formula'].get(), window['--I_strkt'].get(),o,mode,H298,S298,' '.join(['%.7e' for i in FS_db_params[o]['Cp']])%tuple(FS_db_params[o]['Cp']), ' '.join(['%.7e' for i in FS_db_params[o]['a']])%tuple(FS_db_params[o]['a']), ' '.join(['%.7e' for i in FS_db_params[o]['1/Ks']])%tuple(FS_db_params[o]['1/Ks']), ' '.join(['%.7e' for i in FS_db_params[o]['Ksp']])%tuple(FS_db_params[o]['Ksp']))
 
 
                 window['--Tab_fs_'].update(visible=False)
@@ -635,7 +652,7 @@ def gui() -> object:
                 mode = event.replace('--Chk_mode_','')
             else:
                 mode = 'xx'
-            print(mode)
+            # print(mode)
 
 
         elif event in ['--B_ix'+windows_ix+'-figwidth_UP', '--B_ix'+windows_ix+'-figheight_UP', '--B_ix'+windows_ix+'-figwidth_DN', '--B_ix'+windows_ix+'-figheight_DN']:
@@ -753,9 +770,9 @@ def gui() -> object:
 
             while True:
                 event2, values2 = data4plot_dict[windows_ix].popup_window.read()
-                print(event2)
+                # print(event2)
                 if event2 in ('--B_ok_w2',sg.WIN_CLOSED):
-                    print('ok')
+                    # print('ok')
                     break
 
                 if event2 == '--B_addtab_w2':

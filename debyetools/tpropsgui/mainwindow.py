@@ -59,6 +59,7 @@ class mainWindow(QMainWindow):
         self.check_xs.stateChanged.connect(self.on_check_xs)
 
         self.ui.progress.setGeometry(450, 525, 80, 5)
+        self.ui.progress_2.setGeometry(260, 165, 80, 5)
 
         self.ipotparamsdialog = windowInteratormic(self)
         self.ipotparamsdialog.args = (None,)
@@ -84,6 +85,7 @@ class mainWindow(QMainWindow):
         self.plotwindow.show()
 
     def selectionchange(self, i):
+        self.ui.progress_2.setValue(0)
         dict_eos = {'Birch-Murnaghan':'BM', 'Rose-Vinet':'RV', 'Mie-Gruneisen':'MG', 'TB-SMA':'TB',
                     'Murnaghan':'MU', 'Poirier-Tarantola':'PT', 'Morse int. potential':'MP', 'EAM int. potential':'EAM'}
         self.eos_str = dict_eos[self.ui.comboBox.itemText(i)]
@@ -151,6 +153,7 @@ class mainWindow(QMainWindow):
         self.ui.lineEdit_xs.setEnabled(self.state_xs)
 
     def on_pushButton_fitEOS(self):
+        self.ui.progress_2.setValue(33)
         self.eos = getattr(dt_potentials, self.eos_str)(*self.ipotparamsdialog.args)
 
         Vdata, Edata = self.get_EvV()
@@ -161,6 +164,8 @@ class mainWindow(QMainWindow):
         self.eos.fitEOS(Vdata, Edata, initial_parameters = initial_guess, fit=True)
 
         self.ui.lineEdit_2.setText(', '.join(['%.9e' % (p) for p in self.eos.pEOS]))
+        self.ui.progress_2.setValue(100)
+
 
     def on_pushButton_calc_nu(self):
         C = self.get_C()

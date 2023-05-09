@@ -289,7 +289,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"debyetools GUI (lite)", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"debyetools GUI", None))
         self.actionE_V.setText(QCoreApplication.translate("MainWindow", u"Exxx", None))
         self.actionasasas.setText(QCoreApplication.translate("MainWindow", u"asasas", None))
         self.actionEV.setText(QCoreApplication.translate("MainWindow", u"E(V)", None))

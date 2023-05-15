@@ -161,6 +161,7 @@ class mainWindow(QMainWindow):
         self.Edata = Edata
 
         initial_guess = self.get_EOS_params()
+        # print(Vdata, Edata)
         self.eos.fitEOS(Vdata, Edata, initial_parameters = initial_guess, fit=True)
 
         self.ui.lineEdit_2.setText(', '.join(['%.9e' % (p) for p in self.eos.pEOS]))

@@ -5,13 +5,15 @@ Implementation of a tool for calculating self-consistent thermodynamic propertie
 Made by Javier Jofre: javier.jofre@polymtl.ca
 Please cite.
 
-### Requirements:
+### Requirements for Python module:
 - numpy
 - mpmath
 - scipy
-- PySimpleGUI
-- matplotlib
 
+### Requirements for Interface:
+For the interface it will also be necesary:
+- matplotlib
+- PySide6
 
 ### Installation
 ```
@@ -24,42 +26,53 @@ To start getting familiar with the interface `tProps` you can download `examples
 The GUI can be launched by executing the interface script from the debyetools repository main folder:
 
 ```
-python gui.py
+python interface.py
 ```
 
 Or you can launch  inside python:
 ```
-from debyetools.tpropsgui.gui import gui
-gui()
+from debyetools.tpropsgui.gui import interface
+interface()
 ```
 
 Debye tools can also be used as a library. Example: heat capacity of Al fcc using 3rd order Birch-Murnaghan EOS
 
 ```Python
 import numpy as np
+import debyetools.potentials as potentials
 from debyetools.ndeb import nDeb
 
-nu, m = 0.32, 0.026981500000000002
-Tmelting = 933
+# EOS parametrization
+# =========================
+EOS_parameters = [-3.607736520e+05, 9.929277050e-06, 7.729289055e+10, 4.604381753e+00]
+EOS = potentials.BM()
+EOS.fitEOS([0], [0], initial_parameters=EOS_parameters, fit=False)
 
-p_EOS = [-3.617047894e+05, 9.929931142e-06, 7.618619745e+10, 4.591924487e+00]
-p_intanh = 0, 1, p_EOS[1]
+# Other Contributions parametrization
+# =========================
 p_electronic = [3.8027342892e-01, -1.8875015171e-02, 5.3071034596e-04, -7.0100707467e-06]
-p_defects = 8.46, 1.69, Tmelting, 0.1, p_EOS[2],p_EOS[1]
-p_anh = 0,0,0
+mass = 0.026981500000000002
+Tmelting = 933
+p_defects = 8.46, 1.69, Tmelting, 0.1
+p_anharmonicity = 0, 1
+p_XS = 0, 0, 0
+poissonsratio = 0.37
 
-EOS_name = 'BM'
+# F minimization using Slater approximaiton
+# =========================
+ndeb = nDeb(poissonsratio, mass, p_anharmonicity, EOS, p_electronic, p_defects, p_XS, mode='jjsl')
+T_initial, T_final= 0.1, 1000
+T = np.arange(T_initial, T_final, 10)
+Pressure = 0
+T, V = ndeb.min_G(T, EOS_parameters[0] * .9, P=Pressure)
 
-ndeb_BM = nDeb(nu, m, p_intanh, p_EOS, p_electronic, p_defects,p_anh,EOS_name)
-
-T,V = 9.33000000000e+02,1.07790131286e-05
-                       #
-result = ndeb_BM.eval_props(T,V)['Cp']
+# Evaluation of thermodynamic properties
+# =========================
+tprops_dict = ndeb.eval_props(T, V, P=Pressure)
 ```
 
 To Do's:
 
-- Add More Examples to Documentation
 - Improve error handling
 - Add 'Compatible input files formats'
 - Improve Documentation

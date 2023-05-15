@@ -31,7 +31,8 @@ class nDeb:
     :param string mode: Type of approximation of the Debye temperature (see vibrational contribution).
     """
 
-    def __init__(self, nu, m, p_intanh, EOS, p_electronic, p_defects, p_anh, *args, units='J/mol', mode='jjsl'):
+    def __init__(self, nu: float, m: float, p_intanh: np.ndarray, EOS: object, p_electronic: np.ndarray, p_defects: np.ndarray, p_anh: np.ndarray, *args: object, units: object = 'J/mol',
+                 mode: str = 'jjsl') -> None:
 
         a0, m0 = p_intanh
         q0, q1, q2, q3 = p_electronic
@@ -113,12 +114,12 @@ class nDeb:
         del V
 
         ixs = np.where(newV <= 1.5 * newV[0])
-        Tmax = T[-1]
+        # Tmax = T[-1]
         T, V = T[ixs], newV[ixs]
 
         return T, V
 
-    def eval_props(self, T, V, P):
+    def eval_props(self, T, V, P=None):
         """
         Evaluates the thermodynamic properties of a given compound/element at (T,V).
 

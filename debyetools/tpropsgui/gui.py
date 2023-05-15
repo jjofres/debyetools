@@ -163,7 +163,7 @@ def gui():
                 window['--IC_prop2plt'].update('')
                 # print(verb,'02')
 
-                V_DFT, E_DFT = load_V_E(str_folderbrowser, str_folderbrowser+'/CONTCAR.5', units='J/mol')
+                V_DFT, E_DFT = load_V_E(str_folderbrowser+'/SUMMARY.fcc', str_folderbrowser+'/CONTCAR.5', units='J/mol')
                 # print(verb,'3')
 
                 for k in opened_EOS_dict:

@@ -92,9 +92,9 @@ def fit_electronic(Vs, p_el,E,N,Ef, ixss=8, ixse=-1):
     P2 = P2[0]
 
     NfVcalc = [NfV_poly_fun(Vi, P2[0], P2[1], P2[2], P2[3]) for Vi in V[ixss:ixse]]
-    print('#V NfVdata NfVcalc')
-    for Vi, Ndatai, Ncalci in zip(V[ixss:ixse], NfV, NfVcalc):
-        print('%.5e %.5e %.5e' % (Vi, Ndatai, Ncalci))
+    # print('#V NfVdata NfVcalc')
+    # for Vi, Ndatai, Ncalci in zip(V[ixss:ixse], NfV, NfVcalc):
+    #     print('%.5e %.5e %.5e' % (Vi, Ndatai, Ncalci))
     return P2
 
 def NfV_poly_fun(V, _A, _B, _C, _D):

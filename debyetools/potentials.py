@@ -34,27 +34,16 @@ class BM:
         :rtype: list
         """
         if fit:
-            # print(verb, 0)
             pEOS = initial_parameters[:4]
-            # print(verb, 1)
-            # for x in [self.error2min, pEOS,Vdata, Edata]:
-            #     print(type(x))
             popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
-            # print(verb, 2)
             self.pEOS = popt
-            # print(verb, 3)
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        # bounds = [(min(Vdata) * .99, max(Vdata) * 1.01)]
-        # mV = minimize(self.E0, [np.mean(Vdata)], bounds=bounds, tol=1e-10)
-        # print(verb, 4)
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-        # print(verb, 5)
         self.V0 = mV['x'][0]
-        # print(verb, 6)
 
-        return self.pEOS
+        # return self.pEOS
 
     def E04min(self, V, pEOS):
         E0, V0, B0, Bp0 = pEOS
@@ -533,15 +522,12 @@ class MP:  # Morse
 
     def __init__(self, *args, units='J/mol', parameters='', prec=10):
         formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = args
-        # formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
         self.formula, self.primitive_cell, self.basis_vectors = formula, primitive_cell, basis_vectors
 
         size = np.array([1, 1, 1])
-        center = np.array([0, 0, 0])
         atom_types = formula * np.prod(size)
         neigbor_distances_at_Vstar, number_of_pairs_per_distance, comb_types = pairanalysis.pair_analysis(atom_types,
-                                                                                                          size, cutoff,
-                                                                                                          center,
+                                                                                                          cutoff,
                                                                                                           basis_vectors,
                                                                                                           primitive_cell,
                                                                                                           prec=prec)
@@ -590,10 +576,7 @@ class MP:  # Morse
         if not fit:
             self.pEOS = initial_parameters
 
-            #        for i in range(-20, 21):
-            #            print(Vdata[0]*(1+i/100) , self.E0(Vdata[0]*(1+i/100)))
         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata) * .9, max(Vdata) * 1.1)], tol=1e-10)
-        # mV2 = self.minimize_bruteforce(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata)*.9, max(Vdata)*1.1)], tol=1e-10)
         self.V0 = mV['x'][0]
 
         return self.pEOS
@@ -623,8 +606,7 @@ class MP:  # Morse
         ms = []
         for njs, Dj, alphaj, r0j in zip(self.npair.T, Ds, alphas, r0s):
             for rstari, nij in zip(self.ndist, njs):
-                ms.append(
-                    nij / 2 * Dj * ((1 - np.exp(-alphaj * (rstari * (V / self.Vstar) ** (1 / 3) - r0j))) ** 2 - 1))
+                ms.append(nij / 2 * Dj * ((1 - np.exp(-alphaj * (rstari * (V / self.Vstar) ** (1 / 3) - r0j))) ** 2 - 1))
         return np.sum(ms) * (self.mult_E)
 
     def dE0dV_T(self, V):
@@ -642,10 +624,7 @@ class MP:  # Morse
         ms = []
         for njs, Dj, alphaj, r0j in zip(self.npair.T, Ds, alphas, r0s):
             for rstari, nij in zip(self.ndist, njs):
-                ms.append(-nij * Dj * (-1 + np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (
-                            2 / 3)) / self.Vstar)) * alphaj * rstari * np.exp(
-                    alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (2 / 3)) / self.Vstar) / (
-                                      3 * self.Vstar ** (1 / 3) * V ** (2 / 3)))
+                ms.append(-nij * Dj * (-1 + np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (2 / 3)) / self.Vstar)) * alphaj * rstari * np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (2 / 3)) / self.Vstar) / (3 * self.Vstar ** (1 / 3) * V ** (2 / 3)))
         return np.sum(ms) * (self.mult_E) / (self.mult_V)
 
     def d2E0dV2_T(self, V):
@@ -663,13 +642,7 @@ class MP:  # Morse
         ms = []
         for njs, Dj, alphaj, r0j in zip(self.npair.T, Ds, alphas, r0s):
             for rstari, nij in zip(self.ndist, njs):
-                ms.append(2 * np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (
-                            2 / 3)) / self.Vstar) * nij * alphaj * rstari * Dj * (
-                                      (alphaj * rstari * V ** (1 / 3) * self.Vstar ** (2 / 3) + self.Vstar) * np.exp(
-                                  alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (
-                                              2 / 3)) / self.Vstar) - (1 / 2) * alphaj * rstari * V ** (
-                                                  1 / 3) * self.Vstar ** (2 / 3) - self.Vstar) / (
-                                      9 * V ** (5 / 3) * self.Vstar ** (4 / 3)))
+                ms.append(2*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*nij*alphaj*rstari*Dj*((alphaj*rstari*V**(1/3)*self.Vstar**(2/3)+self.Vstar)*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)-(1/2)*alphaj*rstari*V**(1/3)*self.Vstar**(2/3)-self.Vstar)/(9*V**(5/3)*self.Vstar**(4/3)))
         return np.sum(ms) * (self.mult_E) / (self.mult_V) ** 2
 
     def d3E0dV3_T(self, V):
@@ -687,19 +660,7 @@ class MP:  # Morse
         ms = []
         for njs, Dj, alphaj, r0j in zip(self.npair.T, Ds, alphas, r0s):
             for rstari, nij in zip(self.ndist, njs):
-                ms.append(-nij * Dj * alphaj * rstari * np.exp(
-                    alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (2 / 3)) / self.Vstar) * (
-                                      4 * np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (
-                                          2 / 3)) / self.Vstar) * alphaj ** 2 * rstari ** 2 * V ** (
-                                                  2 / 3) * self.Vstar ** (1 / 3) - alphaj ** 2 * rstari ** 2 * V ** (
-                                                  2 / 3) * self.Vstar ** (1 / 3) + 12 * alphaj * rstari * np.exp(
-                                  alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (
-                                              2 / 3)) / self.Vstar) * V ** (1 / 3) * self.Vstar ** (
-                                                  2 / 3) - 6 * alphaj * rstari * V ** (1 / 3) * self.Vstar ** (
-                                                  2 / 3) + 10 * self.Vstar * np.exp(alphaj * (
-                                          r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (
-                                              2 / 3)) / self.Vstar) - 10 * self.Vstar) / (
-                                      27 * self.Vstar ** (4 / 3) * V ** (8 / 3)))
+                ms.append(-nij*Dj*alphaj*rstari*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*(4*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2 / 3)) / self.Vstar) * alphaj ** 2 * rstari ** 2 * V ** (2 / 3) * self.Vstar ** (1 / 3) - alphaj ** 2 * rstari ** 2 * V ** (2 / 3) * self.Vstar ** (1 / 3) + 12 * alphaj * rstari * np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (2 / 3)) / self.Vstar) * V ** (1 / 3) * self.Vstar ** (2 / 3) - 6 * alphaj * rstari * V ** (1 / 3) * self.Vstar ** (2 / 3) + 10 * self.Vstar * np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (2 / 3)) / self.Vstar) - 10 * self.Vstar) / (27 * self.Vstar ** (4 / 3) * V ** (8 / 3)))
         return np.sum(ms) * (self.mult_E) / (self.mult_V) ** 3
 
     def d4E0dV4_T(self, V):
@@ -717,22 +678,7 @@ class MP:  # Morse
         ms = []
         for njs, Dj, alphaj, r0j in zip(self.npair.T, Ds, alphas, r0s):
             for rstari, nij in zip(self.ndist, njs):
-                ms.append(8 * nij * alphaj * np.exp(
-                    alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (2 / 3)) / self.Vstar) * ((
-                                                                                                                                                                      V * alphaj ** 3 * rstari ** 3 + 6 * alphaj ** 2 * rstari ** 2 * V ** (
-                                                                                                                                                                      2 / 3) * self.Vstar ** (
-                                                                                                                                         1 / 3) + 13 * alphaj * rstari * V ** (
-                                                                                                                                         1 / 3) * self.Vstar ** (
-                                                                                                                                         2 / 3) + 10 * self.Vstar) * np.exp(
-                    alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (2 / 3)) / self.Vstar) - (
-                                                                                                                             1 / 8) * V * alphaj ** 3 * rstari ** 3 - 3 * alphaj ** 2 * rstari ** 2 * V ** (
-                                                                                                                             2 / 3) * self.Vstar ** (
-                                                                                                                             1 / 3) * (
-                                                                                                                             1 / 2) - 13 * alphaj * rstari * V ** (
-                                                                                                                             1 / 3) * self.Vstar ** (
-                                                                                                                             2 / 3) * (
-                                                                                                                             1 / 2) - 10 * self.Vstar) * rstari * Dj / (
-                                      81 * self.Vstar ** (4 / 3) * V ** (11 / 3)))
+                ms.append(8*nij*alphaj*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*((V*alphaj**3*rstari**3+6*alphaj**2*rstari**2*V**(2/3)*self.Vstar**(1/3)+13*alphaj*rstari*V**(1/3)*self.Vstar**(2/3)+10*self.Vstar)*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)-(1/8)*V*alphaj**3*rstari**3-3*alphaj**2*rstari**2*V**(2/3)*self.Vstar**(1/3)*(1/2)-13*alphaj*rstari*V**(1/3)*self.Vstar**(2/3)*(1/2)-10*self.Vstar)*rstari*Dj/(81*self.Vstar**(4/3)*V**(11/3)))
         return np.sum(ms) * (self.mult_E) / (self.mult_V) ** 4
 
     def d5E0dV5_T(self, V):
@@ -750,27 +696,7 @@ class MP:  # Morse
         ms = []
         for njs, Dj, alphaj, r0j in zip(self.npair.T, Ds, alphas, r0s):
             for rstari, nij in zip(self.ndist, njs):
-                ms.append(-nij * Dj * alphaj * rstari * np.exp(
-                    alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (2 / 3)) / self.Vstar) * (
-                        16 * np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (
-                                          2 / 3)) / self.Vstar) * V ** (
-                                                  4 / 3) * alphaj ** 4 * rstari ** 4 * self.Vstar ** (2 / 3) - V ** (
-                                                  4 / 3) * alphaj ** 4 * rstari ** 4 * self.Vstar ** (
-                                2 / 3) + 160 * np.exp(alphaj * (
-                                          r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (
-                                              2 / 3)) / self.Vstar) * V * self.Vstar * alphaj ** 3 * rstari ** 3 - 20 * V * self.Vstar * alphaj ** 3 * rstari ** 3 + 640 * np.exp(
-                                  alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (
-                                              2 / 3)) / self.Vstar) * alphaj ** 2 * rstari ** 2 * V ** (
-                                                  2 / 3) * self.Vstar ** (
-                                                  4 / 3) - 160 * alphaj ** 2 * rstari ** 2 * V ** (
-                                                  2 / 3) * self.Vstar ** (4 / 3) + 1200 * np.exp(alphaj * (
-                                          r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (
-                                              2 / 3)) / self.Vstar) * self.Vstar ** (5 / 3) * alphaj * rstari * V ** (
-                                                  1 / 3) - 600 * self.Vstar ** (5 / 3) * alphaj * rstari * V ** (
-                                1 / 3) + 880 * np.exp(alphaj * (
-                        r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (
-                                              2 / 3)) / self.Vstar) * self.Vstar ** 2 - 880 * self.Vstar ** 2) / (
-                                      243 * V ** (14 / 3) * self.Vstar ** (7 / 3)))
+                ms.append(-nij * Dj * alphaj * rstari * np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (2 / 3)) / self.Vstar) * (16 * np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (  2 / 3)) / self.Vstar) * V ** (  4 / 3) * alphaj ** 4 * rstari ** 4 * self.Vstar ** (2 / 3) - V ** (  4 / 3) * alphaj ** 4 * rstari ** 4 * self.Vstar ** (2 / 3) + 160 * np.exp(alphaj * (  r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (  2 / 3)) / self.Vstar) * V * self.Vstar * alphaj ** 3 * rstari ** 3 - 20 * V * self.Vstar * alphaj ** 3 * rstari ** 3 + 640 * np.exp(  alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (  2 / 3)) / self.Vstar) * alphaj ** 2 * rstari ** 2 * V ** (  2 / 3) * self.Vstar ** (  4 / 3) - 160 * alphaj ** 2 * rstari ** 2 * V ** (  2 / 3) * self.Vstar ** (4 / 3) + 1200 * np.exp(alphaj * (  r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (  2 / 3)) / self.Vstar) * self.Vstar ** (5 / 3) * alphaj * rstari * V ** (  1 / 3) - 600 * self.Vstar ** (5 / 3) * alphaj * rstari * V ** (1 / 3) + 880 * np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (  2 / 3)) / self.Vstar) * self.Vstar ** 2 - 880 * self.Vstar ** 2) / (  243 * V ** (14 / 3) * self.Vstar ** (7 / 3)))
         return np.sum(ms) * (self.mult_E) / (self.mult_V) ** 5
 
     def d6E0dV6_T(self, V):
@@ -2475,12 +2401,9 @@ class EAM:  #
         self.formula_ABCD = formula_ABCD
         # # ## pr0nt(formula_ABCD)
         #
-        size = np.array([1, 1, 1])
-        center = np.array([0, 0, 0])
-        atom_types = self.formula_ABCD * np.prod(size)
+        atom_types = self.formula_ABCD
         neigbor_distances_at_Vstar, number_of_pairs_per_distance, comb_types = pairanalysis.pair_analysis(atom_types,
-                                                                                                          size, cutoff,
-                                                                                                          center,
+                                                                                                          cutoff,
                                                                                                           basis_vectors,
                                                                                                           primitive_cell)
         neigbor_distances_at_Vstar, number_of_pairs_per_distance = neigbor_distances_at_Vstar[

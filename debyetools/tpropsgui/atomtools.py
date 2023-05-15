@@ -476,4 +476,4 @@ class Molecule:
 
     def run_pa(self, cutoff):
         self.cutoff = cutoff
-        self.distances, self.num_bonds_per_formula, self.combs_types = dt_pa_calc.pair_analysis(self.formula, np.array([1,1,1]), self.cutoff, np.array([0,0,0]), self.basis, self.cell)
+        self.distances, self.num_bonds_per_formula, self.combs_types = dt_pa_calc.pair_analysis(self.formula, self.cutoff, self.basis, self.cell)

@@ -184,7 +184,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"debyetools GUI (lite) - Heat Capacity", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"debyetools GUI - property viewer", None))
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"GPa", None))
         self.lineEdit_2.setText(QCoreApplication.translate("MainWindow", u"0 30 10", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"Temperature range:", None))

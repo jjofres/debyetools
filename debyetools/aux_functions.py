@@ -12,7 +12,7 @@ class logging(object):
     def flush(self) :
         for f in self.files:
             f.flush()
-def c_types(atom_types: str) -> tuple[list, list]:
+def c_types(atom_types: str):
     """
     returns all the pair types combinations.
 

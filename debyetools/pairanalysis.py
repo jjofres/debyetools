@@ -1,8 +1,9 @@
 import numpy as np
 import itertools as it
 import debyetools.aux_functions as afn
+from typing import Tuple
 
-def neighbor_list(size: np.ndarray, basis: np.ndarray, cell: np.ndarray, cutoff: float)->tuple[np.ndarray,np.ndarray,np.ndarray]:
+def neighbor_list(size: np.ndarray, basis: np.ndarray, cell: np.ndarray, cutoff: float)->Tuple[np.ndarray,np.ndarray,np.ndarray]:
     """ calculate a list i, j, dij where i and j are a pair of atoms of
     indexes i and j, respectively, and dij is the distance between them.
 
@@ -11,7 +12,7 @@ def neighbor_list(size: np.ndarray, basis: np.ndarray, cell: np.ndarray, cutoff:
     :param np.ndarray cell: the primitive cell
     :param float cutoff: cut-off distance
     :return: D, I , J
-    :rtype: tuple[np.ndarray, np.ndarray, np.ndarray]
+    :rtype: Tuple[np.ndarray, np.ndarray, np.ndarray]
     
 
     """
@@ -70,7 +71,7 @@ def pair_analysis(atom_types, cutoff, basis, cell, prec=10, full=False):
     :param np.ndarray basis: atoms position within a single primitive cell
     :param np.ndarray cell: the primitive cell
     :return:  pair distance, pair number, pair types
-    :rtype: tuple[np.ndarray,np.ndarray,np.ndarray]
+    :rtype: Tuple[np.ndarray,np.ndarray,np.ndarray]
     """
     # dAxBy, iAxBy, jAxBy, cells_cohordniates, ij_ccix  = neighbor_list(size, max_distance, center, basis, cell)
     size=np.array([1,1,1])

@@ -1,6 +1,7 @@
 import itertools as it
 import re
 import numpy as np
+from typing import Tuple
 
 class logging(object):
     def __init__(self, *files):
@@ -12,13 +13,13 @@ class logging(object):
     def flush(self) :
         for f in self.files:
             f.flush()
-def c_types(atom_types: str):
+def c_types(atom_types: str) -> Tuple[list, list]:
     """
     returns all the pair types combinations.
 
     :param str atom_types: the types of each atom in the primitive cell in the same order as the basis vectors.
     :return: pair types and list wuth individual types.
-    :rtype: tuple[list, list]
+    :rtype: Tuple[list, list]
     """
     types_all = re.findall('[A-Z][^A-Z]*', atom_types)
     ptypes=list(set([s for s in types_all]))

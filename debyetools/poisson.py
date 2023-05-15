@@ -9,23 +9,23 @@ def poisson_ratio(EM, quiet=False):
     if quiet:
         return quiet_pa(EM)
 
-    C11, C12, C13 = EM[0,0]*1e-1, EM[0,1]*1e-1, EM[0,2]*1e-1
-    C22, C23 = EM[1,1]*1e-1, EM[1,2]*1e-1
-    C33 = EM[2,2]*1e-1
-    C44 = EM[3,3]*1e-1
-    C55 = EM[4,4]*1e-1
-    C66 = EM[5,5]*1e-1
+    C11, C12, C13 = EM[0,0], EM[0,1], EM[0,2]
+    C22, C23 = EM[1,1], EM[1,2]
+    C33 = EM[2,2]
+    C44 = EM[3,3]
+    C55 = EM[4,4]
+    C66 = EM[5,5]
 
-    if EM[0,4]**2*1e-1>0:
-        C15 = EM[0,4]*1e-1
-        C25 = EM[1,4]*1e-1
-        C35 = EM[2,4]*1e-1
-        C46 = EM[3,5]*1e-1
+    if EM[0,4]**2>0:
+        C15 = EM[0,4]
+        C25 = EM[1,4]
+        C35 = EM[2,4]
+        C46 = EM[3,5]
     else:
-        C15 = EM[0,5]*1e-1
-        C25 = EM[1,5]*1e-1
-        C35 = EM[2,5]*1e-1
-        C46 = EM[3,4]*1e-1
+        C15 = EM[0,5]
+        C25 = EM[1,5]
+        C35 = EM[2,5]
+        C46 = EM[3,4]
 
     f = C11*(C22*C55-C25**2)-C12*(C12*C55-C15*C25)+C15*(C12*C25-C15*C22)+C25*(C23*C35-C25*C33)
     g = C11*C22*C33-C11*C23**2-C22*C13**2-C33*C12**2+2*C12*C13*C23
@@ -44,8 +44,8 @@ def poisson_ratio(EM, quiet=False):
     Y = (9.*B*S)/(3.*B+S)
     nu = (3.*B-Y)/(6.*B)
     AU = 5*Sv/Sr+Bv/Br-6
-    print('Sv/Sr',Sv/Sr, 'Bv/Br', Bv/Br)
-    print('C11, C12, C13, C15, C22, C23, C25, C33, C35, C44, C46, C55, C66, B, Y, S, AU, nu','\n',C11, C12, C13, C15, C22, C23, C25, C33, C35, C44, C46, C55, C66, B, Y, S, AU, nu)
+    # print('Sv/Sr',Sv/Sr, 'Bv/Br', Bv/Br)
+    # print('C11, C12, C13, C15, C22, C23, C25, C33, C35, C44, C46, C55, C66, B, Y, S, AU, nu','\n',C11, C12, C13, C15, C22, C23, C25, C33, C35, C44, C46, C55, C66, B, Y, S, AU, nu)
 
     return nu
 

@@ -1,6 +1,7 @@
 import itertools as it
 import re
 import numpy as np
+from typing import Tuple
 
 class logging(object):
     def __init__(self, *files):
@@ -12,11 +13,13 @@ class logging(object):
     def flush(self) :
         for f in self.files:
             f.flush()
-def c_types(atom_types):
+def c_types(atom_types: str) -> Tuple[list, list]:
     """
     returns all the pair types combinations.
 
-    :param list_of_str atom_types: the types of each atom in the primitive cell in the same order as the basis vectors.
+    :param str atom_types: the types of each atom in the primitive cell in the same order as the basis vectors.
+    :return: pair types and list wuth individual types.
+    :rtype: Tuple[list, list]
     """
     types_all = re.findall('[A-Z][^A-Z]*', atom_types)
     ptypes=list(set([s for s in types_all]))
@@ -29,9 +32,11 @@ def generate_cells_coordinates(size, primitive_cell,center):
     """ generate the cell coordinates for which we are going
     to calculate the neighbor list.
 
-    :param array size: Number of times we are replicating the primitive cell
-    :param array primitive_cell: The primitive cell
-    :param array center: The position in space where the system of reference is
+    :param np.ndarray size: Number of times we are replicating the primitive cell
+    :param np.ndarray primitive_cell: The primitive cell
+    :param np.ndarray center: The position in space where the system of reference is
+    :return: cell coordinates.
+    :rtype: np.ndarray
 
     """
 
@@ -44,7 +49,7 @@ def generate_cells_coordinates(size, primitive_cell,center):
 
     return cell_coords_centered
 
-def gen_Ts(Ti,Tf,nTs):
+def gen_Ts(Ti: float, Tf: float, nTs: int) -> np.ndarray:
     """
     Function to generate a range of temperatures.
 
@@ -52,7 +57,7 @@ def gen_Ts(Ti,Tf,nTs):
     :param float Tf: Final temperature.
     :param int nTs: Number of values. This does not include room temperature, which is included anyways.
 
-    :retun list_of_floats: Values of temperatures between Ti and Tf, inclusive, plus room temperature.
+    :retun np.ndarray: Values of temperatures between Ti and Tf, inclusive, plus room temperature.
     """
     minF_step = (Tf - Ti)/(nTs - 1.)
     Ts = np.arange(Ti, Tf+minF_step, minF_step)
@@ -105,7 +110,7 @@ def load_doscar(filename_sufix, list_filetags = ['-0.10', '-0.09','-0.08','-0.07
 
     return E,N,Ef
 
-def load_V_E(energy_dir,energy_dir_contcar, units='eV/atom'):
+def load_V_E(energy_dir_summary,energy_dir_contcar, units='eV/atom'):
     with open(energy_dir_contcar,'r') as f_poscar:
         f_poscar_lines = f_poscar.readlines()
         cell_poscar = f_poscar_lines[2:5]
@@ -119,7 +124,7 @@ def load_V_E(energy_dir,energy_dir_contcar, units='eV/atom'):
         except:
             nat = sum([int(li) for li in np.fromstring(f_poscar_lines[6], dtype=int, sep=' ')])
             1/nat
-    with open(energy_dir + '/SUMMARY.fcc') as f_summary:
+    with open(energy_dir_summary) as f_summary:
         f_summary_lines = f_summary.readlines()
         f_summary_lines = list(dict.fromkeys(f_summary_lines))
         ds = []

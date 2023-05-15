@@ -22,7 +22,7 @@ class CpTestCase(unittest.TestCase):
         folder_name = './inpt_files/Al_fcc'
         # EOS parametrization
         # =========================
-        V_DFT, E_DFT = load_V_E(folder_name, folder_name + '/CONTCAR.5', units='J/mol')
+        V_DFT, E_DFT = load_V_E(folder_name+'/SUMMARY.fcc', folder_name + '/CONTCAR.5', units='J/mol')
         EOS_name = 'BM4'
         initial_parameters = [-3.6e+05, 9.9e-06, 7.8e+10, 4.7e+00, 1.e-10]
         eos_BM4 = getattr(potentials, EOS_name)()
@@ -54,13 +54,14 @@ class CpTestCase(unittest.TestCase):
 
         # F minimization
         # =========================
-        m = 0.026981500000000002
+        m = 0.0269815
         ndeb_BM4 = nDeb(nu, m, p_intanh, eos_BM4, p_electronic, p_defects, p_anh, mode='jjsl')
 
         T_initial, T_final, number_Temps = 0.1, 1000, 10
         T = gen_Ts(T_initial, T_final, number_Temps)
 
         T, V = ndeb_BM4.min_G(T, p_EOS[1] * .9, P=Pressure)
+        print(T,V)
         # =========================
 
         # Evaluations
@@ -74,12 +75,11 @@ class CpTestCase(unittest.TestCase):
         # FS comp db parameters
         # =========================
         FS_db_params = fit_FS(tprops_dict, T_from, T_to)
-        print('yyyy', FS_db_params['Cp'])
+        # print('yyyy', FS_db_params['Cp'])
         # =========================
 
         np.testing.assert_almost_equal(np.sum(FS_db_params['Cp'])/10,
-                                       np.sum([1.55473717e+02, -1.22152871e-01, 1.22933082e+06, 6.37489482e-05,
-                                               -1.97628077e+03, 1.00000000e+00])/10, decimal=1)
+                                       np.sum([3.73329836e+01,-3.19009406e-02,-5.87201278e+05,3.12404016e-05])/10, decimal=1)
 
     def test_Complete_Al_fcc_Morse(self):
         """ Test complete algorithm to calculate TP for Al fcc using the 4th order Birch-Murnaghan EOS."""
@@ -87,7 +87,7 @@ class CpTestCase(unittest.TestCase):
         folder_name = './inpt_files/Al_fcc'
         # EOS parametrization
         # =========================
-        V_DFT, E_DFT = load_V_E(folder_name, folder_name + '/CONTCAR.5', units='J/mol')
+        V_DFT, E_DFT = load_V_E(folder_name + '/SUMMARY.fcc', folder_name + '/CONTCAR.5', units='J/mol')
 
         formula, primitive_cell, sbasis_vectors = load_cell(folder_name + '/CONTCAR.5')
 
@@ -99,7 +99,7 @@ class CpTestCase(unittest.TestCase):
         initial_parameters = np.array([0.35, 1, 3.5])
 
         eos_Morse.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters)
-        p_EOS = eos_Morse.pEOS
+        # p_EOS = eos_Morse.pEOS
         # =========================
 
         # Electronic Contributions
@@ -127,8 +127,9 @@ class CpTestCase(unittest.TestCase):
         # F minimization
         # =========================
         m = 0.026981500000000002
+
         ndeb_Morse = nDeb(nu, m, p_intanh, eos_Morse, p_electronic,
-                          p_defects, p_anh, mode='jj')
+                          p_defects, p_anh, mode='jjsl')
 
         T_initial, T_final, number_Temps = 0.1, 1000, 10
         T = gen_Ts(T_initial, T_final, number_Temps)
@@ -151,8 +152,7 @@ class CpTestCase(unittest.TestCase):
         # =========================
 
         np.testing.assert_almost_equal(np.sum(FS_db_params['Cp'])/10,
-                               np.sum([1.11506748e+02, -8.08764375e-02, 7.35338964e+05, 4.28319803e-05,
-                                       -1.30713807e+03, 1])/10, decimal=1)
+                               np.sum([3.29178852e+01,-1.98782976e-02,-4.51619818e+05,2.02779715e-05])/10, decimal=1)
 
 
 if __name__ == '__main__':

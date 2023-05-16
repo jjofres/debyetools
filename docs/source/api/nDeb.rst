@@ -38,22 +38,18 @@ Example
 
 .. code-block:: python
 
-   import numpy as np
-   from debyetools.aux_functions import load_doscar, load_V_E, load_EM, load_cell
-   import debyetools.potentials as potentials
-
-   folder_name = '../tests/inpt_files/Al_fcc'
-
-   V_DFT, E_DFT = load_V_E(folder_name, folder_name + '/CONTCAR.5', units='J/mol')
-   formula, primitive_cell, sbasis_vectors = load_cell(folder_name+'/CONTCAR.5')
-   EOS_name = 'MP'
-   cutoff = 5
-   number_of_neighbor_levels = 3
-
-   eos_Morse = getattr(potentials,EOS_name)(formula, primitive_cell, sbasis_vectors, cutoff, number_of_neighbor_levels, units='J/mol')
-
-   initial_parameters = np.array([0.35, 1, 3.5])
-   eos_Morse.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters)
+>>> import numpy as np
+>>> import debyetools.potentials as potentials
+>>> V_data = np.array([11.89,12.29,12.70,13.12,13.55,13.98,14.43,14.88,
+... 15.35,15.82,16.31,16.80,17.31,17.82,18.34,18.88,19.42,19.98,20.54,
+... 21.12,21.71])*(1E-30*6.02E+23)
+>>> E_data = np.array([-2.97,-3.06,-3.14,-3.20,-3.26,-3.30,-3.33,-3.36,
+... -3.37,-3.38,-3.38,-3.38,-3.37,-3.36,-3.34,-3.32,-3.30,-3.27,-3.24,
+... -3.21,-3.17])*(1.60218E-19 * 6.02214E+23)
+>>> params_initial_guess = [-3e5, 1e-5, 7e10, 4]
+>>> Birch_Murnaghan = potentials.BM()
+>>> Birch_Murnaghan.fitEOS(V_data, E_data, params_initial_guess)
+array([-3.26551e+05,9.82096e-06,6.31727e+10,4.31057e+00])
 
 Source code
 -----------
@@ -87,10 +83,12 @@ Example
 
 .. code-block:: python
 
-    from debyetools.poisson import poisson_ratio
+>>> from debyetools.poisson import poisson_ratio
+>>> EM = EM = load_EM(folder_name+'/OUTCAR.eps')
+>>> nu = poisson_ratio(EM)
 
-    EM = EM = load_EM(folder_name+'/OUTCAR.eps')
-    nu = poisson_ratio(EM)
+Source Code
+------
 
 .. automodule:: debyetools.poisson
     :members:
@@ -106,22 +104,35 @@ Example: Minimization of the free energy.
 
 .. code-block:: python
 
-    from debyetools.ndeb import nDeb
-    from debyetools.aux_functions import gen_Ts
-
-    m = 0.026981500000000002
-    ndeb_Morse = nDeb(nu, m, p_intanh, eos_Morse, p_electronic, p_defects, p_anh)
-    T_initial, T_final, number_Temps = 0.1, 1000, 10
-    T = gen_Ts(T_initial, T_final, number_Temps)
-
-    T, V = ndeb_Morse.min_F(T,ndeb_Morse.EOS.V0)
+>>> from debyetools.ndeb import nDeb
+>>> from debyetools import potentials
+>>> from debyetools.aux_functions import gen_Ts,load_V_E
+>>> m = 0.021971375
+>>> nu = poisson_ratio (EM)
+>>> p_electronic = fit_electronic(V_data, p_el_inittial, E, N, Ef)
+>>> p_defects = [8.46, 1.69, 933, 0.1]
+>>> p_anh, p_intanh = [0,0,0], [0, 1]
+>>> V_data, E_data = load_V_E('/path/to/SUMMARY', '/path/to/CONTCAR')
+>>> eos = potentials.BM()
+>>> peos = eos.fitEOS(V_data, E_data, params_initial_guess)
+>>> ndeb = nDeb (nu , m, p_intanh , eos , p_electronic , p_defects , p_anh )
+>>> T = gen_Ts ( T_initial , T_final , 10 )
+>>> T, V = ndeb.min_G (T,  1e-5, P=0)
+>>> V
+array([9.98852539e-06, 9.99974297e-06, 1.00578469e-05, 1.01135875e-05,
+       1.01419825e-05, 1.02392921e-05, 1.03467847e-05, 1.04650048e-05,
+       1.05953063e-05, 1.07396467e-05, 1.09045695e-05, 1.10973163e-05])
 
 Example: Evaluation of the thermodynamic properties:
 ----------------------------------------------------
 
 .. code-block:: python
 
-    tprops_dict = ndeb_Morse.eval_props(T, V)
+>>> trprops_dict=ndeb.eval_props(T,V)
+>>> tprops_dict['Cp']
+array([4.02097531e-05, 9.68739597e+00, 1.96115210e+01, 2.25070513e+01,
+       2.34086394e+01, 2.54037595e+01, 2.68478029e+01, 2.82106379e+01,
+       2.98214145e+01, 3.20143195e+01, 3.51848547e+01, 3.98791392e+01])
 
 Source code
 -----------

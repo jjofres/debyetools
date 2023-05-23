@@ -8,13 +8,13 @@ class Anharmonicity:
     :param float s0,s1,s2: Parameters of the A(V) term.
     """
 
-    def __init__(self, s0, s1, s2):
+    def __init__(self, s0: float, s1: float, s2: float):
         self.panh = s0, s1, s2
         self.s0 = s0
         self.s1 = s1
         self.s2 = s2
 
-    def A(self, V):
+    def A(self, V: float) -> float:
         """
         A(V) = s0+s0*V+s1*V**2, where A is the polynomial model for the excess contribution to the free energy, A(V)*T.
 
@@ -24,7 +24,7 @@ class Anharmonicity:
         """
         return self.s0 + self.s1 * V + self.s2 * V ** 2
 
-    def dAdV_T(self, V):
+    def dAdV_T(self, V: float) -> float:
         """
         Volume derivative of A at fixed T.
 
@@ -34,7 +34,7 @@ class Anharmonicity:
         """
         return 2 * V * self.s2 + self.s1
 
-    def d2AdV2_T(self, V):
+    def d2AdV2_T(self, V: float) -> float:
         """
         Second order volume derivative of A at fixed T.
 
@@ -44,7 +44,7 @@ class Anharmonicity:
         """
         return 2 * self.s2
 
-    def d3AdV3_T(self, V):
+    def d3AdV3_T(self, V: float) -> float:
         """
         Third order volume derivative of A at fixed T.
 
@@ -54,7 +54,7 @@ class Anharmonicity:
         """
         return 0
 
-    def d4AdV4_T(self, V):
+    def d4AdV4_T(self, V: float) -> float:
         """
         Fourth order volume derivative of A at fixed T.
 
@@ -64,7 +64,7 @@ class Anharmonicity:
         """
         return 0
 
-    def E(self, T, V):
+    def E(self, T, V: float) -> float:
         """
         Internal energy due the excess term.
 
@@ -75,7 +75,7 @@ class Anharmonicity:
         """
         return 1 / 2 * self.A(V) * T ** 2
 
-    def S(self, T, V):
+    def S(self, T, V: float) -> float:
         """
         Entropy due the excess term.
 
@@ -86,7 +86,7 @@ class Anharmonicity:
         """
         return self.A(V) * T
 
-    def F(self, T, V):
+    def F(self, T, V: float) -> float:
         """
         Free energy due the excess term.
 
@@ -97,7 +97,7 @@ class Anharmonicity:
         """
         return -1 / 2 * self.A(V) * T ** 2
 
-    def dFdV_T(self, T, V):
+    def dFdV_T(self, T, V: float) -> float:
         """
         Volume derivative of the free energy due the excess term, at fixed T.
 
@@ -108,7 +108,7 @@ class Anharmonicity:
         """
         return -1 / 2 * self.dAdV_T(V) * T ** 2
 
-    def dFdT_V(self, T, V):
+    def dFdT_V(self, T, V: float) -> float:
         """
         Temperature derivative of the free energy due the excess term, at fixed V.
 
@@ -119,7 +119,7 @@ class Anharmonicity:
         """
         return -T*self.A(V)
 
-    def d2FdT2_V(self, T, V):
+    def d2FdT2_V(self, T, V: float) -> float:
         """
         Second order Temperature derivative of the free energy due the excess term, at fixed V.
 
@@ -130,7 +130,7 @@ class Anharmonicity:
         """
         return -self.A(V)
 
-    def d2FdV2_T(self, T, V):
+    def d2FdV2_T(self, T, V: float) -> float:
         """
         Second order volume derivative of the free energy due the excess term, at fixed T.
 
@@ -141,7 +141,7 @@ class Anharmonicity:
         """
         return -self.d2AdV2_T(V) * T ** 2 / 2
 
-    def d3FdV3_T(self, T, V):
+    def d3FdV3_T(self, T, V: float) -> float:
         """
         Third order volume derivative of the free energy due the excess term, at fixed T.
 
@@ -152,7 +152,7 @@ class Anharmonicity:
         """
         return -self.d3AdV3_T(V) * T ** 2 / 2
 
-    def d4FdV4_T(self, T, V):
+    def d4FdV4_T(self, T, V: float) -> float:
         """
         Fourth order volume derivative of the free energy due the excess term, at fixed T.
 
@@ -163,7 +163,7 @@ class Anharmonicity:
         """
         return -self.d4AdV4_T(V) * T ** 2 / 2
 
-    def d2FdVdT(self, T, V):
+    def d2FdVdT(self, T, V: float) -> float:
         """
         Second order derivative of the free energy due the excess term, with respect to T and V.
 
@@ -174,7 +174,7 @@ class Anharmonicity:
         """
         return -self.dAdV_T(V) * T
 
-    def d3FdV2dT(self, T, V):
+    def d3FdV2dT(self, T, V: float) -> float:
         """
         Third order derivative of the free energy due the excess term, with respect to T, V, and V.
 
@@ -185,7 +185,7 @@ class Anharmonicity:
         """
         return -self.d2AdV2_T(V) * T
 
-    def d3FdVdT2(self, T, V):
+    def d3FdVdT2(self, T, V: float) -> float:
         """
         Third order derivative of the free energy due the excess term, with respect to T, T, and V.
 
@@ -198,7 +198,7 @@ class Anharmonicity:
 
 
 class intAnharmonicity:
-    def __init__(self, a0=0, m0=1, V0=1):
+    def __init__(self, a0: float = 0, m0: float = 1, V0: float = 1):
         """
         Instantiate the corrections required to consider temperature dependence on the Debye temperature.
 
@@ -223,7 +223,7 @@ class intAnharmonicity:
         self.m0 = m0
         self.V0 = V0
 
-    def an(self, V):
+    def an(self, V: float) -> float:
         """
         Intrinsic anharmonicity parameter.
 
@@ -233,7 +233,7 @@ class intAnharmonicity:
         """
         return self.a0 * (V / self.V0) ** self.m0
 
-    def Anh(self, T, V):
+    def Anh(self, T, V: float) -> float:
         """
         Intrinsic anharmonicity correction to the Debye temperature.
 
@@ -246,7 +246,7 @@ class intAnharmonicity:
         self.Anh_val = np.exp(1 / 2 * self.an_val * T)
         return self.Anh_val
 
-    def dAnhdT_V(self):
+    def dAnhdT_V(self) -> float:
         """
         Temperature derivative of the intrinsic anharmonicity correction of the Debye temperature, at fixed V.
 
@@ -257,7 +257,7 @@ class intAnharmonicity:
         self.dAnhdT_V_val = (1 / 2) * self.an_val * self.Anh_val
         return self.dAnhdT_V_val
 
-    def d2AnhdT2_V(self):
+    def d2AnhdT2_V(self) -> float:
         """
         Second order temperature derivative of the intrinsic anharmonicity correction of the Debye temperature,
         at fixed V.
@@ -269,7 +269,7 @@ class intAnharmonicity:
         self.d2AnhdT2_V_val = (1 / 2) * self.an_val * self.dAnhdT_V_val
         return self.d2AnhdT2_V_val
 
-    def d3AnhdT3_V(self):
+    def d3AnhdT3_V(self) -> float:
         """
         Third order temperature derivative of the intrinsic anharmonicity correction of the Debye temperature,
         at fixed V.
@@ -281,7 +281,7 @@ class intAnharmonicity:
         self.d3AnhdT3_V_val = (1 / 2) * self.an_val * self.d2AnhdT2_V_val
         return self.d3AnhdT3_V_val
 
-    def d4AnhdT4_V(self):
+    def d4AnhdT4_V(self) -> float:
         """
         Fourth order temperature derivative of the intrinsic anharmonicity correction of the Debye temperature,
         at fixed V.
@@ -293,10 +293,11 @@ class intAnharmonicity:
         self.d4AnhdT4_V_val = (1 / 2) * self.an_val * self.d3AnhdT3_V_val
         return self.d4AnhdT4_V_val
 
-    def dAnhdV_T(self, T, V):
+    def dAnhdV_T(self, T: float, V: float) -> float:
         """
         Volume derivative of the intrinsic anharmonicity correction of the Debye temperature, at fixed T.
 
+        :param float T: Temperature
         :param float V: Volume
         :return: m0*T*an_val*Anh_val/(2*V)
         :rtype: float
@@ -304,10 +305,11 @@ class intAnharmonicity:
         self.dAnhdV_T_val = self.m0 * T * self.an_val * self.Anh_val / (2 * V)
         return self.dAnhdV_T_val
 
-    def d2AnhdV2_T(self, T, V):
+    def d2AnhdV2_T(self, T: float, V: float) -> float:
         """
         Second order Volume derivative of the intrinsic anharmonicity correction of the Debye temperature, at fixed T.
 
+        :param float T: Temperature
         :param float V: Volume
         :return: dAnhdV_T_val*(T*an_val*m0+2*m0-2)/(2*V)
         :rtype: float
@@ -316,10 +318,11 @@ class intAnharmonicity:
         self.d2AnhdV2_T_val = self.dAnhdV_T_val * (T * self.an_val * self.m0 + 2 * self.m0 - 2) / (2 * V)
         return self.d2AnhdV2_T_val
 
-    def d3AnhdV3_T(self, T, V):
+    def d3AnhdV3_T(self, T: float, V: float) -> float:
         """
         Third order Volume derivative of the intrinsic anharmonicity correction of the Debye temperature, at fixed T.
 
+        :param float T: Temperature
         :param float V: Volume
         :return: dAnhdV_T_val*(T^2*an_val^2*m0^2+6*T*an_val*m0^2-6*T*an_val*m0+4*m0^2-12*m0+8)/(4*V^2)
         :rtype: float
@@ -329,10 +332,11 @@ class intAnharmonicity:
                                           4 * V ** 2)
         return self.d3AnhdV3_T_val
 
-    def d4AnhdV4_T(self, T, V):
+    def d4AnhdV4_T(self, T: float, V: float) -> float:
         """
         Fourth order Volume derivative of the intrinsic anharmonicity correction of the Debye temperature, at fixed T.
 
+        :param float T: Temperature
         :param float V: Volume
         :return: dAnhdV_T_val*(T^3*an_val^3*m0^3+12*T^2*an_val^2*m0^3 - 12*T^2*an_val^2*m0^2+28*T*an_val*m0^3-72*T*an_val*m0^2+44T*an_val*m0+8+m0^3-48*m0^2+88*m0-48)/(8*V^3)
         :rtype: float
@@ -342,24 +346,24 @@ class intAnharmonicity:
                                           8 * V ** 3)
         return self.d4AnhdT4_V_val
 
-    def d2AnhdVdT(self, T):
+    def d2AnhdVdT(self, T: float) -> float:
         """
         Second order derivative of the intrinsic anharmonicity correction of the Debye temperature,
         with respect to T and V.
 
-        :param float V: Volume
+        :param float T: Temperature
         :return: dAnhdV_T_val * (1 / T + an_val / 2)
         :rtype: float
         """
         self.d2AnhdVdT_val = self.dAnhdV_T_val * (1 / T + self.an_val / 2)
         return self.d2AnhdVdT_val
 
-    def d3AnhdVdT2(self, T):
+    def d3AnhdVdT2(self, T: float) -> float:
         """
         Third order derivative of the intrinsic anharmonicity correction of the Debye temperature,
         with respect to T, T, and V.
 
-        :param float V: Volume
+        :param float T: Temperature
         :return: dAnhdV_T_val * an_val * (1 / T + an_val / 4)
         :rtype: float
         """
@@ -367,11 +371,12 @@ class intAnharmonicity:
         self.d3AnhdVdT2_val = self.dAnhdV_T_val * self.an_val * (1 / T + self.an_val / 4)
         return self.d3AnhdVdT2_val
 
-    def d3AnhdV2dT(self, T, V):
+    def d3AnhdV2dT(self, T: float, V: float) -> float:
         """
         Third order derivative of the intrinsic anharmonicity correction of the Debye temperature,
         with respect to T, V, and V.
 
+        :param float T: Temperature
         :param float V: Volume
         :return: dAnhdV_T_val/V*(m0/T-1/T+3/2*an_val*m0-an_val/2+an_val^2*m0*T/4)
         :rtype: float

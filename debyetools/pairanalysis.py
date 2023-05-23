@@ -3,7 +3,7 @@ import itertools as it
 import debyetools.aux_functions as afn
 from typing import Tuple
 
-def neighbor_list(size: np.ndarray, basis: np.ndarray, cell: np.ndarray, cutoff: float)->Tuple[np.ndarray,np.ndarray,np.ndarray]:
+def neighbor_list(size: np.ndarray, basis: np.ndarray, cell: np.ndarray, cutoff: float, full:bool=False)->Tuple[np.ndarray,np.ndarray,np.ndarray]:
     """ calculate a list i, j, dij where i and j are a pair of atoms of
     indexes i and j, respectively, and dij is the distance between them.
 
@@ -60,6 +60,9 @@ def neighbor_list(size: np.ndarray, basis: np.ndarray, cell: np.ndarray, cutoff:
 
     res = distances, Is[ix], Js[ix]#, cell_coords_centered_g, CIXs[ix]
 
+    if full:
+        res = distances, Is[ix], Js[ix], cell_coords_centered_g, CIXs[ix]
+
     return res
 
 def pair_analysis(atom_types, cutoff, basis, cell, prec=10, full=False):
@@ -73,16 +76,16 @@ def pair_analysis(atom_types, cutoff, basis, cell, prec=10, full=False):
     :return:  pair distance, pair number, pair types
     :rtype: Tuple[np.ndarray,np.ndarray,np.ndarray]
     """
-    # dAxBy, iAxBy, jAxBy, cells_cohordniates, ij_ccix  = neighbor_list(size, max_distance, center, basis, cell)
     size=np.array([1,1,1])
+    dAxBy, iAxBy, jAxBy, cells_cohordniates, ij_ccix  = neighbor_list(size, basis, cell, cutoff, full=full)
     dAxBy, iAxBy, jAxBy  = neighbor_list(size, basis, cell, cutoff)
     # max_distance = np.array([int(cutoff), int(cutoff), int(cutoff)]) ##<--- fix_here
     if cutoff is not None:
         maxdjx = np.where(dAxBy <= cutoff)
-        # dAxBy, iAxBy, jAxBy, ij_ccix = dAxBy[maxdjx], iAxBy[maxdjx], jAxBy[maxdjx], ij_ccix[maxdjx]
-        dAxBy, iAxBy, jAxBy = dAxBy[maxdjx], iAxBy[maxdjx], jAxBy[maxdjx]
+        dAxBy, iAxBy, jAxBy, ij_ccix = dAxBy[maxdjx], iAxBy[maxdjx], jAxBy[maxdjx], ij_ccix[maxdjx]
+        # dAxBy, iAxBy, jAxBy = dAxBy[maxdjx], iAxBy[maxdjx], jAxBy[maxdjx]
     dAxBy = np.array([np.round(d,prec) for d in dAxBy])
-    # res_2 = dAxBy, iAxBy, jAxBy
+    res_2 = dAxBy, iAxBy, jAxBy
     nat = np.prod(size)*len(basis)
 
     combs_types,types_all = afn.c_types(atom_types)
@@ -91,6 +94,8 @@ def pair_analysis(atom_types, cutoff, basis, cell, prec=10, full=False):
     bins_dAxBy =list(set([li for li in list(set(np.append(dAxBy, [cutoff])))]))
     bins_dAxBy.sort()
     distances = bins_dAxBy[:-1]
+    print(full)
+    hola
 
     ptlst = []
     for i,j,d in zip(iAxBy,jAxBy,dAxBy):
@@ -112,7 +117,8 @@ def pair_analysis(atom_types, cutoff, basis, cell, prec=10, full=False):
     num_bonds_per_formula = tot_num_bonds_per_molecule/nat
 
     if full:
-        # return np.array(distances), num_bonds_per_formula, combs_types, res_2[0], res_2[1], res_2[2], cells_cohordniates, ij_ccix
-        return np.array(distances), num_bonds_per_formula, combs_types
+        hola
+        return np.array(distances), num_bonds_per_formula, combs_types, res_2[0], res_2[1], res_2[2], cells_cohordniates, ij_ccix
+        # return np.array(distances), num_bonds_per_formula, combs_types
     else:
         return np.array(distances), num_bonds_per_formula, combs_types

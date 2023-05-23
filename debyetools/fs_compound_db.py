@@ -7,15 +7,18 @@ alpha2fit = lambda T, Q0, Q1, Q2, Q3: Q0*T**0 + Q1*T**1 + Q2*T**(-1) + Q3*T**(-2
 Ksinv2fit = lambda T, R0, R1, R2, R3: R0*T**0 + R1*T**1 + R2*T**2 + R3*T**3
 Ksp2fit = lambda T, S0, S1: S0 + S1*(T-298.15)*np.log(T/298.15)
 
-def fit_FS(tprops, T_from, T_to):
+def fit_FS(tprops: dict, T_from: float, T_to: float) -> dict:
     """
     Procedure for the fitting of FS compound database parametes to thermodynamic properties.
 
-    :param dict tprops: Dictionary with the thermodynamic properties.
-    :params float T_from: Initial temperature.
-    :params float T_to: Final temperature.
-
-    :return dict: Dictionary with the optimal parameters.
+    :param tprops: Dictionary with the thermodynamic properties.
+    :type tprops: dict
+    :param T_from: Initial temperature.
+    :type T_from: float
+    :param T_to: Final temperature.
+    :type T_to: float
+    :return: Dictionary with the optimal parameters.
+    :rtype: dict
     """
 
     from_ix = np.where(np.round(tprops['T'],2) == np.round(T_from,2))[0][0]

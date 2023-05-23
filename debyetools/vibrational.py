@@ -21,7 +21,7 @@ class Vibrational:
     :param intAnharmonicity_instance intanh: Intrinsic anharmonicity object.
     """
 
-    def __init__(self, nu, EOS_obj, m, intanh, mode):
+    def __init__(self, nu: float, EOS_obj: object, m: float, intanh: np.ndarray, mode: str):
         self.d4tDdV4_T = None
         self.d3tDdVdT2 = None
         self.d3tDdV2dT = None
@@ -95,7 +95,7 @@ class Vibrational:
             self.a_DM = ''
             self.lam = -1
 
-    def set_int_anh(self, T, V):
+    def set_int_anh(self, T: float, V: float) -> None:
         """
         Calculates intrinsic anharmonicity correction to the Debye temperature and its derivatives.
 
@@ -112,7 +112,7 @@ class Vibrational:
         self.d3AnhdVdT2 = self.intanh.d3AnhdVdT2(T)
         self.d3AnhdV3_T = self.intanh.d3AnhdV3_T(T, V)
         self.d4AnhdV4_T = self.intanh.d4AnhdV4_T(T, V)
-    def set_int_anh_4minF(self, T, V):
+    def set_int_anh_4minF(self, T: float, V: float) -> None:
         """
         Calculates intrinsic anharmonicity correction to the Debye temperature and its derivatives.
 
@@ -131,7 +131,7 @@ class Vibrational:
         self.d4AnhdV4_T = 'X'#self.intanh.d4AnhdV4_T(T, V)
 
 
-    def set_theta(self, T, V):
+    def set_theta(self, T: float, V: float) -> None:
         """
         Calculates the Debye Temperature and its derivatives.
 
@@ -205,7 +205,7 @@ class Vibrational:
         self.d3tDdVdT2 = dxDdV*vD*self.d2AnhdT2_V+xD*dvDdV*self.d2AnhdT2_V+xD*vD*self.d3AnhdVdT2  if 'jj' in self.mode else 0
         self.d4tDdV4_T = 6*d2xDdV2*d2vDdV2*self.Anh+12*d2xDdV2*dvDdV*self.dAnhdV_T+6*d2xDdV2*vD*self.d2AnhdV2_T+4*dxDdV*d3vDdV3*self.Anh+12*dxDdV*d2vDdV2*self.dAnhdV_T+12*dxDdV*dvDdV*self.d2AnhdV2_T+4*dxDdV*vD*self.d3AnhdV3_T+xD*d4vDdV4*self.Anh+4*xD*d3vDdV3*self.dAnhdV_T+6*xD*d2vDdV2*self.d2AnhdV2_T+4*xD*dvDdV*self.d3AnhdV3_T+xD*vD*self.d4AnhdV4_T+d4xDdV4*vD*self.Anh+4*d3xDdV3*dvDdV*self.Anh+4*d3xDdV3*vD*self.dAnhdV_T  if 'jj' in self.mode else tD_DM*self.Anh*d4DMdV4
 
-    def set_theta_4minF(self, T, V):
+    def set_theta_4minF(self, T: float, V: float) -> None:
         """
         Calculates the Debye Temperature and its derivatives.
 
@@ -281,12 +281,14 @@ class Vibrational:
 
 
 
-    def F(self, T, V):
+    def F(self, T: float, V: float) -> float:
         """
         Vibration Helmholtz free energy.
 
         :param float T: Temperature.
         :param float V: Volume.
+        :return: F_vib.
+        :rtype:  float
         """
 
         x = self.tD/T
@@ -297,18 +299,29 @@ class Vibrational:
                 return 1e10
         return 3*r*NAv*kB*(self.tD*3/8+T*np.log(1-np.exp(-x))-D3*T/3)
 
-    def dFdV_T(self, T, V):
+    def dFdV_T(self, T: float, V: float) -> float:
+        """
+        Derivative of vibrational Helmholtz free energy.
+
+        :param float T: Temperature.
+        :param float V: Volume.
+        :return: dFdV_T.
+        :rtype:  float
+        """
+
         x = self.tD/T
         D3 = D_3(x)
         dD3 = dD_3dx(x, D3)
         return 3*r*NAv*kB*(3*(self.dtDdV_T)*(1/8)+(self.dtDdV_T)*np.exp(-x)/(1-np.exp(-x))-(1/3)*dD3*(self.dtDdV_T))
 
-    def dFdT_V(self, T, V):
+    def dFdT_V(self, T: float, V: float) -> float:
         """
-        (d2F(T, V)/dT2)_V
+        Derivative of vibrational Helmholtz free energy.
 
         :param float T: Temperature.
         :param float V: Volume.
+        :return: dFdT_V.
+        :rtype:  float
         """
 
         x = self.tD / T
@@ -322,12 +335,14 @@ class Vibrational:
         dD3dx = dD_3dx(x, D3)
         return 9*r*NAv*kB*(self.dtDdT_V)*(1/8) + 3*kB*r*NAv*np.log(1-np.exp(-x)) + 3*r*NAv*kB*(self.dtDdT_V)/(ex*(1-1/ex)) - 3*r*NAv*kB*self.tD/(T*ex*(1-1/ex)) - r*NAv*kB*dD3dx*(self.dtDdT_V) + r*NAv*kB*dD3dx*self.tD/T - r*NAv*kB*D3
 
-    def d2FdT2_V(self, T, V):
+    def d2FdT2_V(self, T: float, V: float) -> float:
         """
-        (d2F(T, V)/dT2)_V
+        Derivative of vibrational Helmholtz free energy.
 
         :param float T: Temperature.
         :param float V: Volume.
+        :return: d2FdT2_V.
+        :rtype:  float
         """
 
         x = self.tD / T
@@ -344,12 +359,14 @@ class Vibrational:
                               self.dtDdT_V * T - self.tD) ** 2) * (1 / 8)) * kB / (
                                self.tD ** 2 * (ex - 1) * T ** 2)
 
-    def d2FdV2_T(self, T, V):
+    def d2FdV2_T(self, T: float, V: float) -> float:
         """
-        (d2F(T, V)/dV2)_T
+        Derivative of vibrational Helmholtz free energy.
 
         :param float T: Temperature.
         :param float V: Volume.
+        :return: d2FdV2_T.
+        :rtype:  float
         """
         x = self.tD / T
         D3 = D_3(x)
@@ -358,12 +375,14 @@ class Vibrational:
                     8 * self.dtDdV_T ** 2 * self.tD * dD3dx - 8 * self.dtDdV_T ** 2 * D3 * T + 8 * self.d2tDdV2_T * D3 * self.tD * T + 3 * self.d2tDdV2_T * self.tD ** 2) / (
                            8 * self.tD ** 2)
 
-    def d3FdV3_T(self, T, V):
+    def d3FdV3_T(self, T: float, V: float) -> float:
         """
-        (d3F(T, V)/dV3)_T
+        Derivative of vibrational Helmholtz free energy.
 
         :param float T: Temperature.
         :param float V: Volume.
+        :return: d3FdV3_T.
+        :rtype:  float
         """
         x = self.tD / T
         D3 = D_3(x)
@@ -374,12 +393,14 @@ class Vibrational:
                                     3 * self.dtDdV_T * self.d2tDdV2_T * T * self.tD ** 2 - 2 * self.dtDdV_T ** 3 * T * self.tD) * dD3dx + d2D3dx2 * self.dtDdV_T ** 3 * self.tD ** 2 + 3 * self.d3tDdV3_T * self.tD ** 3 * T * (
                                     1 / 8)) * kB * NAv / (T * self.tD ** 3)
 
-    def d4FdV4_T(self, T, V):
+    def d4FdV4_T(self, T: float, V: float) -> float:
         """
-        (d4F(T, V)/dV4)_T
+        Derivative of vibrational Helmholtz free energy.
 
         :param float T: Temperature.
         :param float V: Volume.
+        :return: d4FdV4_T.
+        :rtype:  float
         """
         x = self.tD / T
         D3 = D_3(x)
@@ -400,12 +421,14 @@ class Vibrational:
                                                                                                                       1 / 3) + self.d4tDdV4_T * self.tD * T ** 2))) * self.tD)) * kB * NAv / (
                            T ** 2 * self.tD ** 4)
 
-    def d2FdVdT(self, T, V):
+    def d2FdVdT(self, T: float, V: float) -> float:
         """
-        (d2F(T, V)/dVdT)
+        Derivative of vibrational Helmholtz free energy.
 
         :param float T: Temperature.
         :param float V: Volume.
+        :return: d2FdVdT.
+        :rtype:  float
         """
         x = self.tD / T
         D3 = D_3(x)
@@ -415,12 +438,14 @@ class Vibrational:
                            D3 * T + 3 * self.tD * (1 / 8)) * kB * self.d2tDdVdT * NAv / self.tD - 3 * r * (
                            D3 * T + 3 * self.tD * (1 / 8)) * kB * self.dtDdV_T * NAv * self.dtDdT_V / self.tD ** 2
 
-    def d3FdV2dT(self, T, V):
+    def d3FdV2dT(self, T: float, V: float) -> float:
         """
-        (d3F(T, V)/dV2dT)
+        Derivative of vibrational Helmholtz free energy.
 
         :param float T: Temperature.
         :param float V: Volume.
+        :return: d3FdV2dT.
+        :rtype:  float
         """
         x = self.tD / T
         D3 = D_3(x)
@@ -435,12 +460,14 @@ class Vibrational:
                                                      1 / 3) + self.tD * self.d3tDdV2dT * T ** 2) * (
                                                  1 / 8))) * kB * NAv / (T ** 2 * self.tD ** 3)
 
-    def d3FdVdT2(self, T, V):
+    def d3FdVdT2(self, T: float, V: float) -> float:
         """
-        (d3F(T, V)/dVdT2)
+        Derivative of vibrational Helmholtz free energy.
 
         :param float T: Temperature.
         :param float V: Volume.
+        :return: d3FdVdT2.
+        :rtype:  float
         """
         x = self.tD / T
         D3 = D_3(x)

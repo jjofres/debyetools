@@ -9,6 +9,8 @@ from debyetools.vibrational import Vibrational
 # import debyetools.potentials as pots
 from debyetools.debfunct import D_3#, dD_3dx, d2D_3dx2, d3D_3dx3
 
+from typing import Tuple
+
 hbar = 0.1054571800e-33
 NAv = 0.6022140857e24
 kB = 0.138064852e-22
@@ -23,16 +25,16 @@ class nDeb:
 
     :param float nu: Poisson's ratio.
     :param float m: mass in Kg/mol-at
-    :param list_of_floats p_intanh: Intrinsic anharmonicity parameters: a0, m0, V0.
-    :param list_of_floats EOS: Equation of state instance.
-    :param list_of_floats p_electronic: Electronic contribution parameters.
-    :param list_of_floats p_defects: Mono-vacancies defects contribution parameters: Evac00,Svac00,Tm,a,P2,V0.
-    :param list_of_floats p_anh: Excess contribution parameters.
-    :param string mode: Type of approximation of the Debye temperature (see vibrational contribution).
+    :param np.ndarray p_intanh: Intrinsic anharmonicity parameters: a0, m0, V0.
+    :param object EOS: Equation of state instance.
+    :param np.ndarray p_electronic: Electronic contribution parameters.
+    :param np.ndarray p_defects: Mono-vacancies defects contribution parameters: Evac00,Svac00,Tm,a,P2,V0.
+    :param np.ndarray p_anh: Excess contribution parameters.
+    :param str mode: Type of approximation of the Debye temperature (see vibrational contribution).
     """
 
-    def __init__(self, nu: float, m: float, p_intanh: np.ndarray, EOS: object, p_electronic: np.ndarray, p_defects: np.ndarray, p_anh: np.ndarray, *args: object, units: object = 'J/mol',
-                 mode: str = 'jjsl') -> None:
+    def __init__(self, nu: float, m: float, p_intanh: np.ndarray, EOS: object, p_electronic: np.ndarray, p_defects: np.ndarray, p_anh: np.ndarray, *args: object, units: str = 'J/mol',
+                 mode: str = 'jjsl'):
 
         a0, m0 = p_intanh
         q0, q1, q2, q3 = p_electronic
@@ -57,7 +59,7 @@ class nDeb:
         r = 1
         self.xDcte = hbar * 6 ** (1 / 3.) * (np.pi ** 2 * NAv * r) ** (1 / 3.)
 
-    def f2min(self, T, V, P):
+    def f2min(self, T: float, V: float, P: float) -> float:
         """
         free energy for minimization.
 
@@ -65,7 +67,8 @@ class nDeb:
         :param float V: Volume.
         :param float P: Pressure.
 
-        :return float: Free energy.
+        :return: Free energy.
+        :rtype: float
         """
         # self.vib.set_int_anh_4minF(T, V)
         # self.vib.set_theta_4minF(T,V)
@@ -80,15 +83,15 @@ class nDeb:
         F = E0 + Fvib + Fel + Fdef + Fa
         return F+P*V#(dFdV_T + P)**2
 
-    def min_G(self, T, initial_V, P):
+    def min_G(self, T: np.ndarray, initial_V: float, P: float) -> Tuple[np.ndarray,np.ndarray]:
         """
         Procedure for the calculation of the volume as function of temperature.
 
         :param list_of_floats T: Temperature.
         :param float initial_V: initial guess.
         :param float P: Pressure.
-        :return list_of_floats: Temperature.
-        :return list_of_floats: Equilibrium Volume as function of the temperature.
+        :return: Temperature and Volume
+        :rtype: Tuple[np.ndarray,np.ndarray]
 
         """
         V0i = initial_V
@@ -119,13 +122,14 @@ class nDeb:
 
         return T, V
 
-    def eval_props(self, T, V, P=None):
+    def eval_props(self, T: np.ndarray, V: np.ndarray, P = None) -> dict:
         """
         Evaluates the thermodynamic properties of a given compound/element at (T,V).
 
-        :params float T: The temperature in Kelvin.
-        :params float V: The volume in "units".
-        :return dict: A dictionary with the following keys: 'T': temperature, 'V': volume, 'tD': Debye temperature, 'g': Gruneisen parameter, 'Kt': isothermal bulk modulus, 'Ktp': pressure derivative of the isothermal bulk modulus, 'Ktpp': second order pressure derivative of the isothermal bulk modulus, 'Cv': constant-volume heat capacity, 'a': thermal expansion, 'Cp': constant-pressure heat capacity, 'Ks': adiabatic bulk modulus , 'Ksp': pressure derivative of the adiabatic bulk modulus, 'G': Gibbs free energy, 'E': total internal energy, 'S': entropy, 'E0': 'cold' internal energy defined by the EOS, 'Fvib': vibrational free energy, 'Evib': vibrational internal energy, 'Svib': vibrational entropy, 'Cvvib': vibrational heat capacity, 'Pcold': 'cold' pressure, 'dPdT_V': (dP/dT)_V, 'G^2': Ktp**2-2*Kt*Ktpp, 'dSdP_T': (dS/dP)_T, 'dKtdT_P': (dKt/dT)_P, 'dadP_T': (da/dP)_T, 'dCpdP_T': (dCp/dP)_T, 'ddSdT_PdP_T': (d2S/dTdP).
+        :param np.ndarray T: The temperature in Kelvin.
+        :param np.ndarray V: The volume in "units".
+        :return: A dictionary with the following keys: 'T': temperature, 'V': volume, 'tD': Debye temperature, 'g': Gruneisen parameter, 'Kt': isothermal bulk modulus, 'Ktp': pressure derivative of the isothermal bulk modulus, 'Ktpp': second order pressure derivative of the isothermal bulk modulus, 'Cv': constant-volume heat capacity, 'a': thermal expansion, 'Cp': constant-pressure heat capacity, 'Ks': adiabatic bulk modulus , 'Ksp': pressure derivative of the adiabatic bulk modulus, 'G': Gibbs free energy, 'E': total internal energy, 'S': entropy, 'E0': 'cold' internal energy defined by the EOS, 'Fvib': vibrational free energy, 'Evib': vibrational internal energy, 'Svib': vibrational entropy, 'Cvvib': vibrational heat capacity, 'Pcold': 'cold' pressure, 'dPdT_V': (dP/dT)_V, 'G^2': Ktp**2-2*Kt*Ktpp, 'dSdP_T': (dS/dP)_T, 'dKtdT_P': (dKt/dT)_P, 'dadP_T': (da/dP)_T, 'dCpdP_T': (dCp/dP)_T, 'ddSdT_PdP_T': (d2S/dTdP).
+        :rtype: dict
         """
         del P
         # nu, r, m = self.nu, self.r, self.m

@@ -188,4 +188,4 @@ def load_cell(filename_contcar: str) -> tuple[str,np.ndarray,np.ndarray]:
     basis = np.array([np.fromstring(line_i, dtype=float,sep=' ') for line_i in poscar_lines[8:8+tots_nats]])
     # basis = np.dot(basis,cell)
 
-    return formula, cell, basis
+    return formula.replace('x', ''), cell, basis

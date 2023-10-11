@@ -3,9 +3,7 @@ from PySide6.QtWidgets import QMainWindow
 from debyetools.tpropsgui.ui_interatomic_params import Ui_Form as Ui_iparams
 
 from matplotlib.figure import Figure
-from  debyetools.tpropsgui.backend_qt_patched.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-
-# from matplotlib.backends.backend_qt5agg import FigureCanvas
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import numpy as np
 
 import debyetools.tpropsgui.get_functions as get
@@ -54,8 +52,10 @@ class windowInteratormic(QMainWindow):
 
         self.plot_cell()
 
+
         cutoff = int(self.ui.lineEdit.text())
         self.molecule.run_pa(cutoff)
+#        print('bkp1')
 
         ds, ns, cts = self.molecule.distances, self.molecule.num_bonds_per_formula, self.molecule.combs_types
 
@@ -79,6 +79,8 @@ class windowInteratormic(QMainWindow):
         self.params_interatomic = ', '.join([params for _ in range(len(cts))])
 
         self.ui.lineEdit_3.setText(self.params_interatomic)
+
+        self.ui.OKbutton.setEnabled(True)
 
     def plot_atom_xy(self, ax, atom_position, atom_type):
         x, y, z = atom_position

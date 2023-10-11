@@ -19,26 +19,41 @@ The code_ is freely available under the GNU Affero General Public License.
 .. _Python: https://www.python.org/
 .. _code: https://github.com/jjofres/debyetools
 
+How to cite:
+============
+
+Please cite ``debyetools`` referencing the following publication:
+
+TBD
+
 Calculate quality thermodynamic properties in a flexible and fast manner:
 #########################################################################
 
-It's possible to couple the Debye model to other algorithms, to fit experimental data and in this way use data available to calculate other properties like thermal expansion, free energy, bulk modulus among many others.
+It's possible to couple the Debye model to other algorithms, to :ref:`fit experimental data <Cp_ga_example>` and in this way use data available to calculate other properties like thermal expansion, free energy, bulk modulus among many others.
 
-.. figure:: ./source/api/images/Cp_LiFePO4.jpeg
-   :align: center
+.. |pic1| image:: ./source/api/images/ga_fig.jpeg
+   :width: 59%
 
-   Heat capacity of LiFePO4 calculated with ``debyetools`` and compared to other methods as shown in :ref:`examples <examples>`.
+.. |pic2| image:: ./source/api/images/Cp_LiFePO4.jpeg
+   :width: 39%
+
+|pic1| |pic2|
+
+   Heat capacity of LiFePO4 calculated with ``debyetools`` and compared to other methods.
+
+The prediciton of :ref:`thermodynamic phase equilibria at high pressure <PvT_example>` can be performed by simultaneous parameter adjusting to experimental heat capacity and thermal expansion at P = 0.
+
+.. _PvT:
+.. figure::  ./source/api/images/Mg2SiO4_PvT.jpeg
+   :align:   center
+
+   Phase diagram P versus T for the α, β and γ forms of Mg2SiO4. Symbols are literature data for the phase stability regions
+   boundaries.
 
 Using ``debyetools`` through the GUI:
 #####################################
 
 ``debyetools`` is a Python_ library that also comes with a graphical user interface to help perform quick calculations without the need to code scripts.
-
-.. _tProps_main:
-.. figure::  ./source/api/images/main_interface.jpeg
-   :align:   center
-
-   ``debyetools`` setup interface.
 
 .. _tProps_prop:
 .. figure::  ./source/api/images/property_interface.jpeg
@@ -52,8 +67,6 @@ Using ``debyetools`` as a Python_ library. Example: Al fcc using Morse Potential
 Using ``debyetools`` as a Python_ library adds versatility and expands its usability.
 
 EOS parametrization:
-
-.. code-block:: python
 
 >>> import debyetools.potentials as potentials
 >>> from debyetools.aux_functions import load_V_E
@@ -70,8 +83,6 @@ array([-3.26551e+05,9.82096e-06,6.31727e+10,4.31057e+00])
 
 Calculation of the electronic contribution:
 
-.. code-block:: python
-
 >>> from debyetools.aux_functions import load_doscar
 >>> from debyetools.electronic import fit_electronic
 >>> p_el_inittial = [3.8e-01,-1.9e-02,5.3e-04,-7.0e-06]
@@ -81,8 +92,6 @@ array([1.73273079e-01,-6.87351153e+03,5.3e-04,-7.0e-06])
 
 Poisson's ratio:
 
-.. code-block:: python
-
 >>> import numpy as np
 >>> from debyetools . poisson import poisson_ratio
 >>> from debyetools.aux_functions import load_EM
@@ -91,8 +100,6 @@ Poisson's ratio:
 0.2 2 9 41 5 49 8 67148558
 
 Free energy minimization:
-
-.. code-block:: python
 
 >>> from debyetools.ndeb import nDeb
 >>> from debyetools import potentials
@@ -115,8 +122,6 @@ array([9.98852539e-06, 9.99974297e-06, 1.00578469e-05, 1.01135875e-05,
 
 Evaluation of the thermodynamic properties:
 
-.. code-block:: python
-
 >>> trprops_dict=ndeb.eval_props(T,V)
 >>> tprops_dict['Cp']
 array([4.02097531e-05, 9.68739597e+00, 1.96115210e+01, 2.25070513e+01,
@@ -124,8 +129,6 @@ array([4.02097531e-05, 9.68739597e+00, 1.96115210e+01, 2.25070513e+01,
        2.98214145e+01, 3.20143195e+01, 3.51848547e+01, 3.98791392e+01])
 
 FS compound database parameters:
-
-.. code-block:: python
 
 >>> from debyetools.fs_compound_db import fit_FS
 >>> T_from = 298.15
@@ -139,11 +142,11 @@ array([ 3.48569519e+01, -2.56558596e-02, -6.35562885e+05,  2.65035585e-05])
    :caption: Content:
 
    source/api/installation
-   source/api/pairanalysis
    source/api/nDeb
    source/api/contributions
    source/api/fsdb
    source/api/gui
+   source/api/pairanalysis
    source/api/plot
    source/api/fileformats
    source/api/examples

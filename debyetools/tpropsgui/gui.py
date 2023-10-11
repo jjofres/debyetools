@@ -1,16 +1,19 @@
 import sys
 from PySide6.QtWidgets import QApplication
 
-from debyetools.tpropsgui.mainwindow import mainWindow
-def interface():
+from debyetools.tpropsgui.mainwindow import MainWindow
+def interface() -> None:
+    """
+    Function that calls the mainWindow class from  debyetools.tpropsgui.mainwindow.
+    """
     app = QApplication(sys.argv)
 
-    widget = mainWindow(app=app)
+    widget = MainWindow(app=app)
     # widget.app = app
     widget.show()
     sys.exit(app.exec())
 
-
+#
 def gui():
     from warnings import warn
 
@@ -802,4 +805,3 @@ def gui():
             data4plot_dict[windows_ix].popup_window.close()
         checked_EOS_dict = events.update_diabled(window1, window7,opened_EOS_dict,EOS_str_lst,checked_EOS_dict, bool_anh)
 
-        # print(verb,'11')

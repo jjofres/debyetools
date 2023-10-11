@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'dialog_DOSCAR.ui'
+## Form generated from reading UI file 'dialogOUTCAR.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.4.2
 ##
@@ -22,21 +22,19 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         if not Dialog.objectName():
             Dialog.setObjectName(u"Dialog")
-        Dialog.resize(400, 115)
-        self.browse = QPushButton(Dialog)
-        self.browse.setObjectName(u"browse")
-        self.browse.setGeometry(QRect(20, 10, 80, 24))
-        self.filepath = QLineEdit(Dialog)
-        self.filepath.setObjectName(u"filepath")
-        self.filepath.setGeometry(QRect(110, 10, 271, 24))
+        Dialog.resize(400, 99)
         self.ok = QPushButton(Dialog)
         self.ok.setObjectName(u"ok")
-        self.ok.setGeometry(QRect(300, 40, 80, 24))
-        self.label_2 = QLabel(Dialog)
-        self.label_2.setObjectName(u"label_2")
-        self.label_2.setGeometry(QRect(20, 40, 241, 71))
-        self.label_2.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignTop)
-        self.label_2.setWordWrap(True)
+        self.ok.setGeometry(QRect(300, 70, 80, 24))
+        self.label = QLabel(Dialog)
+        self.label.setObjectName(u"label")
+        self.label.setGeometry(QRect(10, 10, 111, 16))
+        self.browseoutcar = QPushButton(Dialog)
+        self.browseoutcar.setObjectName(u"browseoutcar")
+        self.browseoutcar.setGeometry(QRect(20, 30, 80, 24))
+        self.outcarpath = QLineEdit(Dialog)
+        self.outcarpath.setObjectName(u"outcarpath")
+        self.outcarpath.setGeometry(QRect(110, 30, 271, 24))
 
         self.retranslateUi(Dialog)
 
@@ -44,10 +42,10 @@ class Ui_Dialog(object):
     # setupUi
 
     def retranslateUi(self, Dialog):
-        Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Select folder where the \"DOSCAR.i\" files are...", None))
-        self.browse.setText(QCoreApplication.translate("Dialog", u"Browse", None))
-        self.filepath.setText(QCoreApplication.translate("Dialog", u".", None))
+        Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Enter path for Elastic constants...", None))
         self.ok.setText(QCoreApplication.translate("Dialog", u"OK", None))
-        self.label_2.setText(QCoreApplication.translate("Dialog", u"Note: DOSCAR files must be placed in the same folder and named \"DOSCAR.i\", where \"i\" is an integer from 1 to the number of points in the E(V) data. ", None))
+        self.label.setText(QCoreApplication.translate("Dialog", u"OUTCAR:", None))
+        self.browseoutcar.setText(QCoreApplication.translate("Dialog", u"Browse", None))
+        self.outcarpath.setText(QCoreApplication.translate("Dialog", u"./OUTCAR", None))
     # retranslateUi
 

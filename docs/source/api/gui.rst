@@ -53,18 +53,18 @@ The calculation results are shown in this window.
 Parametrization
 ===================
 
-The parameters of all contributions are entered and/or calculated in this module. The mass is entered as $kg/mol$-$at$. EOS parameters can be fitted for the internal energy if the energy curve and initial guess for the parameters are given. The EOS to be used can be selected from a drop-down list. For the selected EOS/potential, the fitting of the parameters is carried out if the ‘fit’ option is selected, otherwise, the parameters entered manually are used.
+The parameters of all contributions are entered and/or calculated in this module. The mass is entered as :math:`kg/mol-at`. EOS parameters can be fitted for the internal energy if the energy curve and initial guess for the parameters are given. The EOS to be used can be selected from a drop-down list. For the selected EOS/potential, the fitting of the parameters is carried out if the ‘fit’ option is selected, otherwise, the parameters entered manually are used.
 
 V(T)
 ====
 
-After the parametrization is complete, the temperature dependence of the equilibrium volume is carried out when clicking the button 'calculate'. Once the input parameters have been entered and/or calculated, it is possible to proceed to the calculation of the volume as a function of temperature through free energy minimization. Default values for pressure and temperature are used the first time the calculation is carried out, with pressures from $0$ to $30~GPa$ and temperatures from $0.1$ to $1000.1~K$.
+After the parametrization is complete, the temperature dependence of the equilibrium volume is carried out when clicking the button 'calculate'. Once the input parameters have been entered and/or calculated, it is possible to proceed to the calculation of the volume as a function of temperature through free energy minimization. Default values for pressure and temperature are used the first time the calculation is carried out, with pressures from :math:`0` to :math:`30 GPa` and temperatures from :math:`0.1` to :math:`1000.1 K`.
 An energy minimization will be performed at each temperature and each pressure. The calculated volume as a function of temperature and pressure is stored for the evaluation of the thermodynamic properties.
 
 Thermodynamic Properties
 ========================
 
-The evaluation of the thermodynamic properties can be performed in this module for the list of triplets $\left(T,V,P\right)$ from the previous part.  Each individual property can be selected from a drop-down menu to be plotted.
+The evaluation of the thermodynamic properties can be performed in this module for the list of triplets :math:`(T,V,P)` from the previous part.  Each individual property can be selected from a drop-down menu to be plotted.
 
 In the results visualization window properties are evaluated and shown as a function of temperature and pressure. By default is the heat capacity that is presented but the available properties can be selected from a drop-down menu. Note that right-clocking in the figure allows to copy the data to the clipboard. The defined pressure and temperature range can be modified from default values. The default setting performs calculations using the Slater approximation for the Debye temperature but the calculations can be performed using also the Dugdale-Macdonald or mean-free volume theory approximations. The FactSace compound database parameters are also presented in this view for each pressure, for the chosen range of temperature. If the setting are changed, the calculation can be re-run clicking 're-calculate'.
 
@@ -72,6 +72,7 @@ FS compound database parameters.
 ================================
 
 The calculated thermodynamic properties for each EOS selected are used to fit the models for heat capacity, thermal expansion,  bulk modulus and pressure derivative of the bulk modulus.   The resulting parameters are printed in the GUI to be used in FactSage as a compound database.
+
 
 
 .. _VASP: https://www.vasp.at/

@@ -6,11 +6,15 @@ import ctypes
 
 from matplotlib.transforms import Bbox
 
-from matplotlib.backends.qt_compat import QT_API, _enum, _setDevicePixelRatio
+# from matplotlib.backends.qt_compat import QT_API, _enum, _setDevicePixelRatio
+from debyetools.tpropsgui.backend_qt_patched.qt_compat import QT_API, _enum, _setDevicePixelRatio
+
 from matplotlib import cbook
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from debyetools.tpropsgui.backend_qt_patched.backend_qt import (
-    QtCore, QtGui, QtWidgets, _BackendQT, FigureCanvasQT, FigureManagerQT,
+    QtCore, QtGui, QtWidgets,
+    _BackendQT, FigureCanvasQT,
+    FigureManagerQT,
     NavigationToolbar2QT, backend_version)
 
 

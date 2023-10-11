@@ -1,6 +1,7 @@
 """
 Render to qt from agg
 """
+import matplotlib
 from matplotlib import backends
 
 backends._QT_FORCE_QT5_BINDING = True

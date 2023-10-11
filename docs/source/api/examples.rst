@@ -18,177 +18,131 @@ The ``BM`` object instantiates the representation og the EOS and its derivatives
 The method ``fitEOS`` with the option ``fit=True`` will fit the EOS parameters to (Volume, Energy) data using ``initial_parameters`` as initial guess.
 The following is an example for `Al fcc`.
 
-.. code-block:: python
-
-    from debyetools.aux_functions import load_V_E
-    import debyetools.potentials as potentials
-
-    V_DFT, E_DFT = load_V_E('./tests/inpt_files/Al_fcc', './tests/inpt_files/Al_fcc/CONTCAR.5', units='J/mol')
-    initial_parameters =  [-3.6e+05, 9.9e-06, -7.8e+10, 4.7e+00, 1.e-10]
-    eos_BM = potentials.BM()
-    eos_BM.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters, fit=True)
-    p_EOS = eos_BM.pEOS
-    print(p_EOS)
-
-This will print:
-
-.. code-block:: python
-
-    [-3.61704789e+05  9.92993115e-06  7.61861944e+10  4.59192465e+00]
+>>> from debyetools.aux_functions import load_V_E
+>>> import debyetools.potentials as potentials
+>>> V_DFT, E_DFT = load_V_E('./tests/inpt_files/Al_fcc', './tests/inpt_files/Al_fcc/CONTCAR.5', units='J/mol')
+>>> initial_parameters =  np.array([-3.6e+05, 9.9e-06, -7.8e+10, 4.7e+00, 1.e-10])
+>>> eos_BM = potentials.BM()
+>>> eos_BM.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters, fit=True)
+>>> eos_BM.pEOS
+[-3.61704789e+05  9.92993115e-06  7.61861944e+10  4.59192465e+00]
 
 To fit the electronic contribution to eDOS data we can load them as `VASP` format `DOSCAR` files using the function ``load_doscar``.
 Then, at each ``V_DFT`` volume, the parameters of the electronic contribution will be fitted with the ``fit_electronic`` function from the ``electronic`` module, using ``p_el_initial`` as initial parameters.
 
-.. code-block:: python
-
-    from debyetools.aux_functions import load_doscar
-    from debyetools.electronic import fit_electronic
-
-    p_el_inittial = [3.8027342892e-01, -1.8875015171e-02,
-                     5.3071034596e-04, -7.0100707467e-06]
-    E, N, Ef = load_doscar('./tests/inpt_files/Al_fcc/DOSCAR.EvV.')
-    p_electronic = fit_electronic(V_DFT, p_el_inittial,E,N,Ef)
-    print(p_electronic)
-
-This will print:
-
-.. code-block:: python
-
-    [ 2.89157792e-01 -1.08059850e+04  5.30710346e-04 -7.01007075e-06]
+>>> from debyetools.aux_functions import load_doscar
+>>> from debyetools.electronic import fit_electronic
+>>> p_el_inittial = [3.8027342892e-01, -1.8875015171e-02, 5.3071034596e-04, -7.0100707467e-06]
+>>> E, N, Ef = load_doscar('./tests/inpt_files/Al_fcc/DOSCAR.EvV.')
+>>> fit_electronic(V_DFT, p_el_inittial,E,N,Ef)
+[ 2.89157792e-01 -1.08059850e+04  5.30710346e-04 -7.01007075e-06]
 
 The Poisson's ratio and elastic constants can be calculated using the ``poisson_ratio`` method and the `elastic moduli matrix` in the `VASP` format `OUTCAR` obtained when using ``IBRION = 6`` in the `INCAR` file, loaded using ``load_EM``.
 
-.. code-block:: python
-
-    from debyetools.aux_functions import load_EM
-    from debyetools.poisson import poisson_ratio
-
-    EM = EM = load_EM('./tests/inpt_files/Al_fcc/OUTCAR.eps')
-    nu = poisson_ratio(EM)
-    print(nu)
-
-This will print:
-
-.. code-block:: python
-
-    0.31681328927273716
-
+>>> from debyetools.aux_functions import load_EM
+>>> from debyetools.poisson import poisson_ratio
+>>> EM = EM = load_EM('./tests/inpt_files/Al_fcc/OUTCAR.eps')
+>>> poisson_ratio(EM)
+0.31681328927273716
 
 For this example, all other contributions are set to zero.
 
-.. code-block:: python
-
-    Tmelting = 933
-    p_defects = 1e10, 0, Tmelting, 0.1
-    p_intanh = 0, 1
-    p_anh = 0, 0, 0
-
+>>> Tmelting = 933
+>>> p_defects = 1e10, 0, Tmelting, 0.1
+>>> p_intanh = 0, 1
+>>> p_anh = 0, 0, 0
 
 The temperature dependence of the equilibrium volume is calculated by minimizing `G`. In this example is done at `P=0`. We need to instantiate first a ``nDeb`` object and define the arbitrary temperatures (this can be done using ``gen_Ts``, for example).
 The minimization og the Gibbs free energy is done by calling the method ``nDeb.minG``.
 
-.. code-block:: python
-
-    from debyetools.ndeb import nDeb
-    from debyetools.aux_functions import gen_Ts
-
-    m = 0.026981500000000002
-    ndeb_BM = nDeb(nu, m, p_intanh, eos_BM, p_electronic,
-                    p_defects, p_anh, EOS_name)
-
-    T_initial, T_final, number_Temps = 0.1, 1000, 10
-    T = gen_Ts(T_initial, T_final, number_Temps)
-
-    T, V = ndeb_BM.min_G(T,p_EOS[1],P=0)
-
-    print(T)
-    print(V)
-
-This will print:
-
-.. code-block:: python
-
-    [1.0000e-01 1.1120e+02 2.2230e+02 2.9815e+02 3.3340e+02 4.4450e+02
-     5.5560e+02 6.6670e+02 7.7780e+02 8.8890e+02 1.0000e+03]
-    [1.00482370e-05 1.00634467e-05 1.01233950e-05 1.01755443e-05
-     1.02016291e-05 1.02892993e-05 1.03845055e-05 1.04876914e-05
-     1.05993279e-05 1.07193984e-05 1.08557462e-05]
+>>> from debyetools.ndeb import nDeb
+>>> from debyetools.aux_functions import gen_Ts
+>>> m = 0.026981500000000002
+>>> ndeb_BM = nDeb(nu, m, p_intanh, eos_BM, p_electronic, p_defects, p_anh, EOS_name)
+>>> T_initial, T_final, number_Temps = 0.1, 1000, 10
+>>> T = gen_Ts(T_initial, T_final, number_Temps)
+>>> T, V = ndeb_BM.min_G(T,p_EOS[1],P=0)
+>>> T
+[1.0000e-01 1.1120e+02 2.2230e+02 2.9815e+02 3.3340e+02 4.4450e+02 5.5560e+02 6.6670e+02 7.7780e+02 8.8890e+02 1.0000e+03]
+>>> V
+[1.00482370e-05 1.00634467e-05 1.01233950e-05 1.01755443e-05 1.02016291e-05 1.02892993e-05 1.03845055e-05 1.04876914e-05 1.05993279e-05 1.07193984e-05 1.08557462e-05]
 
 The thermodynamic properties are calculated by just evaluating the thermodynamic functions with ``nDeb.eval_props``. This will return a dictionary with the values of the different thermodynamic properties.
 
-.. code-block:: python
+>>> tprops_dict = ndeb_BM.eval_props(T,V,P=0)
+>>> print(tprops_dict['Cp'])
+[nan 13.02154474 21.56815985 23.75327828 24.43028457 25.96493363 27.12420027 28.20133277 29.3286694  30.59560714 32.13417233]
 
-    tprops_dict = ndeb_BM.eval_props(T,V,P=0)
-    print(tprops_dict['Cp'])
+Thermodynamic properties with the ``debyetools`` interface
+===========================================================
 
-This will print:
+The same calculations as the previous example were carried out using `debyetools` GUI.
 
-.. code-block:: python
-
-    [nan 13.02154474 21.56815985 23.75327828 24.43028457 25.96493363
-     27.12420027 28.20133277 29.3286694  30.59560714 32.13417233]
-
-Thermodynamic properties with `tprops` GUI.
-===========================================
-
-The same calculations as the previous example were carried out using `tprops` GUI.
-
-.. figure::  ./images/Al_fcc_example.png
+.. figure::  ./images/example_main_window_Al_fcc.jpeg
    :align:   center
 
-   `tprops v1.0.3`
+   `debyetools main interface`
+
+The calculated results can be plotted in the viewer window that will pop-up after clicking the button 'calculate'. Note that the number of calculations where modified from default settings to show smoother curves.
+
+.. figure::  ./images/example_tprops_viewer_Al_fcc.jpeg
+   :align:   center
+
+   `debyetools viewer window`
+
+
+.. _Cp_ga_example:
 
 Genetic algorithm to fit Cp to experimental data.
 =================================================
 
 To show how flexible ``debyetools`` is we shoe next a way to fit a thermodynamic property like the heat capacity to experimental data using a genetic algorithm.
+
+.. _GA_fig:
+.. figure:: ./images/ga_fig.jpeg
+   :align:   center
+
+   Schematics for data fitting o the heat capacity to experimental data.
+
+
 First we set the initial input values and experimental values:
 
-.. code-block:: python
-
-    import numpy as np
-    import debyetools.potentials as potentials
-
-    eos_MU = potentials.MU()
-    V0, K0, K0p = 6.405559904e-06, 1.555283892e+11, 4.095209375e+00
-    nu = 0.2747222272342077
-    a0, m0 = 0, 1
-    s0, s1, s2 = 0, 0, 0
-    edef, sdef = 20,0
-    T = np.array([126.9565217,147.826087,167.826087,186.9565217,207.826087,226.9565217,248.6956522,267.826087,288.6956522,306.9565217,326.9565217,349.5652174,366.9565217,391.3043478,408.6956522,428.6956522,449.5652174,467.826087,488.6956522,510.4347826,530.4347826,548.6956522,571.3043478,590.4347826,608.6956522,633.0434783,649.5652174,670.4347826,689.5652174,711.3043478,730.4347826,750.4347826,772.173913])
-    C_exp = np.array([9.049180328,10.14519906,11.29742389,12.05620609,12.92740047,13.82669789,14.61358314,15.45667447,16.07494145,16.55269321,17.00234192,17.73302108,18.21077283,18.60421546,19.25058548,19.53161593,19.78454333,20.12177986,20.4028103,20.90866511,21.18969555,21.52693208,21.89227166,22.4824356,22.96018735,23.40983607,23.69086651,23.88758782,23.71896956,23.7470726,23.85948478,23.83138173,24.19672131])
+>>> import numpy as np
+>>> import debyetools.potentials as potentials
+>>> eos_MU = potentials.MU()
+>>> V0, K0, K0p = 6.405559904e-06, 1.555283892e+11, 4.095209375e+00
+>>> nu = 0.2747222272342077
+>>> a0, m0 = 0, 1
+>>> s0, s1, s2 = 0, 0, 0
+>>> edef, sdef = 20,0
+>>> T = np.array([126.9565217,147.826087,167.826087,186.9565217,207.826087,226.9565217,248.6956522,267.826087,288.6956522,306.9565217,326.9565217,349.5652174,366.9565217,391.3043478,408.6956522,428.6956522,449.5652174,467.826087,488.6956522,510.4347826,530.4347826,548.6956522,571.3043478,590.4347826,608.6956522,633.0434783,649.5652174,670.4347826,689.5652174,711.3043478,730.4347826,750.4347826,772.173913])
+>>> C_exp = np.array([9.049180328,10.14519906,11.29742389,12.05620609,12.92740047,13.82669789,14.61358314,15.45667447,16.07494145,16.55269321,17.00234192,17.73302108,18.21077283,18.60421546,19.25058548,19.53161593,19.78454333,20.12177986,20.4028103,20.90866511,21.18969555,21.52693208,21.89227166,22.4824356,22.96018735,23.40983607,23.69086651,23.88758782,23.71896956,23.7470726,23.85948478,23.83138173,24.19672131])
 
 Then we run a genetic algorithm to fit the heat capacity to the experimental data.
 
-.. code-block:: python
-
-    import numpy.random as rnd
-    from debyetools.ndeb import nDeb
-    ix = 0
-    max_iter = 500
-    mvar=[(V0,V0*0.01), (K0,K0*0.05), (K0p,K0p*0.01), (nu,nu*0.01), (a0,5e-6), (m0,5e-3), (s0,5e-5), (s1,5e-5), (s2,5e-5), (edef,0.5), (sdef, 0.1)]
-    parents_params = mutate(params = [V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef], n_chidren = 2, mrate=0.7, mvar=mvar)
-
-    counter_change = 0
-    errs_old = 1
-    while ix <= max_iter:
-        children_params = mate(parents_params, 10, mvar)
-        parents_params, errs_new = select_bests(Cp_LiFePO4, T, children_params,2, C_exp)
-        V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef = parents_params[0]
-        mvar=[(V0,V0*0.05), (K0,K0*0.05), (K0p,K0p*0.05), (nu,nu*0.05), (a0,5e-6), (m0,5e-3), (s0,5e-5), (s1,5e-5), (s2,5e-5), (edef,0.5), (sdef, 0.1)]
-
-        if errs_old == errs_new[0]:
-            counter_change+=1
-        else:
-            counter_change=0
-        ix+=1
-        errs_old = errs_new[0]
-        if counter_change>=20: break
-
-    T = np.arange(0.1,800.1,20)
-    Cp1 = Cp_LiFePO4(T, parents_params[0])
-
-    best_params = parents_params[0]
+>>> import numpy.random as rnd
+>>> from debyetools.ndeb import nDeb
+>>> ix = 0
+>>> max_iter = 500
+>>> mvar=[(V0,V0*0.01), (K0,K0*0.05), (K0p,K0p*0.01), (nu,nu*0.01), (a0,5e-6), (m0,5e-3), (s0,5e-5), (s1,5e-5), (s2,5e-5), (edef,0.5), (sdef, 0.1)]
+>>> parents_params = mutate(params = [V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef], n_chidren = 2, mrate=0.7, mvar=mvar)
+>>> counter_change = 0
+>>> errs_old = 1
+>>> while ix <= max_iter:
+...    children_params = mate(parents_params, 10, mvar)
+...    parents_params, errs_new = select_bests(Cp_LiFePO4, T, children_params,2, C_exp)
+...    V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef = parents_params[0]
+...    mvar=[(V0,V0*0.05), (K0,K0*0.05), (K0p,K0p*0.05), (nu,nu*0.05), (a0,5e-6), (m0,5e-3), (s0,5e-5), (s1,5e-5), (s2,5e-5), (edef,0.5), (sdef, 0.1)]
+...    if errs_old == errs_new[0]:
+...        counter_change+=1
+...    else:
+...        counter_change=0
+...    ix+=1
+...    errs_old = errs_new[0]
+...    if counter_change>=20: break
+>>> T = np.arange(0.1,800.1,20)
+>>> Cp1 = Cp_LiFePO4(T, parents_params[0])
+>>> best_params = parents_params[0]
 
 The algorithm consists in first generating the `parent` set of parameters by running ``mutate`` function with the option ``n_children = 2`` to generate two variation of the initial set.
 Then the iterations goes by (1) `mating` the parents using the function ``mate``, (2) evaluating and (3) selecting the best 2 sets that will be the new `parents`. This will go until stop conditions are met.
@@ -316,3 +270,92 @@ The resulting figure is:
    :align:   center
 
    LiFePO4 heat capacity.
+
+.. _PvT_example:
+
+Simultaneous parameter adjusting to experimental heat capacity and thermal expansion at P = 0 and prediction of thermodynamic phase equilibria at high pressure
+===============================================================================================================================================================
+
+Similarly to the previous example, a genetic algorithm was implemented to adjust model parameters fitting experimental data. The compound studied was Mg$_2$SiO$_4$ in the $\alpha$, $\beta$, and $\gamma$ phases (forsterite, wadsleyite, and ringwoodite) with structures Pnma, Imma, and Fd3m, respectively, for temperatures from $0$ to $2500~K$ and pressures from $0$ to $30~GPa$.
+In this usage example, the isobaric heat capacity and the thermal expansion were fitted simultaneously at $0$ pressure. For that, the objective function should simultaneously evaluate the thermal expansion and heat capacity as:
+
+.. code-block:: python
+
+    def Cp_alpha_Mg2SiO4(T, params):
+        V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef = params
+        p_intanh = a0, m0
+        p_anh = s0, s1, s2
+        initial_parameters =  [-6.745375544e+05, V0, K0, K0p]
+        eos_MU.fitEOS([V0], 0, initial_parameters=initial_parameters, fit=False)
+        p_EOS = eos_MU.pEOS
+        p_electronic = [0,0,0,0]
+        Tmelting = 800
+        p_defects = edef, sdef, Tmelting, 0.1
+        m = 0.02253677142857143
+        ndeb_MU = nDeb(nu, m, p_intanh, eos_MU, p_electronic,
+                        p_defects, p_anh, mode='jj)
+        T, V = ndeb_MU.min_G(T, p_EOS[1], P=0)
+        tprops_dict = ndeb_MU.eval_props(T, V, P=0)
+        return [tprops_dict['a'], tprops_dict['Cp']]
+
+The genetic algorithms remains the same as the previous example except for the evaluation function which now takes target data for both thermal expansion and heat capacity.
+
+.. code-block:: python
+
+    def evaluate(fc, T_set1, T_set2, pi, yexp, yexp2):
+        evalfunc1 = fc(T_set1, pi, eval='min')
+        evalfunc2 = fc(T_set2, pi, eval='min')
+        try:
+            errtotal1 = np.sqrt(np.sum(((evalfunc1[0] - yexp) / yexp) ** 2)) / len(T_set1)
+            errtotal2 = np.sqrt(np.sum(((evalfunc2[1] - yexp2) / yexp2) ** 2)) / len(T_set2)
+            return errtotal1 + errtotal2
+        except:
+            return 1e10
+
+Once the optimal parameters for the three phases are obtained, the calculation of the thermodynamic properties can be calculated as function of the temperature and pressure as:
+
+.. code-block:: python
+
+    Ps = gen_Ps(0, 30e9, n_vals)
+
+    tprops_dict = []
+
+    # Pressure loop:
+    for P in Ps:
+        # minimization of the free energy:
+        T, V = ndeb.min_G(Ts, V0, P=P)
+        # evaluation of the thermodynamic properties:
+        tprops_dict.append(ndeb.eval_props(T, V, P=P))
+
+In order to access the Gibbs free energy of each phase we use the key ``G`` in the ``tprops_dict`` list. Note that this list stores, for each pressure, a dictionary with all the thermodynamic properties.
+
+.. code-block:: python
+
+    G_alpha = np.zeros((len(Ts), len(Ps)))
+    G_beta = np.zeros((len(Ts), len(Ps)))
+    G_gamma = np.zeros((len(Ts), len(Ps)))
+    for i in range(len(Ts)):
+        for j in range(len(Ps)):
+            G_alpha[i, j] = tprops_dict_alpha[j]['G'][i]
+            G_beta[i, j] = tprops_dict_beta[j]['G'][i]
+            G_gamma[i, j] = tprops_dict_gamma[j]['G'][i]
+
+
+To evaluate the stability relative to these three phases, the Gibbs free energy of each of them is compared:
+
+.. code-block:: python
+
+    G_z = np.zeros((len(Ts), len(Ps)))
+    for i in range(len(Ts)):
+        for j in range(len(Ps)):
+            G_list = [tprops_dict_alpha[j]['G'][i], tprops_dict_beta[j]['G'][i], tprops_dict_gamma[j]['G'][i]]
+            print(G_list)
+            G_z[j,i] = G_list.index(min(G_list)) +1
+
+This can be plotted in a P vs T predominance diagram:
+
+.. figure::  ./images/Mg2SiO4_PvT.jpeg
+   :align:   center
+
+   Phase diagram P versus T for the α, β and γ forms of Mg2SiO4. Symbols are literature data for the phase stability regions
+   boundaries.

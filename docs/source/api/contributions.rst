@@ -16,12 +16,7 @@ The temperature dependence of the phonon frequencies con be introduced using wha
 Source code
 -----------
 
-. currentmodule:: debyetools.anharmonicity
-
-.. autoclass:: debyetools.anharmonicity.Anharmonicity
-  :members:
-
-.. autoclass:: debyetools.anharmonicity.intAnharmonicity
+.. automodule:: debyetools.anharmonicity
   :members:
 
 Defects

@@ -3,7 +3,23 @@
 Implementation of a tool for calculating self-consistent thermodynamic properties that can take into account all kinds of contributions to the free energy inluding explicit anharmonicity. The software presented here is based in the Debye approximation within the QHA using the crystal internal energetics parametrized at ground-state to project the thermodynamics properties at high temperatures. 
 
 Made by Javier Jofre: javier.jofre@polymtl.ca
-Please cite.
+If you use  ``debyetools`` in a publication, please refer to the `source code`.  If you use the implemented method for the calculation of the thermodynamic properties, please cite the following publication:
+
+Jofre, J., Gheribi, A. E., & Harvey, J.-P. Development of a flexible quasi-harmonic-based approach for fast generation of self-consistent thermodynamic properties used in computational thermochemistry. Calphad 83 (2023) 102624. doi: https://doi.org/10.1016/j.calphad.2023.102624.
+
+```
+   @article{,
+      author = {Javier Jofré and Aïmen E. Gheribi and Jean-Philippe Harvey},
+      doi = {10.1016/j.calphad.2023.102624},
+      issn = {03645916},
+      journal = {Calphad},
+      month = {12},
+      pages = {102624},
+      title = {Development of a flexible quasi-harmonic-based approach for fast generation of self-consistent thermodynamic properties used in computational thermochemistry},
+      volume = {83},
+      year = {2023},
+   }
+```
 
 ### Requirements for Python module:
 - numpy
@@ -22,7 +38,7 @@ pip install --upgrade debyetools
 
 ### Get started
 
-To start getting familiar with the interface `tProps` you can download `examples input files`.
+To start getting familiar with the interface you can download `examples input files`.
 The GUI can be launched by executing the interface script from the debyetools repository main folder:
 
 ```

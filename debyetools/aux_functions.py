@@ -4,13 +4,13 @@ import numpy as np
 from typing import Tuple
 
 class logging(object):
-    def __init__(self, *files):
+    def __init__(self, *files: ...) -> None:
         self.files = files
-    def write(self, obj):
+    def write(self, obj: str) -> None:
         for f in self.files:
             f.write(obj)
-            f.flush() # If you want the output to be visible immediately
-    def flush(self) :
+            f.flush()
+    def flush(self)  -> None:
         for f in self.files:
             f.flush()
 def c_types(atom_types: str) -> Tuple[list, list]:
@@ -82,10 +82,20 @@ def gen_Ps(Pi,Pf,nPs):
     return Ps
 
 def load_doscar(filename_sufix: str, list_filetags: list = None) -> tuple[list,list,list]:
+    """
+    Extract electronic density, energies and Fermi level as function of volume from DOSCAR's.
+    :param filename_sufix: folder path.
+    :type filename_sufix: str
+    :param list_filetags: filename tags.
+    :type list_filetags: list
+    :return: E,N,Ef.
+    :rtype: tuple[list,list,list]
+    """
     if list_filetags is None:
         list_filetags = ['-0.10', '-0.09','-0.08','-0.07','-0.06','-0.05','-0.04','-0.03',
                          '-0.02','-0.01','-0.00','0.01','0.02','0.03','0.04','0.05','0.06',
                          '0.07','0.08','0.09','0.10']
+
     list_filetags = [str(li) for li in list_filetags]
     E = []
     N = []
@@ -114,6 +124,17 @@ def load_doscar(filename_sufix: str, list_filetags: list = None) -> tuple[list,l
     return E,N,Ef
 
 def load_V_E(energy_dir_summary: str, energy_dir_contcar: str, units: str = 'eV/atom') -> tuple[np.ndarray,np.ndarray]:
+    """
+    Loads Energy curve as function of volume from VASP outputs.
+    :param energy_dir_summary: Summary file path.
+    :type energy_dir_summary: str
+    :param energy_dir_contcar: Atoms positions file path.
+    :type energy_dir_contcar: str
+    :param units: units.
+    :type units: str
+    :return: Energy as function of volume
+    :rtype: tuple[np.ndarray,np.ndarray]
+    """
     with open(energy_dir_contcar,'r') as f_poscar:
         f_poscar_lines = f_poscar.readlines()
         cell_poscar = f_poscar_lines[2:5]
@@ -150,6 +171,13 @@ def load_V_E(energy_dir_summary: str, energy_dir_contcar: str, units: str = 'eV/
     return np.array(V).T*uconvV, np.array(E).T*uconvE
 
 def load_EM(filename_outcar_eps: str) -> np.ndarray:
+    """
+    Extract the stiffness tensor from the VASP output (OUTCAR for IBRION=6).
+    :param filename_outcar_eps: file path.
+    :type filename_outcar_eps: str
+    :return: Stiffness tensor.
+    :rtype: np.ndarray
+    """
     EM = []
 
     with open(filename_outcar_eps) as f:
@@ -167,6 +195,13 @@ def load_EM(filename_outcar_eps: str) -> np.ndarray:
     return EM
 
 def load_cell(filename_contcar: str) -> tuple[str,np.ndarray,np.ndarray]:
+    """
+    Extract crystal structure from file in VASP format (POSCAR or CONTCAR).
+    :param filename_contcar: File path
+    :type filename_contcar: str
+    :return: formula,, cell, and basis.
+    :rtype: tuple[str,np.ndarray,np.ndarray]
+    """
     with open(filename_contcar) as f:
         poscar_lines=f.readlines()
     mult = float(poscar_lines[1])

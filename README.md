@@ -74,7 +74,6 @@ tprops_dict = ndeb.eval_props(T, V, P=Pressure)
 To Do's:
 
 - Improve error handling
-- Add 'Compatible input files formats'
 - Improve Documentation
 - Add handling of anisotropic materials
 - Prediction of explicit anharmonicity parameters

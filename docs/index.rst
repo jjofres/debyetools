@@ -18,26 +18,44 @@ The code_ is freely available under the GNU Affero General Public License.
 .. _PyPI: https://pypi.org/project/debyetools/
 .. _Python: https://www.python.org/
 .. _code: https://github.com/jjofres/debyetools
+.. _`source code`: https://github.com/jjofres/debyetools
+.. _`10.1016/j.calphad.2023.102624`: https://doi.org/10.1016/j.calphad.2023.102624
 
 How to cite:
 ============
 
-Please cite ``debyetools`` referencing the following publication:
+If you use  ``debyetools`` in a publication, please refer to the `source code`_.  If you use the implemented method for the calculation of the thermodynamic properties, please cite the following publication:
 
-TBD
+Jofre, J., Gheribi, A. E., & Harvey, J.-P. Development of a flexible quasi-harmonic-based approach for fast generation of self-consistent thermodynamic properties used in computational thermochemistry. Calphad 83 (2023) 102624. doi: `10.1016/j.calphad.2023.102624`_.
+
+.. code-block::
+
+   @article{,
+      author = {Javier Jofré and Aïmen E. Gheribi and Jean-Philippe Harvey},
+      doi = {10.1016/j.calphad.2023.102624},
+      issn = {03645916},
+      journal = {Calphad},
+      month = {12},
+      pages = {102624},
+      title = {Development of a flexible quasi-harmonic-based approach for fast generation of self-consistent thermodynamic properties used in computational thermochemistry},
+      volume = {83},
+      year = {2023},
+   }
 
 Calculate quality thermodynamic properties in a flexible and fast manner:
 #########################################################################
 
 It's possible to couple the Debye model to other algorithms, to :ref:`fit experimental data <Cp_ga_example>` and in this way use data available to calculate other properties like thermal expansion, free energy, bulk modulus among many others.
 
-.. |pic1| image:: ./source/api/images/ga_fig.jpeg
-   :width: 59%
+.. figure:: ./source/api/images/ga_fig.jpeg
+   :align:   center
+   :width: 50%
 
-.. |pic2| image:: ./source/api/images/Cp_LiFePO4.jpeg
-   :width: 39%
+   ``debyetools`` coupled to a Genetic Algorithm.
 
-|pic1| |pic2|
+.. figure:: ./source/api/images/Cp_LiFePO4.jpeg
+   :align:   center
+   :width: 50%
 
    Heat capacity of LiFePO4 calculated with ``debyetools`` and compared to other methods.
 
@@ -46,6 +64,7 @@ The prediciton of :ref:`thermodynamic phase equilibria at high pressure <PvT_exa
 .. _PvT:
 .. figure::  ./source/api/images/Mg2SiO4_PvT.jpeg
    :align:   center
+   :width: 50%
 
    Phase diagram P versus T for the α, β and γ forms of Mg2SiO4. Symbols are literature data for the phase stability regions
    boundaries.
@@ -142,14 +161,14 @@ array([ 3.48569519e+01, -2.56558596e-02, -6.35562885e+05,  2.65035585e-05])
    :caption: Content:
 
    source/api/installation
+   source/api/gui
+   source/api/examples
    source/api/nDeb
    source/api/contributions
    source/api/fsdb
-   source/api/gui
    source/api/pairanalysis
-   source/api/plot
    source/api/fileformats
-   source/api/examples
+
 
 =======
 Indices

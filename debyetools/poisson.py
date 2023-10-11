@@ -42,17 +42,10 @@ def poisson_ratio(EM: np.ndarray, quiet: bool = False) -> float|Tuple[float,floa
     BV = (C11+C22+C33+2*(C12+C13+C23))/9
     BR = Omega*((C33*C55-C35**2)*(C11+C22-2*C12)+(C23*C55-C25*C35)*(2*C12-2*C11-C23) + (C13*C35-C15*C33)*(C15-2*C25)+(C13*C55-C15*C35)*(2*C12+2*C23-C13-2*C22)+2*(C13*C25-C15*C23)*(C25-C15)+f)**(-1)
 
-    Br=BR
-    Bv=BV
-    Sr=GR
-    Sv=GV
     B = (BR+BV)/2
     S = (GR+GV)/2
     Y = (9.*B*S)/(3.*B+S)
     nu = (3.*B-Y)/(6.*B)
-    AU = 5*Sv/Sr+Bv/Br-6
-    # print('Sv/Sr',Sv/Sr, 'Bv/Br', Bv/Br)
-    # print('C11, C12, C13, C15, C22, C23, C25, C33, C35, C44, C46, C55, C66, B, Y, S, AU, nu','\n',C11, C12, C13, C15, C22, C23, C25, C33, C35, C44, C46, C55, C66, B, Y, S, AU, nu)
 
     return nu
 

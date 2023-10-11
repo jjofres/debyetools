@@ -8,7 +8,7 @@ class Anharmonicity:
     :param float s0,s1,s2: Parameters of the A(V) term.
     """
 
-    def __init__(self, s0: float, s1: float, s2: float):
+    def __init__(self, s0: float, s1: float, s2: float) -> None:
         self.panh = s0, s1, s2
         self.s0 = s0
         self.s1 = s1

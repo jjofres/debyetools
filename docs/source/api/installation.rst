@@ -5,7 +5,7 @@ Installation
 Source Code
 ===========
 
-All the code is in my repository on GitHub_.
+All the code is in ``debyetools`` repository on GitHub_.
 
 Requirements
 ============
@@ -17,8 +17,8 @@ Requirements
 
 Other recommended packages:
 
-* Matplotlib_ (for plotting)
-* PySimpleGUI_ (for the GUI)
+* Matplotlib_ (for plotting,  a comprehensive library for visualizations in Python)
+* PySide6_ (for the GUI, PySide6 is the official Python module from the Qt for Python project)
 
 Installation using pip
 ======================
@@ -33,6 +33,6 @@ The simplest way to install ``debyetools`` is to use pip_ which will automatical
 .. _SciPy: https://scipy.org
 .. _PIP: https://pip.pypa.io/en/stable/
 .. _Matplotlib: https://matplotlib.org/
-.. _PySimpleGUI: https://pysimplegui.readthedocs.io/en/latest/
+.. _PySide6: https://pypi.org/project/PySide6/
 .. _GitHub: https://github.com/jjofres/debyetools
 .. _mpmath: https://mpmath.org/

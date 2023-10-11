@@ -1,8 +1,9 @@
 from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout
-# from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from  debyetools.tpropsgui.backend_qt_patched.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.widgets import Cursor
 from matplotlib.figure import Figure
+import numpy as np
+
 
 # Main window
 class windowPlot(QMainWindow):

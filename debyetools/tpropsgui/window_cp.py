@@ -6,8 +6,9 @@ from debyetools.tpropsgui.ui_heatcapacitywindow import Ui_MainWindow as Ui_Cp
 from debyetools.fs_compound_db import fit_FS as dt_fit_FS
 #from debyetools.fs_compound_db import Cp2fit as dt_Cp2fit
 
-from  debyetools.tpropsgui.backend_qt_patched.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-# from matplotlib.backends.backend_qt5agg import FigureCanvasAgg
+# from  debyetools.tpropsgui.backend_qt_patched.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+# from matplotlib.backends.backend_qt5agg import FigureCanvasAgg as FigureCanvas
 # from matplotlib.backends.backend_mixed import FigureCanvas
 # print(hola)
 

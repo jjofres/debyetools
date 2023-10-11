@@ -11,9 +11,9 @@ GUI
 
 General Overview
 ================
-``tProps`` is a GUI that allows to easily parametrize the Free energy and calculate the thermodynamic properties. It is organized in two main level, (1) GUI, and (2) calculation engine. The GUI will receive the user defined options and/or parameter values and will launch the calculations and display the results.The user level part of the software is divided in four modules: (1) parametrization, (2) free energy minimization,(3) evaluation of thermodynamic properties, and (4) calculation of the database parameters.
+The interface is a GUI that allows to easily parametrize the Free energy and calculate the thermodynamic properties. It is organized in two main level, (1) GUI, and (2) calculation engine. The GUI will receive the user defined options and/or parameter values and will launch the calculations and display the results.The user level part of the software is divided in four modules: (1) parametrization, (2) free energy minimization,(3) evaluation of thermodynamic properties, and (4) calculation of the database parameters.
 
-Note that in this version, most :ref:`input file <fileformats>` must be in VASP_ format, i.e., CONTCAR for the crystal structure, and DOSCAR for the calculation of the electronic contribution. Also, the elastic moduli matrix  is  read  from  an  OUTCAR  file  and  the E(V)data  is  read  from  a  SUMMARY  file  which contains the total energy at each deformation.
+Note that in this version, most :ref:`input file <fileformats>` must be in VASP_ format, i.e., CONTCAR for the crystal structure, and DOSCAR for the calculation of the electronic contribution. Also, the elastic moduli matrix  is  read  from  an  OUTCAR  file.
 
 How to launch it:
 -----------------
@@ -21,68 +21,59 @@ How to launch it:
 To start getting familiar with the interface you can download `examples input files`_.
 The GUI can be launched by executing the interface script from the debyetools repository main folder::
 
-$ python gui.py
+$ python interface.py
 
 Or you can launch  inside python:
 
->>> from debyetools.tpropsgui.gui import gui
->>> gui()
+>>> from debyetools.tpropsgui.gui import interface
+>>> interface()
 
-The interface:
---------------
+The interface main window:
+--------------------------
 
-.. _tProps:
-.. figure::  ./images/tprops_gui.png
+The model parametrization is done in the main window.
+
+.. _interface_mainindow:
+.. figure::  ./images/main_interface.jpeg
    :align:   center
 
-   tProps v1.0.3
+   ``debyetools`` interface main window.
 
+The properties viewer
+---------------------
 
-EOS Parametrization
+The calculation results are shown in this window.
+
+.. _interface_prop:
+.. figure::  ./images/property_interface.jpeg
+   :align:   center
+
+   ``debyetools`` properties viewer.
+
+Parametrization
 ===================
 
-The parameters of all contributions are entered and/or calculated in this module.  Parameters will be fitted for the internal energy, for each selected EOS/potential (the user has the freedom to choose more than one EOS/potentials, simultaneously), if the 'fit' option is selected. The atom positions and energy as function of volume must be provided.
-
-.. _tProps_EOS_parametrization:
-.. figure::  ./images/tprops_EOS_params.png
-   :align:   center
-
-   Parametrization: this figure shows the selection of different potentials, their fits and parameters for the other contributions.
-
+The parameters of all contributions are entered and/or calculated in this module. The mass is entered as :math:`kg/mol-at`. EOS parameters can be fitted for the internal energy if the energy curve and initial guess for the parameters are given. The EOS to be used can be selected from a drop-down list. For the selected EOS/potential, the fitting of the parameters is carried out if the ‘fit’ option is selected, otherwise, the parameters entered manually are used.
 
 V(T)
 ====
 
-The calculation of the temperature dependent volume is carried out by minimizing the free energy at fixed temperatures from T=0.1 to melting temperature. The temperature are chosen from a equi-spaced list. The resulting volume and temperatures are returned and printed to the GUI accordingly.
-
-.. _tProps_F_min:
-.. figure::  ./images/tprops_F_min.png
-   :align:   center
-
-   Free energy minimization.
-
+After the parametrization is complete, the temperature dependence of the equilibrium volume is carried out when clicking the button 'calculate'. Once the input parameters have been entered and/or calculated, it is possible to proceed to the calculation of the volume as a function of temperature through free energy minimization. Default values for pressure and temperature are used the first time the calculation is carried out, with pressures from :math:`0` to :math:`30 GPa` and temperatures from :math:`0.1` to :math:`1000.1 K`.
+An energy minimization will be performed at each temperature and each pressure. The calculated volume as a function of temperature and pressure is stored for the evaluation of the thermodynamic properties.
 
 Thermodynamic Properties
 ========================
 
-The thermodynamic functions are evaluated at the temperatures and volumes obtained in the minimization part and printed to a multiline text box in an individual tab for each corresponding EOS chosen.
+The evaluation of the thermodynamic properties can be performed in this module for the list of triplets :math:`(T,V,P)` from the previous part.  Each individual property can be selected from a drop-down menu to be plotted.
 
-.. _tProps_eval:
-.. figure::  ./images/tprops_eval.png
-   :align:   center
-
-   Evaluation of the thermodynamic properties.
+In the results visualization window properties are evaluated and shown as a function of temperature and pressure. By default is the heat capacity that is presented but the available properties can be selected from a drop-down menu. Note that right-clocking in the figure allows to copy the data to the clipboard. The defined pressure and temperature range can be modified from default values. The default setting performs calculations using the Slater approximation for the Debye temperature but the calculations can be performed using also the Dugdale-Macdonald or mean-free volume theory approximations. The FactSace compound database parameters are also presented in this view for each pressure, for the chosen range of temperature. If the setting are changed, the calculation can be re-run clicking 're-calculate'.
 
 FS compound database parameters.
 ================================
 
 The calculated thermodynamic properties for each EOS selected are used to fit the models for heat capacity, thermal expansion,  bulk modulus and pressure derivative of the bulk modulus.   The resulting parameters are printed in the GUI to be used in FactSage as a compound database.
 
-.. _tProps_FSparams:
-.. figure::  ./images/tprops_FSparams.png
-   :align:   center
 
-   FactSage compound database parameters.
 
 .. _VASP: https://www.vasp.at/
 .. _`examples input files`: https://github.com/jjofres/debyetools/tree/main/tests/inpt_files

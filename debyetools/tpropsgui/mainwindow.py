@@ -2,12 +2,16 @@ from PySide6.QtWidgets import QMainWindow
 from PySide6.QtGui import QIcon
 
 from debyetools.tpropsgui.dialog_doscar import dialogDOSCAR
+from debyetools.tpropsgui.dialog_summary import dialogSUMMARY
+from debyetools.tpropsgui.dialog_outcar import dialogOUTCAR
 from debyetools.tpropsgui.dialog_warning import dialogWarning
 from debyetools.tpropsgui.window_cp import windowCp
 from debyetools.tpropsgui.window_interatomicparams import windowInteratormic
 from debyetools.tpropsgui.plot_EV import windowPlot
 
 from debyetools.tpropsgui.ui_mainwindow import Ui_MainWindow as Ui_MW
+from debyetools.tpropsgui.ui_missingkey import Ui_Form as Ui_KEY
+
 from debyetools.tpropsgui.atomtools import Molecule, dt_potentials
 
 import numpy as np
@@ -16,12 +20,33 @@ from debyetools.poisson import poisson_ratio as dt_poisson_ratio
 from debyetools.aux_functions import load_doscar as dt_load_doscar
 from debyetools.electronic import fit_electronic as dt_fit_electronic
 
-class mainWindow(QMainWindow):
-    def __init__(self, parent=None, app=None):
-        super().__init__(parent)
-        self.ui = Ui_MW()
-        self.ui.setupUi(self)
+from debyetools.tpropsgui.lock import keygen as kg
 
+class MainWindow(QMainWindow):
+    def __init__(self, parent=None, app=None):
+
+        super().__init__(parent)
+
+        key1 = kg()
+        try:
+            f = open('debyetools/tpropsgui/keydtgl','r')
+            key0 = f.read().replace('\n','')
+        except:
+            key0=''
+            passed=False
+        if key0 != key1:
+            passed = False
+        else:
+            passed = True
+
+        if passed:
+            self.ui = Ui_MW()
+        else:
+            self.ui = Ui_KEY()
+            self.ui.setupUi(self)
+            return
+
+        self.ui.setupUi(self)
         my_icon = QIcon()
         my_icon.addFile('icon.ico')
 
@@ -30,13 +55,14 @@ class mainWindow(QMainWindow):
         self.cp_window = windowCp(self)
         self.cp_window.app = app
         self.doscardialog = dialogDOSCAR(self)
+        self.summarydialog = dialogSUMMARY(self)
+        self.outcardialog = dialogOUTCAR(self)
         self.warningdialog = dialogWarning(self)
 
         self.ui.pushButton.clicked.connect(self.on_pushButton_fitEOS)
         self.ui.pushButton_5.clicked.connect(self.on_pushButton_Cp)
         self.ui.pushButton_2.clicked.connect(self.on_pushButton_calc_nu)
 
-        self.ui.loaddata.clicked.connect(self.on_pushButton_loaddata)
         self.ui.pushButton_3.clicked.connect(self.on_pushButton_calculate_el)
 
         self.eos_str = 'BM'
@@ -68,6 +94,10 @@ class mainWindow(QMainWindow):
         self.plotwindow = windowPlot(self)
         self.ui.actionEV.triggered.connect(self.plotEV)
 
+        self.ui.actionDOSCAR.triggered.connect(self.on_pushButton_loaddata)
+        self.ui.actionSUMMARY.triggered.connect(self.on_pushButton_loadSUMMARY)
+        self.ui.actionOUTCAR.triggered.connect(self.on_pushButton_loadOUTCAR)
+
     def plotEV(self):
         Xdata = self.Vdata/1e-5
         Ydata = self.Edata/1e3
@@ -93,8 +123,15 @@ class mainWindow(QMainWindow):
         self.ipotparamsdialog.args = (None,)
         self.ui.lineEdit_2.setText('-3e5, 1e-5, 7e10, 4')
         if self.eos_str in ['MP', 'EAM']:
+            self.ipotparamsdialog.ui.plainTextEdit.setPlainText('')
+            for axi in self.ipotparamsdialog.ax:
+                for line in axi.lines:
+                    line.remove()
+
+                self.ipotparamsdialog.ax[0].figure.canvas.draw()
             self.ipotparamsdialog.molecule = self.molecule
             self.ipotparamsdialog.eos_str = self.eos_str
+            self.ipotparamsdialog.ui.OKbutton.setEnabled(False)
             self.ipotparamsdialog.show()
 
     def get_EvV(self):
@@ -126,7 +163,7 @@ class mainWindow(QMainWindow):
         return  [float(ti) for ti in txt.replace(' ','').split(',')]
 
     def get_C(self):
-        txt = self.ui.contcarText_2.toPlainText().replace('XX',' ').replace('YY',' ').replace('ZZ',' ').replace('XY',' ').replace('YZ',' ').replace('ZX',' ').split('\n')
+        txt = self.ui.elastic_constants.toPlainText().replace('XX',' ').replace('YY',' ').replace('ZZ',' ').replace('XY',' ').replace('YZ',' ').replace('ZX',' ').split('\n')
         data_lst = []
         for ti in txt:
             if len(ti)==0:continue
@@ -161,12 +198,10 @@ class mainWindow(QMainWindow):
         self.Edata = Edata
 
         initial_guess = self.get_EOS_params()
-        # print(Vdata, Edata)
         self.eos.fitEOS(Vdata, Edata, initial_parameters = initial_guess, fit=True)
 
         self.ui.lineEdit_2.setText(', '.join(['%.9e' % (p) for p in self.eos.pEOS]))
         self.ui.progress_2.setValue(100)
-
 
     def on_pushButton_calc_nu(self):
         C = self.get_C()
@@ -203,6 +238,15 @@ class mainWindow(QMainWindow):
 
     def on_pushButton_loaddata(self):
         self.doscardialog.show()
+
+    def on_pushButton_loadSUMMARY(self):
+        self.summarydialog.mass = self.ui.lineEdit
+        self.summarydialog.EvVtext = self.ui.EvVText
+        self.summarydialog.show()
+
+    def on_pushButton_loadOUTCAR(self):
+        self.outcardialog.elastic_constants = self.ui.elastic_constants
+        self.outcardialog.show()
 
     def on_pushButton_calculate_el(self):
         Vdata, Edata = self.get_EvV()

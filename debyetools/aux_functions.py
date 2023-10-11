@@ -28,7 +28,7 @@ def c_types(atom_types: str) -> Tuple[list, list]:
     combs_types = [A[0]+'-'+A[1] for A in combs_types]
     return combs_types, types_all
 
-def generate_cells_coordinates(size, primitive_cell,center):
+def generate_cells_coordinates(size: np.ndarray, primitive_cell: np.ndarray, center: np.ndarray) -> np.ndarray:
     """ generate the cell coordinates for which we are going
     to calculate the neighbor list.
 
@@ -64,25 +64,28 @@ def gen_Ts(Ti: float, Tf: float, nTs: int) -> np.ndarray:
     Ts = np.r_[Ts, [298.15]]
     Ts.sort()
     return Ts
-def gen_Ps(Ti,Tf,nTs):
+def gen_Ps(Pi,Pf,nPs):
     """
-    Function to generate a range of temperatures.
+    Function to generate a range of pressures.
 
-    :param float Ti: Initial temperature. (Try not to use the value 0. Use 0.1 instead.)
-    :param float Tf: Final temperature.
-    :param int nTs: Number of values. This does not include room temperature, which is included anyways.
+    :param float Pi: Initial pressure.
+    :param float Pf: Final pressure.
+    :param int nPs: Number of values. This does not include room pressure, which is included anyways.
 
-    :retun list_of_floats: Values of temperatures between Ti and Tf, inclusive, plus room temperature.
+    :retun: Values of pressures between Pi and Pf.
+    :rtype: np.ndarray
     """
-    if nTs <= 1: return np.array([Ti])
-    minF_step = (Tf - Ti)/(nTs - 1.)
-    Ts = np.arange(Ti, Tf+1, minF_step)
+    if nPs <= 1: return np.array([Pi])
+    minF_step = (Pf - Pi)/(nPs - 1.)
+    Ps = np.arange(Pi, Pf+1, minF_step)
 
-    return Ts
+    return Ps
 
-def load_doscar(filename_sufix, list_filetags = ['-0.10', '-0.09','-0.08','-0.07','-0.06','-0.05','-0.04','-0.03',
-                                                 '-0.02','-0.01','-0.00','0.01','0.02','0.03','0.04','0.05','0.06',
-                                                 '0.07','0.08','0.09','0.10']):
+def load_doscar(filename_sufix: str, list_filetags: list = None) -> tuple[list,list,list]:
+    if list_filetags is None:
+        list_filetags = ['-0.10', '-0.09','-0.08','-0.07','-0.06','-0.05','-0.04','-0.03',
+                         '-0.02','-0.01','-0.00','0.01','0.02','0.03','0.04','0.05','0.06',
+                         '0.07','0.08','0.09','0.10']
     list_filetags = [str(li) for li in list_filetags]
     E = []
     N = []
@@ -110,7 +113,7 @@ def load_doscar(filename_sufix, list_filetags = ['-0.10', '-0.09','-0.08','-0.07
 
     return E,N,Ef
 
-def load_V_E(energy_dir_summary,energy_dir_contcar, units='eV/atom'):
+def load_V_E(energy_dir_summary: str, energy_dir_contcar: str, units: str = 'eV/atom') -> tuple[np.ndarray,np.ndarray]:
     with open(energy_dir_contcar,'r') as f_poscar:
         f_poscar_lines = f_poscar.readlines()
         cell_poscar = f_poscar_lines[2:5]
@@ -138,6 +141,7 @@ def load_V_E(energy_dir_summary,energy_dir_contcar, units='eV/atom'):
     for di in ds:
         V.append(np.product(np.array(diag_cell)*(1+di))/nat)
 
+    uconvV, uconvE = None, None
     if units=='J/mol':
         uconvE=(0.160218e-18*6.02214e23)
         uconvV=(1e-30*6.02e23)
@@ -145,7 +149,7 @@ def load_V_E(energy_dir_summary,energy_dir_contcar, units='eV/atom'):
         uconvE,uconvV = 1,1
     return np.array(V).T*uconvV, np.array(E).T*uconvE
 
-def load_EM(filename_outcar_eps):
+def load_EM(filename_outcar_eps: str) -> np.ndarray:
     EM = []
 
     with open(filename_outcar_eps) as f:
@@ -162,7 +166,7 @@ def load_EM(filename_outcar_eps):
 
     return EM
 
-def load_cell(filename_contcar):
+def load_cell(filename_contcar: str) -> tuple[str,np.ndarray,np.ndarray]:
     with open(filename_contcar) as f:
         poscar_lines=f.readlines()
     mult = float(poscar_lines[1])
@@ -184,4 +188,4 @@ def load_cell(filename_contcar):
     basis = np.array([np.fromstring(line_i, dtype=float,sep=' ') for line_i in poscar_lines[8:8+tots_nats]])
     # basis = np.dot(basis,cell)
 
-    return formula, cell, basis
+    return formula.replace('x', ''), cell, basis

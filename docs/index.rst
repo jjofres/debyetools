@@ -19,112 +19,134 @@ The code_ is freely available under the GNU Affero General Public License.
 .. _Python: https://www.python.org/
 .. _code: https://github.com/jjofres/debyetools
 
-- Calculate quality thermodynamic properties in a flexible and fast manner:
+How to cite:
+============
 
-.. figure:: ./source/api/images/Cp_LiFePO4.jpeg
-   :align: center
+Please cite ``debyetools`` referencing the following publication:
 
-   Heat capacity of LiFePO4 calculated with ``debyetools`` and compared to other methods as shown in :ref:`examples <examples>`.
+TBD
 
-- Using ``debyetools`` through the GUI ``tProps``:
+Calculate quality thermodynamic properties in a flexible and fast manner:
+#########################################################################
 
-.. _tProps2:
-.. figure::  ./source/api/images/tprops_gui.jpeg
+It's possible to couple the Debye model to other algorithms, to :ref:`fit experimental data <Cp_ga_example>` and in this way use data available to calculate other properties like thermal expansion, free energy, bulk modulus among many others.
+
+.. |pic1| image:: ./source/api/images/ga_fig.jpeg
+   :width: 59%
+
+.. |pic2| image:: ./source/api/images/Cp_LiFePO4.jpeg
+   :width: 39%
+
+|pic1| |pic2|
+
+   Heat capacity of LiFePO4 calculated with ``debyetools`` and compared to other methods.
+
+The prediciton of :ref:`thermodynamic phase equilibria at high pressure <PvT_example>` can be performed by simultaneous parameter adjusting to experimental heat capacity and thermal expansion at P = 0.
+
+.. _PvT:
+.. figure::  ./source/api/images/Mg2SiO4_PvT.jpeg
    :align:   center
 
-   tProps v1.1
+   Phase diagram P versus T for the α, β and γ forms of Mg2SiO4. Symbols are literature data for the phase stability regions
+   boundaries.
 
-- Using ``debyetools`` as a Python_ library. Example: Al fcc using Morse Potential:
+Using ``debyetools`` through the GUI:
+#####################################
+
+``debyetools`` is a Python_ library that also comes with a graphical user interface to help perform quick calculations without the need to code scripts.
+
+.. _tProps_prop:
+.. figure::  ./source/api/images/property_interface.jpeg
+   :align:   center
+
+   ``debyetools`` property viewer.
+
+Using ``debyetools`` as a Python_ library. Example: Al fcc using Morse Potential:
+#################################################################################
+
+Using ``debyetools`` as a Python_ library adds versatility and expands its usability.
 
 EOS parametrization:
 
-.. code-block:: python
+>>> import debyetools.potentials as potentials
+>>> from debyetools.aux_functions import load_V_E
+>>> V_data, E_data = load_V_E('/path/to/SUMMARY', '/path/to/CONTCAR')
+>>> params_initial_guess = [-3e5, 1e-5, 7e10, 4]
+>>> formula = 'AlAlAlLi'
+>>> cell = np.array([[4.025,0,0],[0,4.025488,0],[0,0,4.025488]])
+>>> basis = np.array([[0,0,0],[.5,.5,0],[.5,0,.5],[0,.5,.5]])
+>>> cutoff, number_of_neighbor_levels = 5, 3
+>>> Morse = potentials.MP(formula, cell, basis, cutoff,
+...                       number_of_neighbor_levels)
+>>> Morse.fitEOS(V_data, E_data, params_initial_guess)
+array([-3.26551e+05,9.82096e-06,6.31727e+10,4.31057e+00])
 
-   import numpy as np
-   from debyetools.aux_functions import load_doscar, load_V_E, load_EM, load_cell
-   import debyetools.potentials as potentials
+Calculation of the electronic contribution:
 
-   folder_name = '../tests/inpt_files/Al_fcc'
-
-   V_DFT, E_DFT = load_V_E(folder_name, folder_name + '/CONTCAR.5', units='J/mol')
-   formula, primitive_cell, sbasis_vectors = load_cell(folder_name+'/CONTCAR.5')
-   EOS_name = 'MP'
-   cutoff = 5
-   number_of_neighbor_levels = 3
-
-   eos_Morse = getattr(potentials,EOS_name)(formula, primitive_cell, sbasis_vectors, cutoff, number_of_neighbor_levels, units = 'J/mol')
-
-   initial_parameters = np.array([0.35, 1, 3.5])
-   eos_Morse.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters)
-
-Electronic Contribution:
-
-.. code-block:: python
-
-   from debyetools.electronic import fit_electronic
-
-   p_el_inittial = [3.8027342892e-01, -1.8875015171e-02, 5.3071034596e-04, -7.0100707467e-06]
-   E, N, Ef = load_doscar(folder_name+'/DOSCAR.EvV.')
-   p_electronic = fit_electronic(V_DFT, p_el_inittial,E,N,Ef)
+>>> from debyetools.aux_functions import load_doscar
+>>> from debyetools.electronic import fit_electronic
+>>> p_el_inittial = [3.8e-01,-1.9e-02,5.3e-04,-7.0e-06]
+>>> E, N, Ef = load_doscar('/path/to/DOSCAR.EvV.',list_filetags=range(21))
+>>> fit_electronic(V_data, p_el_inittial, E, N, Ef)
+array([1.73273079e-01,-6.87351153e+03,5.3e-04,-7.0e-06])
 
 Poisson's ratio:
 
-.. code-block:: python
-
-   from debyetools.poisson import poisson_ratio
-
-   EM = EM = load_EM(folder_name+'/OUTCAR.eps')
-   nu = poisson_ratio(EM)
+>>> import numpy as np
+>>> from debyetools . poisson import poisson_ratio
+>>> from debyetools.aux_functions import load_EM
+>>> EM = load_EM( 'path/to/OUTCAR')
+>>> poisson_ratio ( EM )
+0.2 2 9 41 5 49 8 67148558
 
 Free energy minimization:
 
-.. code-block:: python
-
-    from debyetools.ndeb import nDeb
-    from debyetools.aux_functions import gen_Ts
-
-    m = 0.026981500000000002
-    ndeb_Morse = nDeb(nu, m, p_intanh, eos_Morse, p_electronic, p_defects, p_anh)
-    T_initial, T_final, number_Temps = 0.1, 1000, 10
-    T = gen_Ts(T_initial, T_final, number_Temps)
-
-    T, V = ndeb_Morse.min_F(T,ndeb_Morse.EOS.V0)
+>>> from debyetools.ndeb import nDeb
+>>> from debyetools import potentials
+>>> from debyetools.aux_functions import gen_Ts,load_V_E
+>>> m = 0.021971375
+>>> nu = poisson_ratio (EM)
+>>> p_electronic = fit_electronic(V_data, p_el_inittial, E, N, Ef)
+>>> p_defects = [8.46, 1.69, 933, 0.1]
+>>> p_anh, p_intanh = [0,0,0], [0, 1]
+>>> V_data, E_data = load_V_E('/path/to/SUMMARY', '/path/to/CONTCAR')
+>>> eos = potentials.BM()
+>>> peos = eos.fitEOS(V_data, E_data, params_initial_guess)
+>>> ndeb = nDeb (nu , m, p_intanh , eos , p_electronic , p_defects , p_anh )
+>>> T = gen_Ts ( T_initial , T_final , 10 )
+>>> T, V = ndeb.min_G (T,  1e-5, P=0)
+>>> V
+array([9.98852539e-06, 9.99974297e-06, 1.00578469e-05, 1.01135875e-05,
+       1.01419825e-05, 1.02392921e-05, 1.03467847e-05, 1.04650048e-05,
+       1.05953063e-05, 1.07396467e-05, 1.09045695e-05, 1.10973163e-05])
 
 Evaluation of the thermodynamic properties:
 
-.. code-block:: python
-
-    tprops_dict = ndeb_Morse.eval_props(T, V)
+>>> trprops_dict=ndeb.eval_props(T,V)
+>>> tprops_dict['Cp']
+array([4.02097531e-05, 9.68739597e+00, 1.96115210e+01, 2.25070513e+01,
+       2.34086394e+01, 2.54037595e+01, 2.68478029e+01, 2.82106379e+01,
+       2.98214145e+01, 3.20143195e+01, 3.51848547e+01, 3.98791392e+01])
 
 FS compound database parameters:
 
-.. code-block:: python
-
-    from debyetools.fs_compound_db import fit_FS
-
-
-    T_from = 298.15
-    T_to = 1000
-    FS_db_params = fit_FS(tprops_dict,T_from, T_to)
-    print(FS_db_params)
-
-This will return:
-
-.. code-block:: python
-
-   [ 1.11898466e+02 -8.11995443e-02  7.22119591e+05  4.29282477e-05
-   -1.31482568e+03  1.00000000e+00]
+>>> from debyetools.fs_compound_db import fit_FS
+>>> T_from = 298.15
+>>> T_to = 1000.1
+>>> FS_db_params = fit_FS(tprops_dict, T_from,T_to)
+>>> Fs_db_params['Cp']
+array([ 3.48569519e+01, -2.56558596e-02, -6.35562885e+05,  2.65035585e-05])
 
 .. toctree::
    :maxdepth: 2
-   :caption: Documentation:
+   :caption: Content:
 
    source/api/installation
-   source/api/pairanalysis
    source/api/nDeb
    source/api/contributions
    source/api/fsdb
    source/api/gui
+   source/api/pairanalysis
    source/api/plot
    source/api/fileformats
    source/api/examples

@@ -1,9 +1,8 @@
 from __future__ import division
-from scipy.optimize import least_squares, fmin, minimize
+from scipy.optimize import least_squares, minimize
 
 import numpy as np
 import re
-from time import time
 import itertools as it
 import debyetools.pairanalysis as pairanalysis
 
@@ -12,7 +11,6 @@ class BM:
     """
     Third order Birch-Murnaghan EOS and derivatives.
 
-    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
@@ -20,18 +18,21 @@ class BM:
         if parameters != '':
             self.pEOS = parameters[:4]
 
-    def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
         """
         Parameters fitting.
 
-        :param list Vdata: Input data.
-        :param list Edata: Target data.
-        :param initial_parameters: initial parameters.
-        :type initial_parameters: list.
-        :param bool fit: True to run the fitting. False to just use the input parameters.
+        :param Vdata: Input volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Target energy data.
+        :type Edata: np.ndarray
+        :param initial_parameters: Initial guess.
+        :type initial_parameters: np.ndarray
+        :param fit: True to run the fitting. False to just use the input parameters.
+        :type fit: bool.
 
         :return: Optimal parameters.
-        :rtype: list
+        :rtype: np.ndarray
         """
         if fit:
             pEOS = initial_parameters[:4]
@@ -40,112 +41,153 @@ class BM:
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
+        mV = minimize(self.E0, np.array([np.mean(Vdata)]), bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
         self.V0 = mV['x'][0]
 
         # return self.pEOS
 
-    def E04min(self, V, pEOS):
+    def E04min(self, V: float, pEOS: np.ndarray) -> float:
+        """
+        Energy for minimization.
+
+        :param V: Volume.
+        :type V: float
+        :param pEOS: parameters.
+        :type pEOS: np.ndarray
+        :return: E0.
+        :rtype: float
+        """
         E0, V0, B0, Bp0 = pEOS
         if B0<0:
             return 1
         P0, P1, P2, P3 = EVBBp_to_BMparams(pEOS)
         return P0 + P1 / V ** (2 / 3) + P2 / V ** (4 / 3) + P3 * V ** (-6 / 3)
 
-    def E0(self, V):
+    def E0(self, V: float|np.ndarray) -> float|np.ndarray:
         """
         Internal energy.
 
-        :param float V: Volume.
-        :return float: P0 + P1 / V ** (2 / 3) + P2 / V ** (4 / 3) + P3 * V ** (-6 / 3), where Pi are calculated from E0, V0, B0, Bp0 parameters.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: E0(V)
+        :rtype: float|np.ndarray
         """
         return self.E04min(V, self.pEOS)
 
-    def dE0dV_T(self, V):
+    def dE0dV_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (dE0/dV)_T
+        Internal energy volume derivative.
 
-        :param float V: Volume.
-        :return float: -2 * P1 / (3 * V ** (5 / 3)) - 4 * P2 / (3 * V ** (7 / 3)) - 2 * P3 / V ** 3
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: dE0dV_T(V)
+        :rtype: float|np.ndarray
         """
         P0, P1, P2, P3 = EVBBp_to_BMparams(self.pEOS)
         return -2 * P1 / (3 * V ** (5 / 3)) - 4 * P2 / (3 * V ** (7 / 3)) - 2 * P3 / V ** 3
 
-    def d2E0dV2_T(self, V):
+    def d2E0dV2_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d2E0/dV2)_T
+        Internal energy second volume derivative.
 
-        :param float V: Volume.
-        :return float: 10 * P1 / (9 * V ** (8 / 3)) + 28 * P2 / (9 * V ** (10 / 3)) + 6 * P3 / V ** 4
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d2E0dV2_T(V)
+        :rtype: float|np.ndarray
         """
         P0, P1, P2, P3 = EVBBp_to_BMparams(self.pEOS)
         return 10 * P1 / (9 * V ** (8 / 3)) + 28 * P2 / (9 * V ** (10 / 3)) + 6 * P3 / V ** 4
 
-    def d3E0dV3_T(self, V):
+    def d3E0dV3_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d3E0/dV3)_T
+        Internal energy third volume derivative.
 
-        :param float V: Volume.
-        :return float: -80 * P1 / (27 * V ** (11 / 3)) - 280 * P2 / (27 * V ** (13 / 3)) - 24 * P3 / V ** 5
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d3E0dV3_T(V)
+        :rtype: float|np.ndarray
         """
         P0, P1, P2, P3 = EVBBp_to_BMparams(self.pEOS)
         return -80 * P1 / (27 * V ** (11 / 3)) - 280 * P2 / (27 * V ** (13 / 3)) - 24 * P3 / V ** 5
 
-    def d4E0dV4_T(self, V):
+    def d4E0dV4_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d4E0/dV4)_T
+        Internal energy fourth volume derivative.
 
-        :param float V: Volume.
-        :return float: 880 * P1 / (81 * V ** (14 / 3)) + 3640 * P2 / (81 * V ** (16 / 3)) + 120 * P3 / V ** 6
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d4E0dV4_T(V)
+        :rtype: float|np.ndarray
         """
         P0, P1, P2, P3 = EVBBp_to_BMparams(self.pEOS)
         return 880 * P1 / (81 * V ** (14 / 3)) + 3640 * P2 / (81 * V ** (16 / 3)) + 120 * P3 / V ** 6
 
-    def d5E0dV5_T(self, V):
+    def d5E0dV5_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d5E0/dV5)_T
+        Internal energy fifth volume derivative.
 
-        :param float V: Volume.
-        :return float: -12320 * P1 / (243 * V ** (17 / 3)) - 58240 * P2 / (243 * V ** (19 / 3)) - 720 * P3 / V ** 7
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d5E0dV5_T(V)
+        :rtype: float|np.ndarray
         """
         P0, P1, P2, P3 = EVBBp_to_BMparams(self.pEOS)
         return -12320 * P1 / (243 * V ** (17 / 3)) - 58240 * P2 / (243 * V ** (19 / 3)) - 720 * P3 / V ** 7
 
-    def d6E0dV6_T(self, V):
+    def d6E0dV6_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d6E0/dV6)_T
+        Internal energy sixth volume derivative.
 
-        :param float V: Volume.
-        :return float: 209440 * P1 / (729 * V ** (20 / 3)) + 1106560 * P2 / (729 * V ** (22 / 3)) + 5040 * P3 / V ** 8
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d6E0dV6_T(V)
+        :rtype: float|np.ndarray
         """
         P0, P1, P2, P3 = EVBBp_to_BMparams(self.pEOS)
         return 209440 * P1 / (729 * V ** (20 / 3)) + 1106560 * P2 / (729 * V ** (22 / 3)) + 5040 * P3 / V ** 8
 
-    def error2min(self, P, Vdata, Edata):
+    def error2min(self, P: np.ndarray, Vdata: np.ndarray, Edata: np.ndarray) -> np.ndarray:
+        """
+        Error for minimization.
+
+        :param P: E0 parameters.
+        :type P: np.ndarray
+        :param Vdata: Volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Energy data.
+        :type Edata: np.ndarray
+        :return: Error.
+        :rtype: np.ndarray
+        """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return Ecalc - Edata
+        return (Ecalc - Edata)**2
 
 
 class RV:  # Rose-Vinet
     """
     Rose-Vinet EOS and derivatives.
 
-    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
         if parameters != '':
             self.pEOS = parameters[:4]
 
-    def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
         """
         Parameters fitting.
 
-        :param list_of_floats Vdata: Intput data.
-        :param list_of_floats Edata: Target data.
-        :param list_of_floats initial_parameters: initial_parameters.
+        :param Vdata: Input volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Target energy data.
+        :type Edata: np.ndarray
+        :param initial_parameters: Initial guess.
+        :type initial_parameters: np.ndarray
+        :param fit: True to run the fitting. False to just use the input parameters.
+        :type fit: bool.
 
-        :return list_of_floats: Optimal parameters.
+        :return: Optimal parameters.
+        :rtype: np.ndarray
         """
         if fit:
             pEOS = initial_parameters[:4]
@@ -159,7 +201,17 @@ class RV:  # Rose-Vinet
 
         return self.pEOS
 
-    def E04min(self, V, pEOS):
+    def E04min(self, V: float, pEOS: np.ndarray) -> float:
+        """
+        Energy for minimization.
+
+        :param V: Volume.
+        :type V: float
+        :param pEOS: parameters.
+        :type pEOS: np.ndarray
+        :return: E0.
+        :rtype: float
+        """
         E0, V0, B0, Bp0 = pEOS
         if B0<0:
             return 1
@@ -167,42 +219,52 @@ class RV:  # Rose-Vinet
                     3 * (V / V0) ** (1 / 3) * Bp0 - 3 * Bp0 - 3 * (V / V0) ** (1 / 3) + 5) / (Bp0 - 1) ** 2 + (
                            4 * B0 * V0) / ((Bp0 - 1) ** 2)
 
-    def E0(self, V):
+    def E0(self, V: float|np.ndarray) -> float|np.ndarray:
         """
         Internal energy.
 
-        :param float V: Volume.
-
-        :return float: Energy.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: E0(V)
+        :rtype: float|np.ndarray
         """
         return self.E04min(V, self.pEOS)
 
-    def dE0dV_T(self, V):
+    def dE0dV_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (dE0/dV)_T
+        Internal energy volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: dE0dV_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -(3 * (V0 - V ** (1 / 3) * V0 ** (2 / 3))) * np.exp(
             (3 * (Bp0 - 1)) * (V0 - V ** (1 / 3) * V0 ** (2 / 3)) / (2 * V0)) * B0 / (V0 ** (1 / 3) * V ** (2 / 3))
 
-    def d2E0dV2_T(self, V):
+    def d2E0dV2_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d2E0/dV2)_T
+        Internal energy second volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d2E0dV2_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -(3 * Bp0 * (V / V0) ** (2 / 3) - 3 * (V / V0) ** (1 / 3) * Bp0 - 3 * (V / V0) ** (2 / 3) + 5 * (
                     V / V0) ** (1 / 3) - 4) * np.exp(-(1 / 2) * (3 * (Bp0 - 1)) * (-1 + (V / V0) ** (1 / 3))) * B0 / (
                            2 * V * (V / V0) ** (2 / 3))
 
-    def d3E0dV3_T(self, V):
+    def d3E0dV3_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d3E0/dV3)_T
+        Internal energy third volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d3E0dV3_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return 3 * np.exp(-(1 / 2) * (3 * (Bp0 - 1)) * (-1 + (V / V0) ** (1 / 3))) * (
@@ -210,11 +272,14 @@ class RV:  # Rose-Vinet
                         1 / 3) + Bp0 ** 2 * V - 2 * Bp0 * V + V - 40 * V0 * (1 / 9)) * B0 / (
                            4 * (V / V0) ** (2 / 3) * V ** 2 * V0)
 
-    def d4E0dV4_T(self, V):
+    def d4E0dV4_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d4E0/dV4)_T
+        Internal energy fourth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d4E0dV4_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -(3 * (-(8 * (Bp0 - 23 / 9)) * (Bp0 - 1) * V0 * (V / V0) ** (2 / 3) + (
@@ -224,11 +289,14 @@ class RV:  # Rose-Vinet
                                   1 / 27))) * np.exp(-(1 / 2) * (3 * (Bp0 - 1)) * (-1 + (V / V0) ** (1 / 3))) * B0 / (
                            8 * (V / V0) ** (2 / 3) * V ** 3 * V0)
 
-    def d5E0dV5_T(self, V):
+    def d5E0dV5_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d5E0/dV5)_T
+        Internal energy fifth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d5E0dV5_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -5 * np.exp((3 * (Bp0 - 1)) * (V0 - V ** (1 / 3) * V0 ** (2 / 3)) / (2 * V0)) * (
@@ -239,11 +307,14 @@ class RV:  # Rose-Vinet
                                 Bp0 ** 3 * V - (19 / 3) * Bp0 ** 2 * V + (29 / 3) * Bp0 * V - (13 / 3) * V + (
                                     352 / 27) * V0)) * B0 / (2 * V0 ** (4 / 3) * V ** (14 / 3))
 
-    def d6E0dV6_T(self, V):
+    def d6E0dV6_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d6E0/dV6)_T
+        Internal energy sixth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d6E0dV6_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return (5 * (3 * Bp0 - 3)) * np.exp((3 * Bp0 - 3) * (V0 - V ** (1 / 3) * V0 ** (2 / 3)) / (2 * V0)) * (
@@ -254,31 +325,47 @@ class RV:  # Rose-Vinet
                                 Bp0 ** 3 * V - (19 / 3) * Bp0 ** 2 * V + (29 / 3) * Bp0 * V - (13 / 3) * V + (
                                     352 / 27) * V0)) * B0 / (12 * V ** (16 / 3) * V0 ** (5 / 3))
 
-    def error2min(self, P, Vdata, Edata):
+    def error2min(self, P: np.ndarray, Vdata: np.ndarray, Edata: np.ndarray) -> np.ndarray:
+        """
+        Error for minimization.
+
+        :param P: E0 parameters.
+        :type P: np.ndarray
+        :param Vdata: Volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Energy data.
+        :type Edata: np.ndarray
+        :return: Error.
+        :rtype: np.ndarray
+        """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return Ecalc - Edata
+        return (Ecalc - Edata)**2
 
 
 class MG:  # Mie-Gruneisen
     """
     Mie-Gruneisen EOS and derivatives.
-
-    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
         if parameters != '':
             self.pEOS = parameters[:4]
 
-    def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
         """
         Parameters fitting.
 
-        :param list_of_floats Vdata: Intput data.
-        :param list_of_floats Edata: Target data.
-        :param list_of_floats initial_parameters: initial_parameters.
+        :param Vdata: Input volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Target energy data.
+        :type Edata: np.ndarray
+        :param initial_parameters: Initial guess.
+        :type initial_parameters: np.ndarray
+        :param fit: True to run the fitting. False to just use the input parameters.
+        :type fit: bool.
 
-        :return list_of_floats: Optimal parameters.
+        :return: Optimal parameters.
+        :rtype: np.ndarray
         """
         if fit:
             pEOS = initial_parameters[:4]
@@ -292,7 +379,17 @@ class MG:  # Mie-Gruneisen
 
         return self.pEOS
 
-    def E04min(self, V, pEOS):
+    def E04min(self, V: float, pEOS: np.ndarray) -> float:
+        """
+        Energy for minimization.
+
+        :param V: Volume.
+        :type V: float
+        :param pEOS: parameters.
+        :type pEOS: np.ndarray
+        :return: E0.
+        :rtype: float
+        """
         E0, V0, B0, Bp0 = pEOS
         if B0<0:
             return 1
@@ -300,73 +397,92 @@ class MG:  # Mie-Gruneisen
                     1 / 3) + B0 * V0 * ((V / V0) ** (8 / 3 - Bp0) - 3 * Bp0 + 7))) / (
                            (V / V0) ** (1 / 3) * (9 * Bp0 ** 2 - 45 * Bp0 + 56))
 
-    def E0(self, V):
+    def E0(self, V: float|np.ndarray) -> float|np.ndarray:
         """
         Internal energy.
 
-        :param float V: Volume.
-
-        :return float: Energy.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: E0(V)
+        :rtype: float|np.ndarray
         """
         return self.E04min(V, self.pEOS)
 
-    def dE0dV_T(self, V):
+    def dE0dV_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (dE0/dV)_T
+        Internal energy volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: dE0dV_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -(3 * (V ** (8 / 3 - Bp0) * V0 ** (Bp0 - 8 / 3) - 1)) * B0 * V0 ** (4 / 3) / (
                     V ** (4 / 3) * (3 * Bp0 - 8))
 
-    def d2E0dV2_T(self, V):
+    def d2E0dV2_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d2E0/dV2)_T
+        Internal energy second volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d2E0dV2_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return (3 * Bp0 * (V / V0) ** (8 / 3 - Bp0) - 4 * (V / V0) ** (8 / 3 - Bp0) - 4) * B0 * V0 / (
                     V ** 2 * (3 * Bp0 - 8) * (V / V0) ** (1 / 3))
 
-    def d3E0dV3_T(self, V):
+    def d3E0dV3_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d3E0/dV3)_T
+        Internal energy third volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d3E0dV3_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -3 * B0 * (-28 / 9 + (Bp0 ** 2 - (5 / 3) * Bp0 + 4 / 9) * (V / V0) ** (8 / 3 - Bp0)) * V0 / (
                     (V / V0) ** (1 / 3) * V ** 3 * (3 * Bp0 - 8))
 
-    def d4E0dV4_T(self, V):
+    def d4E0dV4_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d4E0/dV4)_T
+        Internal energy fourth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d4E0dV4_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return 3 * B0 * (
                     -280 / 27 + (Bp0 ** 3 - Bp0 ** 2 - (2 / 3) * Bp0 + 8 / 27) * (V / V0) ** (8 / 3 - Bp0)) * V0 / (
                            (V / V0) ** (1 / 3) * V ** 4 * (3 * Bp0 - 8))
 
-    def d5E0dV5_T(self, V):
+    def d5E0dV5_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d5E0/dV5)_T
+        Internal energy fifth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d5E0dV5_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -81 * V0 ** (4 / 3) * B0 * (-3640 / 81 + (1 / 81) * V0 ** (Bp0 - 8 / 3) * (
                     81 * Bp0 ** 4 + 54 * Bp0 ** 3 - 189 * Bp0 ** 2 - 66 * Bp0 + 40) * V ** (8 / 3 - Bp0)) / (
                            V ** (16 / 3) * (-216 + 81 * Bp0))
 
-    def d6E0dV6_T(self, V):
+    def d6E0dV6_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d6E0/dV6)_T
+        Internal energy sixth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d6E0dV6_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -V0 ** (4 / 3) * B0 * V0 ** (Bp0 - 8 / 3) * (
@@ -376,16 +492,26 @@ class MG:  # Mie-Gruneisen
                                81 * Bp0 ** 4 + 54 * Bp0 ** 3 - 189 * Bp0 ** 2 - 66 * Bp0 + 40) * V ** (8 / 3 - Bp0)) / (
                            V ** (19 / 3) * (-216 + 81 * Bp0))
 
-    def error2min(self, P, Vdata, Edata):
+    def error2min(self, P: np.ndarray, Vdata: np.ndarray, Edata: np.ndarray) -> np.ndarray:
+        """
+        Error for minimization.
+
+        :param P: E0 parameters.
+        :type P: np.ndarray
+        :param Vdata: Volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Energy data.
+        :type Edata: np.ndarray
+        :return: Error.
+        :rtype: np.ndarray
+        """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return Ecalc - Edata
+        return (Ecalc - Edata)**2
 
 
 class TB:  # TB-SMA
     """
     Thight-Binding second-order-approximation EOS and derivatives.
-
-    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
@@ -422,41 +548,51 @@ class TB:  # TB-SMA
         p0, p1, p2, p3 = EVBBp_to_TBparams(pEOS)
         return p0 * np.exp(-p2 * V ** (1. / 3.)) + p1 * np.exp(-p3 * V ** (1. / 3.))
 
-    def E0(self, V):
+    def E0(self, V: float|np.ndarray) -> float|np.ndarray:
         """
         Internal energy.
 
-        :param float V: Volume.
-
-        :return float: Energy.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: E0(V)
+        :rtype: float|np.ndarray
         """
         return self.E04min(V, self.pEOS)
 
-    def dE0dV_T(self, V):
+    def dE0dV_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (dE0/dV)_T
+        Internal energy volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: dE0dV_T(V)
+        :rtype: float|np.ndarray
         """
         p0, p1, p2, p3 = EVBBp_to_TBparams(self.pEOS)
         return -(p0 * p2 * np.exp(-p2 * V ** (1 / 3)) + p1 * p3 * np.exp(-p3 * V ** (1 / 3))) / (3 * V ** (2 / 3))
 
-    def d2E0dV2_T(self, V):
+    def d2E0dV2_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d2E0/dV2)_T
+        Internal energy second volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d2E0dV2_T(V)
+        :rtype: float|np.ndarray
         """
         p0, p1, p2, p3 = EVBBp_to_TBparams(self.pEOS)
         return 2 * p0 * p2 * np.exp(-p2 * V ** (1 / 3)) / (9 * V ** (5 / 3)) + p0 * p2 ** 2 * np.exp(
             -p2 * V ** (1 / 3)) / (9 * V ** (4 / 3)) + 2 * p1 * p3 * np.exp(-p3 * V ** (1 / 3)) / (
                            9 * V ** (5 / 3)) + p1 * p3 ** 2 * np.exp(-p3 * V ** (1 / 3)) / (9 * V ** (4 / 3))
 
-    def d3E0dV3_T(self, V):
+    def d3E0dV3_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d3E0/dV3)_T
+        Internal energy third volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d3E0dV3_T(V)
+        :rtype: float|np.ndarray
         """
         p0, p1, p2, p3 = EVBBp_to_TBparams(self.pEOS)
         return -10 * p0 * p2 * np.exp(-p2 * V ** (1 / 3)) / (27 * V ** (8 / 3)) - 2 * p0 * p2 ** 2 * np.exp(
@@ -465,11 +601,14 @@ class TB:  # TB-SMA
                            27 * V ** (8 / 3)) - 2 * p1 * p3 ** 2 * np.exp(-p3 * V ** (1 / 3)) / (
                            9 * V ** (7 / 3)) - p1 * p3 ** 3 * np.exp(-p3 * V ** (1 / 3)) / (27 * V ** 2)
 
-    def d4E0dV4_T(self, V):
+    def d4E0dV4_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d4E0/dV4)_T
+        Internal energy fourth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d4E0dV4_T(V)
+        :rtype: float|np.ndarray
         """
         p0, p1, p2, p3 = EVBBp_to_TBparams(self.pEOS)
         return 80 * p0 * p2 * np.exp(-p2 * V ** (1 / 3)) / (81 * V ** (11 / 3)) + 52 * p0 * p2 ** 2 * np.exp(
@@ -480,11 +619,14 @@ class TB:  # TB-SMA
                            81 * V ** (10 / 3)) + 4 * p1 * p3 ** 3 * np.exp(-p3 * V ** (1 / 3)) / (
                            27 * V ** 3) + p1 * p3 ** 4 * np.exp(-p3 * V ** (1 / 3)) / (81 * V ** (8 / 3))
 
-    def d5E0dV5_T(self, V):
+    def d5E0dV5_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d5E0/dV5)_T
+        Internal energy fifth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d5E0dV5_T(V)
+        :rtype: float|np.ndarray
         """
         p0, p1, p2, p3 = EVBBp_to_TBparams(self.pEOS)
         return -(20 * (p0 * p2 * (
@@ -493,11 +635,14 @@ class TB:  # TB-SMA
                                    (1 / 20) * V ** (4 / 3) * p3 ** 4 + V * p3 ** 3 + 8 * p3 ** 2 * V ** (
                                        2 / 3) + 30 * p3 * V ** (1 / 3) + 44))) / (243 * V ** (14 / 3))
 
-    def d6E0dV6_T(self, V):
+    def d6E0dV6_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d6E0/dV6)_T
+        Internal energy sixth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d6E0dV6_T(V)
+        :rtype: float|np.ndarray
         """
         p0, p1, p2, p3 = EVBBp_to_TBparams(self.pEOS)
         return (380 * (p0 * p2 * ((1 / 380) * V ** (5 / 3) * p2 ** 5 + 3 * V ** (4 / 3) * p2 ** 4 * (
@@ -507,9 +652,21 @@ class TB:  # TB-SMA
                     1 / 38) + V * p3 ** 3 + 126 * p3 ** 2 * V ** (2 / 3) * (1 / 19) + 434 * p3 * V ** (1 / 3) * (
                                                          1 / 19) + 616 / 19))) / (729 * V ** (17 / 3))
 
-    def error2min(self, P, Vdata, Edata):
+    def error2min(self, P: np.ndarray, Vdata: np.ndarray, Edata: np.ndarray) -> np.ndarray:
+        """
+        Error for minimization.
+
+        :param P: E0 parameters.
+        :type P: np.ndarray
+        :param Vdata: Volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Energy data.
+        :type Edata: np.ndarray
+        :return: Error.
+        :rtype: np.ndarray
+        """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return Ecalc - Edata
+        return (Ecalc - Edata)**2
 
 
 class MP:  # Morse
@@ -557,15 +714,21 @@ class MP:  # Morse
             self.pEOS = parameters
         #### pr0nt('xxx',self.ndist,self.npair,self.Vstar)
 
-    def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
         """
         Parameters fitting.
 
-        :param list_of_floats Vdata: Intput data.
-        :param list_of_floats Edata: Target data.
-        :param list_of_floats initial_parameters: initial_parameters.
+        :param Vdata: Input volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Target energy data.
+        :type Edata: np.ndarray
+        :param initial_parameters: Initial guess.
+        :type initial_parameters: np.ndarray
+        :param fit: True to run the fitting. False to just use the input parameters.
+        :type fit: bool.
 
-        :return list_of_floats: Optimal parameters.
+        :return: Optimal parameters.
+        :rtype: np.ndarray
         """
         if fit:
             pEOS = initial_parameters
@@ -581,7 +744,17 @@ class MP:  # Morse
 
         return self.pEOS
 
-    def E04min(self, V, pEOS):
+    def E04min(self, V: float, pEOS: np.ndarray) -> float:
+        """
+        Energy for minimization.
+
+        :param V: Volume.
+        :type V: float
+        :param pEOS: parameters.
+        :type pEOS: np.ndarray
+        :return: E0.
+        :rtype: float
+        """
         if type(V) == np.ndarray:
             return np.array([self.E04min(Vi, pEOS) for Vi in V])
 
@@ -596,7 +769,15 @@ class MP:  # Morse
 
         return ms * (self.mult_E)
 
-    def E0(self, V):
+    def E0(self, V: float|np.ndarray) -> float|np.ndarray:
+        """
+        Internal energy.
+
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: E0(V)
+        :rtype: float|np.ndarray
+        """
         if type(V) == np.ndarray:
             return np.array([self.E0(Vi) for Vi in V])
         V = V / self.mult_V
@@ -609,11 +790,14 @@ class MP:  # Morse
                 ms.append(nij / 2 * Dj * ((1 - np.exp(-alphaj * (rstari * (V / self.Vstar) ** (1 / 3) - r0j))) ** 2 - 1))
         return np.sum(ms) * (self.mult_E)
 
-    def dE0dV_T(self, V):
+    def dE0dV_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (dE0/dV)_T
+        Internal energy volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: dE0dV_T(V)
+        :rtype: float|np.ndarray
         """
         if type(V) == np.ndarray:
             return np.array([self.dE0dV_T(Vi) for Vi in V])
@@ -627,11 +811,14 @@ class MP:  # Morse
                 ms.append(-nij * Dj * (-1 + np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (2 / 3)) / self.Vstar)) * alphaj * rstari * np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (2 / 3)) / self.Vstar) / (3 * self.Vstar ** (1 / 3) * V ** (2 / 3)))
         return np.sum(ms) * (self.mult_E) / (self.mult_V)
 
-    def d2E0dV2_T(self, V):
+    def d2E0dV2_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d2E0/dV2)_T
+        Internal energy second volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d2E0dV2_T(V)
+        :rtype: float|np.ndarray
         """
         if type(V) == np.ndarray:
             return np.array([self.d2E0dV2_T(Vi) for Vi in V])
@@ -645,11 +832,14 @@ class MP:  # Morse
                 ms.append(2*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*nij*alphaj*rstari*Dj*((alphaj*rstari*V**(1/3)*self.Vstar**(2/3)+self.Vstar)*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)-(1/2)*alphaj*rstari*V**(1/3)*self.Vstar**(2/3)-self.Vstar)/(9*V**(5/3)*self.Vstar**(4/3)))
         return np.sum(ms) * (self.mult_E) / (self.mult_V) ** 2
 
-    def d3E0dV3_T(self, V):
+    def d3E0dV3_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d3E0/dV3)_T
+        Internal energy third volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d3E0dV3_T(V)
+        :rtype: float|np.ndarray
         """
         if type(V) == np.ndarray:
             return np.array([self.d3E0dV3_T(Vi) for Vi in V])
@@ -663,11 +853,14 @@ class MP:  # Morse
                 ms.append(-nij*Dj*alphaj*rstari*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*(4*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2 / 3)) / self.Vstar) * alphaj ** 2 * rstari ** 2 * V ** (2 / 3) * self.Vstar ** (1 / 3) - alphaj ** 2 * rstari ** 2 * V ** (2 / 3) * self.Vstar ** (1 / 3) + 12 * alphaj * rstari * np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (2 / 3)) / self.Vstar) * V ** (1 / 3) * self.Vstar ** (2 / 3) - 6 * alphaj * rstari * V ** (1 / 3) * self.Vstar ** (2 / 3) + 10 * self.Vstar * np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (2 / 3)) / self.Vstar) - 10 * self.Vstar) / (27 * self.Vstar ** (4 / 3) * V ** (8 / 3)))
         return np.sum(ms) * (self.mult_E) / (self.mult_V) ** 3
 
-    def d4E0dV4_T(self, V):
+    def d4E0dV4_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d4E0/dV4)_T
+        Internal energy fourth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d4E0dV4_T(V)
+        :rtype: float|np.ndarray
         """
         if type(V) == np.ndarray:
             return np.array([self.d4E0dV4_T(Vi) for Vi in V])
@@ -681,11 +874,14 @@ class MP:  # Morse
                 ms.append(8*nij*alphaj*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)*((V*alphaj**3*rstari**3+6*alphaj**2*rstari**2*V**(2/3)*self.Vstar**(1/3)+13*alphaj*rstari*V**(1/3)*self.Vstar**(2/3)+10*self.Vstar)*np.exp(alphaj*(r0j*self.Vstar-rstari*V**(1/3)*self.Vstar**(2/3))/self.Vstar)-(1/8)*V*alphaj**3*rstari**3-3*alphaj**2*rstari**2*V**(2/3)*self.Vstar**(1/3)*(1/2)-13*alphaj*rstari*V**(1/3)*self.Vstar**(2/3)*(1/2)-10*self.Vstar)*rstari*Dj/(81*self.Vstar**(4/3)*V**(11/3)))
         return np.sum(ms) * (self.mult_E) / (self.mult_V) ** 4
 
-    def d5E0dV5_T(self, V):
+    def d5E0dV5_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d5E0/dV5)_T
+        Internal energy fifth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d5E0dV5_T(V)
+        :rtype: float|np.ndarray
         """
         if type(V) == np.ndarray:
             return np.array([self.d5E0dV5_T(Vi) for Vi in V])
@@ -699,11 +895,14 @@ class MP:  # Morse
                 ms.append(-nij * Dj * alphaj * rstari * np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (2 / 3)) / self.Vstar) * (16 * np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (  2 / 3)) / self.Vstar) * V ** (  4 / 3) * alphaj ** 4 * rstari ** 4 * self.Vstar ** (2 / 3) - V ** (  4 / 3) * alphaj ** 4 * rstari ** 4 * self.Vstar ** (2 / 3) + 160 * np.exp(alphaj * (  r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (  2 / 3)) / self.Vstar) * V * self.Vstar * alphaj ** 3 * rstari ** 3 - 20 * V * self.Vstar * alphaj ** 3 * rstari ** 3 + 640 * np.exp(  alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (  2 / 3)) / self.Vstar) * alphaj ** 2 * rstari ** 2 * V ** (  2 / 3) * self.Vstar ** (  4 / 3) - 160 * alphaj ** 2 * rstari ** 2 * V ** (  2 / 3) * self.Vstar ** (4 / 3) + 1200 * np.exp(alphaj * (  r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (  2 / 3)) / self.Vstar) * self.Vstar ** (5 / 3) * alphaj * rstari * V ** (  1 / 3) - 600 * self.Vstar ** (5 / 3) * alphaj * rstari * V ** (1 / 3) + 880 * np.exp(alphaj * (r0j * self.Vstar - rstari * V ** (1 / 3) * self.Vstar ** (  2 / 3)) / self.Vstar) * self.Vstar ** 2 - 880 * self.Vstar ** 2) / (  243 * V ** (14 / 3) * self.Vstar ** (7 / 3)))
         return np.sum(ms) * (self.mult_E) / (self.mult_V) ** 5
 
-    def d6E0dV6_T(self, V):
+    def d6E0dV6_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d6E0/dV6)_T
+        Internal energy sixth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d6E0dV6_T(V)
+        :rtype: float|np.ndarray
         """
         if type(V) == np.ndarray:
             return np.array([self.d6E0dV6_T(Vi) for Vi in V])
@@ -743,16 +942,26 @@ class MP:  # Morse
                                       729 * self.Vstar ** (7 / 3) * V ** (17 / 3)))
         return np.sum(ms) * (self.mult_E) / (self.mult_V) ** 6
 
-    def error2min(self, P, Vdata, Edata):
+    def error2min(self, P: np.ndarray, Vdata: np.ndarray, Edata: np.ndarray) -> np.ndarray:
+        """
+        Error for minimization.
+
+        :param P: E0 parameters.
+        :type P: np.ndarray
+        :param Vdata: Volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Energy data.
+        :type Edata: np.ndarray
+        :return: Error.
+        :rtype: np.ndarray
+        """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return Ecalc - Edata
+        return (Ecalc - Edata)**2
 
 
 class MU:  # Murnaghan
     """
     Murnaghan EOS and derivatives.
-
-    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
@@ -760,15 +969,21 @@ class MU:  # Murnaghan
         if parameters != '':
             self.pEOS = parameters[:4]
 
-    def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
         """
         Parameters fitting.
 
-        :param list_of_floats Vdata: Intput data.
-        :param list_of_floats Edata: Target data.
-        :param list_of_floats initial_parameters: initial_parameters.
+        :param Vdata: Input volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Target energy data.
+        :type Edata: np.ndarray
+        :param initial_parameters: Initial guess.
+        :type initial_parameters: np.ndarray
+        :param fit: True to run the fitting. False to just use the input parameters.
+        :type fit: bool.
 
-        :return list_of_floats: Optimal parameters.
+        :return: Optimal parameters.
+        :rtype: np.ndarray
         """
         if fit:
             pEOS = initial_parameters[:4]
@@ -782,101 +997,146 @@ class MU:  # Murnaghan
 
         return self.pEOS
 
-    def E04min(self, V, pEOS):
+    def E04min(self, V: float, pEOS: np.ndarray) -> float:
+        """
+        Energy for minimization.
+
+        :param V: Volume.
+        :type V: float
+        :param pEOS: parameters.
+        :type pEOS: np.ndarray
+        :return: E0.
+        :rtype: float
+        """
         E0, V0, B0, Bp0 = pEOS
         if B0<0:
             return 1
         return E0 + B0 * V0 * (1 / (Bp0 * (Bp0 - 1)) * (V / V0) ** (1 - Bp0) + 1 / Bp0 * V / V0 - 1 / (Bp0 - 1))
 
-    def E0(self, V):
+    def E0(self, V: float|np.ndarray) -> float|np.ndarray:
         """
         Internal energy.
 
-        :param float V: Volume.
-
-        :return float: Energy.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: E0(V)
+        :rtype: float|np.ndarray
         """
         return self.E04min(V, self.pEOS)
 
-    def dE0dV_T(self, V):
+    def dE0dV_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (dE0/dV)_T
+        Internal energy volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: dE0dV_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -B0 * (V / V0) ** (-Bp0) / Bp0 + B0 / Bp0
 
-    def d2E0dV2_T(self, V):
+    def d2E0dV2_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d2E0/dV2)_T
+        Internal energy second volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d2E0dV2_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return B0 * (V / V0) ** (-Bp0) / V
 
-    def d3E0dV3_T(self, V):
+    def d3E0dV3_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d3E0/dV3)_T
+        Internal energy third volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d3E0dV3_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -B0 * (V / V0) ** (-Bp0) * (Bp0 + 1) / V ** 2
 
-    def d4E0dV4_T(self, V):
+    def d4E0dV4_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d4E0/dV4)_T
+        Internal energy fourth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d4E0dV4_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return B0 * (V / V0) ** (-Bp0) * (Bp0 ** 2 + 3 * Bp0 + 2) / V ** 3
 
-    def d5E0dV5_T(self, V):
+    def d5E0dV5_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d5E0/dV5)_T
+        Internal energy fifth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d5E0dV5_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -B0 * (V / V0) ** (-Bp0) * (Bp0 ** 3 + 6 * Bp0 ** 2 + 11 * Bp0 + 6) / V ** 4
 
-    def d6E0dV6_T(self, V):
+    def d6E0dV6_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d6E0/dV6)_T
+        Internal energy sixth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d6E0dV6_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return B0 * (V / V0) ** (-Bp0) * (Bp0 ** 4 + 10 * Bp0 ** 3 + 35 * Bp0 ** 2 + 50 * Bp0 + 24) / V ** 5
 
-    def error2min(self, P, Vdata, Edata):
+    def error2min(self, P: np.ndarray, Vdata: np.ndarray, Edata: np.ndarray) -> np.ndarray:
+        """
+        Error for minimization.
+
+        :param P: E0 parameters.
+        :type P: np.ndarray
+        :param Vdata: Volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Energy data.
+        :type Edata: np.ndarray
+        :return: Error.
+        :rtype: np.ndarray
+        """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return Ecalc - Edata
+        return (Ecalc - Edata)**2
 
 
 class BM3:  # Birch-Murnaghan
     """
     Third order Birch-Murnaghan EOS and derivatives.
-
-    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
         if parameters != '':
             self.pEOS = parameters[:4]
 
-    def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
         """
         Parameters fitting.
 
-        :param list_of_floats Vdata: Intput data.
-        :param list_of_floats Edata: Target data.
-        :param list_of_floats initial_parameters: initial_parameters.
+        :param Vdata: Input volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Target energy data.
+        :type Edata: np.ndarray
+        :param initial_parameters: Initial guess.
+        :type initial_parameters: np.ndarray
+        :param fit: True to run the fitting. False to just use the input parameters.
+        :type fit: bool.
 
-        :return list_of_floats: Optimal parameters.
+        :return: Optimal parameters.
+        :rtype: np.ndarray
         """
         if fit:
             pEOS = initial_parameters[:4]
@@ -890,113 +1150,158 @@ class BM3:  # Birch-Murnaghan
 
         return self.pEOS
 
-    def E04min(self, V, pEOS):
+    def E04min(self, V: float, pEOS: np.ndarray) -> float:
+        """
+        Energy for minimization.
+
+        :param V: Volume.
+        :type V: float
+        :param pEOS: parameters.
+        :type pEOS: np.ndarray
+        :return: E0.
+        :rtype: float
+        """
         E0, V0, B0, Bp0 = pEOS
         if B0<0:
             return 1
         P0, P1, P2, P3 = EVBBp_to_BMparams(pEOS)
         return P0 + P1 / V ** (2 / 3) + P2 / V ** (4 / 3) + P3 * V ** (-6 / 3)
 
-    def E0(self, V):
+    def E0(self, V: float|np.ndarray) -> float|np.ndarray:
         """
         Internal energy.
 
-        :param float V: Volume.
-
-        :return float: Energy.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: E0(V)
+        :rtype: float|np.ndarray
         """
         return self.E04min(V, self.pEOS)
 
-    def dE0dV_T(self, V):
+    def dE0dV_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (dE0/dV)_T
+        Internal energy volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: dE0dV_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -9 * V0 ** 2 * B0 * (
                     V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - (1 / 2) * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) - (
                         1 / 2) * V * (Bp0 - 16 / 3)) / (4 * (V0 / V) ** (1 / 3) * V ** 3)
 
-    def d2E0dV2_T(self, V):
+    def d2E0dV2_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d2E0/dV2)_T
+        Internal energy second volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d2E0dV2_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return 21 * V0 ** 2 * (V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - 9 * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) * (
                     1 / 14) - 5 * V * (Bp0 - 16 / 3) * (1 / 14)) * B0 / (4 * (V0 / V) ** (1 / 3) * V ** 4)
 
-    def d3E0dV3_T(self, V):
+    def d3E0dV3_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d3E0/dV3)_T
+        Internal energy third volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d3E0dV3_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -35 * V0 ** 2 * B0 * (
                     V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - 27 * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) * (
                         1 / 35) - 2 * V * (Bp0 - 16 / 3) * (1 / 7)) / (2 * (V0 / V) ** (1 / 3) * V ** 5)
 
-    def d4E0dV4_T(self, V):
+    def d4E0dV4_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d4E0/dV4)_T
+        Internal energy fourth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d4E0dV4_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return 455 * V0 ** 2 * B0 * (
                     V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - 81 * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) * (
                         1 / 91) - 22 * V * (Bp0 - 16 / 3) * (1 / 91)) / (6 * (V0 / V) ** (1 / 3) * V ** 6)
 
-    def d5E0dV5_T(self, V):
+    def d5E0dV5_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d5E0/dV5)_T
+        Internal energy fifth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d5E0dV5_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -3640 * V0 ** 2 * (
                     V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - 729 * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) * (
                         1 / 728) - 11 * V * (Bp0 - 16 / 3) * (1 / 52)) * B0 / (9 * (V0 / V) ** (1 / 3) * V ** 7)
 
-    def d6E0dV6_T(self, V):
+    def d6E0dV6_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d6E0/dV6)_T
+        Internal energy sixth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d6E0dV6_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return 69160 * V0 ** 2 * B0 * (
                     V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - 2187 * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) * (
                         1 / 1976) - 187 * V * (Bp0 - 16 / 3) * (1 / 988)) / (27 * (V0 / V) ** (1 / 3) * V ** 8)
 
-    def error2min(self, P, Vdata, Edata):
+    def error2min(self, P: np.ndarray, Vdata: np.ndarray, Edata: np.ndarray) -> np.ndarray:
+        """
+        Error for minimization.
+
+        :param P: E0 parameters.
+        :type P: np.ndarray
+        :param Vdata: Volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Energy data.
+        :type Edata: np.ndarray
+        :return: Error.
+        :rtype: np.ndarray
+        """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return Ecalc - Edata
+        return (Ecalc - Edata)**2
 
 
 class PT:  # Poirier-Tarantola
     """
     Poirier-Tarantola EOS and derivatives.
-
-    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0.
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
         if parameters != '':
             self.pEOS = parameters[:4]
 
-    def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
         """
         Parameters fitting.
 
-        :param list_of_floats Vdata: Intput data.
-        :param list_of_floats Edata: Target data.
-        :param list_of_floats initial_parameters: initial_parameters.
+        :param Vdata: Input volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Target energy data.
+        :type Edata: np.ndarray
+        :param initial_parameters: Initial guess.
+        :type initial_parameters: np.ndarray
+        :param fit: True to run the fitting. False to just use the input parameters.
+        :type fit: bool.
 
-        :return list_of_floats: Optimal parameters.
+        :return: Optimal parameters.
+        :rtype: np.ndarray
         """
         if fit:
             pEOS = initial_parameters[:4]
@@ -1010,7 +1315,17 @@ class PT:  # Poirier-Tarantola
 
         return self.pEOS
 
-    def E04min(self, V, pEOS):
+    def E04min(self, V: float, pEOS: np.ndarray) -> float:
+        """
+        Energy for minimization.
+
+        :param V: Volume.
+        :type V: float
+        :param pEOS: parameters.
+        :type pEOS: np.ndarray
+        :return: E0.
+        :rtype: float
+        """
         E0, V0, B0, Bp0 = pEOS
         if B0<0:
             return 1
@@ -1018,89 +1333,118 @@ class PT:  # Poirier-Tarantola
         # E0 + K/6*V0(ln(V/V0))^2 (3-(Kp-2)ln(V/V0))
         return E0 + (1 / 6) * B0 * V0 * np.log(V / V0) ** 2 * (3 - (Bp0 - 2) * np.log(V / V0))  # (1/6)*B0*V0*(Bp0-2)*np.log(V0/V)**3-(1/2)*B0*V0*np.log(V0/V)**2+E0
 
-    def E0(self, V):
+    def E0(self, V: float|np.ndarray) -> float|np.ndarray:
         """
         Internal energy.
 
-        :param float V: Volume.
-
-        :return float: Energy.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: E0(V)
+        :rtype: float|np.ndarray
         """
         return self.E04min(V, self.pEOS)
 
-    def dE0dV_T(self, V):
+    def dE0dV_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (dE0/dV)_T
+        Internal energy volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: dE0dV_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -V0 * (-2 + (Bp0 - 2) * np.log(V / V0)) * B0 * np.log(V / V0) / (
                     2 * V)  # B0*(2+(Bp0-2)*np.log(V0/V))*V0*np.log(V0/V)/(2*V)
 
-    def d2E0dV2_T(self, V):
+    def d2E0dV2_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d2E0/dV2)_T
+        Internal energy second volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d2E0dV2_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return V0 * B0 * (2 + (Bp0 - 2) * np.log(V / V0) ** 2 + (-2 * Bp0 + 2) * np.log(V / V0)) / (
                     2 * V ** 2)  # -(2+(Bp0-2)*np.log(V0/V)**2+(2*Bp0-2)*np.log(V0/V))*B0*V0/(2*V**2)
 
-    def d3E0dV3_T(self, V):
+    def d3E0dV3_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d3E0/dV3)_T
+        Internal energy third volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d3E0dV3_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -V0 * B0 * ((Bp0 - 2) * np.log(V / V0) ** 2 + (-3 * Bp0 + 4) * np.log(
             V / V0) + Bp0 + 1) / V ** 3  # B0*((Bp0-2)*np.log(V0/V)**2+(3*Bp0-4)*np.log(V0/V)+Bp0+1)*V0/V**3
 
-    def d4E0dV4_T(self, V):
+    def d4E0dV4_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d4E0/dV4)_T
+        Internal energy fourth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d4E0dV4_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return B0 * V0 * (3 * np.log(V / V0) ** 2 * Bp0 - 11 * np.log(V / V0) * Bp0 - 6 * np.log(
             V / V0) ** 2 + 6 * Bp0 + 16 * np.log(
             V / V0) - 1) / V ** 4  # -B0*V0*(3*np.log(V0/V)**2*Bp0+11*np.log(V0/V)*Bp0-6*np.log(V0/V)**2+6*Bp0-16*np.log(V0/V)-1)/V**4
 
-    def d5E0dV5_T(self, V):
+    def d5E0dV5_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d5E0/dV5)_T
+        Internal energy fifth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d5E0dV5_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return -B0 * V0 * (12 * np.log(V / V0) ** 2 * Bp0 - 50 * np.log(V / V0) * Bp0 - 24 * np.log(
             V / V0) ** 2 + 35 * Bp0 + 76 * np.log(
             V / V0) - 20) / V ** 5  # B0*V0*(12*np.log(V0/V)**2*Bp0+50*np.log(V0/V)*Bp0-24*np.log(V0/V)**2+35*Bp0-76*np.log(V0/V)-20)/V**5
 
-    def d6E0dV6_T(self, V):
+    def d6E0dV6_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d6E0/dV6)_T
+        Internal energy sixth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d6E0dV6_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
         return B0 * V0 * (60 * np.log(V / V0) ** 2 * Bp0 - 274 * np.log(V / V0) * Bp0 - 120 * np.log(
             V / V0) ** 2 + 225 * Bp0 + 428 * np.log(
             V / V0) - 176) / V ** 6  # -B0*V0*(60*np.log(V0/V)**2*Bp0+274*np.log(V0/V)*Bp0-120*np.log(V0/V)**2+225*Bp0-428*np.log(V0/V)-176)/V**6
 
-    def error2min(self, P, Vdata, Edata):
+    def error2min(self, P: np.ndarray, Vdata: np.ndarray, Edata: np.ndarray) -> np.ndarray:
+        """
+        Error for minimization.
+
+        :param P: E0 parameters.
+        :type P: np.ndarray
+        :param Vdata: Volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Energy data.
+        :type Edata: np.ndarray
+        :return: Error.
+        :rtype: np.ndarray
+        """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return Ecalc - Edata
+        return (Ecalc - Edata)**2
 
 
 class BM4:  # Poirier-Tarantola
     """
     Fourth order Birch-Murnaghan EOS and derivatives.
-
-    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0, and B''0.
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
@@ -1108,15 +1452,21 @@ class BM4:  # Poirier-Tarantola
             self.pEOS = parameters[:5]
             self.pEOS[2] = -self.pEOS[2]
 
-    def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
         """
         Parameters fitting.
 
-        :param list_of_floats Vdata: Intput data.
-        :param list_of_floats Edata: Target data.
-        :param list_of_floats initial_parameters: initial_parameters.
+        :param Vdata: Input volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Target energy data.
+        :type Edata: np.ndarray
+        :param initial_parameters: Initial guess.
+        :type initial_parameters: np.ndarray
+        :param fit: True to run the fitting. False to just use the input parameters.
+        :type fit: bool.
 
-        :return list_of_floats: Optimal parameters.
+        :return: Optimal parameters.
+        :rtype: np.ndarray
         """
         if fit:
             pEOS = initial_parameters[:5]
@@ -1134,7 +1484,17 @@ class BM4:  # Poirier-Tarantola
         ### pr0nt(initial_parameters, self.pEOS)
         return self.pEOS
 
-    def E04min(self, V, pEOS):
+    def E04min(self, V: float, pEOS: np.ndarray) -> float:
+        """
+        Energy for minimization.
+
+        :param V: Volume.
+        :type V: float
+        :param pEOS: parameters.
+        :type pEOS: np.ndarray
+        :return: E0.
+        :rtype: float
+        """
         E0, V0, B0, Bp0, Bpp0 = pEOS
         if B0<0:
             return 1
@@ -1152,21 +1512,25 @@ class BM4:  # Poirier-Tarantola
                            5 / 3) * Bp0 * (1 / 32) + 27 * V * (V0 / V) ** (5 / 3) * B0 ** 2 * Bpp0 * (
                            1 / 32) + 27 * V * B0 * (V0 / V) ** (5 / 3) * Bp0 ** 2 * (1 / 32)
 
-    def E0(self, V):
+    def E0(self, V: float|np.ndarray) -> float|np.ndarray:
         """
         Internal energy.
 
-        :param float V: Volume.
-
-        :return float: Energy.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: E0(V)
+        :rtype: float|np.ndarray
         """
         return self.E04min(V, self.pEOS)
 
-    def dE0dV_T(self, V):
+    def dE0dV_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (dE0/dV)_T
+        Internal energy volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: dE0dV_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
         B0 = - B0
@@ -1189,11 +1553,14 @@ class BM4:  # Poirier-Tarantola
                            1 / 32) - 243 * B0 * (V0 / V) ** (5 / 3) * Bp0 * (1 / 32) + 189 * B0 * (V0 / V) ** (
                            11 / 3) * Bp0 * (1 / 128)
 
-    def d2E0dV2_T(self, V):
+    def d2E0dV2_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d2E0/dV2)_T
+        Internal energy second volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d2E0dV2_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
         B0 = - B0
@@ -1212,11 +1579,14 @@ class BM4:  # Poirier-Tarantola
                            1 / 3) * Bp0 ** 2 * V0 ** 2 / (16 * V ** 3) + 231 * B0 * (V0 / V) ** (
                            5 / 3) * Bp0 * V0 ** 2 / (16 * V ** 3)
 
-    def d3E0dV3_T(self, V):
+    def d3E0dV3_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d3E0/dV3)_T
+        Internal energy third volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d3E0dV3_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
         B0 = - B0
@@ -1246,11 +1616,14 @@ class BM4:  # Poirier-Tarantola
                            16 * V ** 4) + 1573 * B0 * (V0 / V) ** (5 / 3) * V0 ** 2 / (16 * V ** 4) + 99 * (V0 / V) ** (
                            5 / 3) * B0 ** 2 * Bpp0 * V0 ** 2 / (16 * V ** 4)
 
-    def d4E0dV4_T(self, V):
+    def d4E0dV4_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d4E0/dV4)_T
+        Internal energy fourth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d4E0dV4_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
         B0 = - B0
@@ -1291,11 +1664,14 @@ class BM4:  # Poirier-Tarantola
                            4 * V ** 5 * (V0 / V) ** (1 / 3)) - 1393 * B0 * V0 ** 3 / (
                            6 * V ** 6 * (V0 / V) ** (2 / 3)) - 1195 * B0 * V0 ** 3 / (18 * V ** 6 * (V0 / V) ** (4 / 3))
 
-    def d5E0dV5_T(self, V):
+    def d5E0dV5_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d5E0/dV5)_T
+        Internal energy fifth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d5E0dV5_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
         B0 = - B0
@@ -1348,11 +1724,14 @@ class BM4:  # Poirier-Tarantola
                            4 * V ** 6 * (V0 / V) ** (1 / 3)) + 5975 * B0 * V0 ** 3 / (
                            12 * V ** 7 * (V0 / V) ** (4 / 3)) + 6965 * B0 * V0 ** 3 / (4 * V ** 7 * (V0 / V) ** (2 / 3))
 
-    def d6E0dV6_T(self, V):
+    def d6E0dV6_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d6E0/dV6)_T
+        Internal energy sixth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d6E0dV6_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
         B0 = - B0
@@ -1418,16 +1797,26 @@ class BM4:  # Poirier-Tarantola
                            3 * V ** 9 * (V0 / V) ** (7 / 3)) + 41825 * B0 * V0 ** 6 / (
                            486 * V ** 11 * (V0 / V) ** (13 / 3))
 
-    def error2min(self, P, Vdata, Edata):
+    def error2min(self, P: np.ndarray, Vdata: np.ndarray, Edata: np.ndarray) -> np.ndarray:
+        """
+        Error for minimization.
+
+        :param P: E0 parameters.
+        :type P: np.ndarray
+        :param Vdata: Volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Energy data.
+        :type Edata: np.ndarray
+        :return: Error.
+        :rtype: np.ndarray
+        """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return Ecalc - Edata
+        return (Ecalc - Edata)**2
 
 
 class MU2:  # Poirier-Tarantola
     """
     Second order Murnaghan EOS and derivatives.
-
-    :param list_of_floats parameters: EOS parameters: E0, V0, B0, B'0, and B''0.
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
@@ -1435,15 +1824,21 @@ class MU2:  # Poirier-Tarantola
             self.pEOS = parameters[:5]
             # self.pEOS[2] = - self.pEOS[2]
 
-    def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
         """
         Parameters fitting.
 
-        :param list_of_floats Vdata: Intput data.
-        :param list_of_floats Edata: Target data.
-        :param list_of_floats initial_parameters: initial_parameters.
+        :param Vdata: Input volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Target energy data.
+        :type Edata: np.ndarray
+        :param initial_parameters: Initial guess.
+        :type initial_parameters: np.ndarray
+        :param fit: True to run the fitting. False to just use the input parameters.
+        :type fit: bool.
 
-        :return list_of_floats: Optimal parameters.
+        :return: Optimal parameters.
+        :rtype: np.ndarray
         """
         if fit:
             pEOS = initial_parameters[:5]
@@ -1459,7 +1854,17 @@ class MU2:  # Poirier-Tarantola
 
         return self.pEOS
 
-    def E04min(self, V, pEOS):
+    def E04min(self, V: float, pEOS: np.ndarray) -> float:
+        """
+        Energy for minimization.
+
+        :param V: Volume.
+        :type V: float
+        :param pEOS: parameters.
+        :type pEOS: np.ndarray
+        :return: E0.
+        :rtype: float
+        """
         E0, V0, B0, Bp0, Bpp0 = pEOS
         if B0<0:
             return 1
@@ -1477,21 +1882,25 @@ class MU2:  # Poirier-Tarantola
                            5 / 3) * Bp0 * (1 / 32) + 27 * V * (V0 / V) ** (5 / 3) * B0 ** 2 * Bpp0 * (
                            1 / 32) + 27 * V * B0 * (V0 / V) ** (5 / 3) * Bp0 ** 2 * (1 / 32)
 
-    def E0(self, V):
+    def E0(self, V: float|np.ndarray) -> float|np.ndarray:
         """
         Internal energy.
 
-        :param float V: Volume.
-
-        :return float: Energy.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: E0(V)
+        :rtype: float|np.ndarray
         """
         return self.E04min(V, self.pEOS)
 
-    def dE0dV_T(self, V):
+    def dE0dV_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (dE0/dV)_T
+        Internal energy volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: dE0dV_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
         K, Kp, Kpp = B0, Bp0, Bpp0
@@ -1499,11 +1908,14 @@ class MU2:  # Poirier-Tarantola
                     np.sqrt(-2 * K * Kpp + Kp ** 2) * ((V0 / V) ** np.sqrt(-2 * K * Kpp + Kp ** 2) + 1) / (
                         Kp * ((V0 / V) ** np.sqrt(-2 * K * Kpp + Kp ** 2) - 1)) - 1)))
 
-    def d2E0dV2_T(self, V):
+    def d2E0dV2_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d2E0/dV2)_T
+        Internal energy second volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d2E0dV2_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
         K, Kp, Kpp = B0, Bp0, Bpp0
@@ -1513,11 +1925,14 @@ class MU2:  # Poirier-Tarantola
                                                                                                                            V0 / V) ** np.sqrt(
             -2 * K * Kpp + Kp ** 2) - Kp - np.sqrt(-2 * K * Kpp + Kp ** 2)) ** 2 * V))
 
-    def d3E0dV3_T(self, V):
+    def d3E0dV3_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d3E0/dV3)_T
+        Internal energy third volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d3E0dV3_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
         K, Kp, Kpp = B0, Bp0, Bpp0
@@ -1533,11 +1948,14 @@ class MU2:  # Poirier-Tarantola
                                                                                                                                -2 * K * Kpp + Kp ** 2) - Kp - np.sqrt(
                                                                                                                                -2 * K * Kpp + Kp ** 2)) ** 3 * V ** 2))
 
-    def d4E0dV4_T(self, V):
+    def d4E0dV4_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d4E0/dV4)_T
+        Internal energy fourth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d4E0dV4_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
         K, Kp, Kpp = B0, Bp0, Bpp0
@@ -1555,11 +1973,14 @@ class MU2:  # Poirier-Tarantola
                                   Kpp * K - (1 / 2) * Kp ** 2) / (((Kp - np.sqrt(-2 * K * Kpp + Kp ** 2)) * (
                     V0 / V) ** np.sqrt(-2 * K * Kpp + Kp ** 2) - Kp - np.sqrt(-2 * K * Kpp + Kp ** 2)) ** 4 * V ** 3))
 
-    def d5E0dV5_T(self, V):
+    def d5E0dV5_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d5E0/dV5)_T
+        Internal energy fifth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d5E0dV5_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
         K, Kp, Kpp = B0, Bp0, Bpp0
@@ -1598,11 +2019,14 @@ class MU2:  # Poirier-Tarantola
                                   Kpp * K - (1 / 2) * Kp ** 2) / (((Kp - np.sqrt(-2 * K * Kpp + Kp ** 2)) * (
                     V0 / V) ** np.sqrt(-2 * K * Kpp + Kp ** 2) - Kp - np.sqrt(-2 * K * Kpp + Kp ** 2)) ** 5 * V ** 4))
 
-    def d6E0dV6_T(self, V):
+    def d6E0dV6_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d6E0/dV6)_T
+        Internal energy sixth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d6E0dV6_T(V)
+        :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0, Bpp0 = self.pEOS
         K, Kp, Kpp = B0, Bp0, Bpp0
@@ -1651,9 +2075,21 @@ class MU2:  # Poirier-Tarantola
                                   Kpp * K - (1 / 2) * Kp ** 2) / (((Kp - np.sqrt(-2 * K * Kpp + Kp ** 2)) * (
                     V0 / V) ** np.sqrt(-2 * K * Kpp + Kp ** 2) - Kp - np.sqrt(-2 * K * Kpp + Kp ** 2)) ** 6 * V ** 5))
 
-    def error2min(self, P, Vdata, Edata):
+    def error2min(self, P: np.ndarray, Vdata: np.ndarray, Edata: np.ndarray) -> np.ndarray:
+        """
+        Error for minimization.
+
+        :param P: E0 parameters.
+        :type P: np.ndarray
+        :param Vdata: Volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Energy data.
+        :type Edata: np.ndarray
+        :return: Error.
+        :rtype: np.ndarray
+        """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return Ecalc - Edata
+        return (Ecalc - Edata)**2
 
 
 Chr_fix = ['Aa', 'Ba', 'Ca', 'Da', 'Ea', 'Fa', 'Ga', 'Ha', 'Ia', 'Ja', 'Ka', 'La', 'Ma', 'Na', 'Oa', 'Pa', 'Qa', 'Ra',
@@ -2388,8 +2824,8 @@ class EAM:  #
     """
     EAM potential and derivatives.
 
-    :param list args: formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels.
-    :param list_of_floats parameters: EAM potential parameters.
+    :param Tuple[str,np.ndarray,np.ndarray, float, int] args: formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels.
+    :param np.ndarray parameters: EAM potential parameters.
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
@@ -2438,15 +2874,21 @@ class EAM:  #
         #     self.params_elmt_type(pEOS_et)
         pass
 
-    def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
         """
         Parameters fitting.
 
-        :param list_of_floats Vdata: Intput data.
-        :param list_of_floats Edata: Target data.
-        :param list_of_floats initial_parameters: initial_parameters.
+        :param Vdata: Input volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Target energy data.
+        :type Edata: np.ndarray
+        :param initial_parameters: Initial guess.
+        :type initial_parameters: np.ndarray
+        :param fit: True to run the fitting. False to just use the input parameters.
+        :type fit: bool.
 
-        :return list_of_floats: Optimal parameters.
+        :return: Optimal parameters.
+        :rtype: np.ndarray
         """
         if fit:
             pEOS = initial_parameters#[1 for _ in initial_parameters]#
@@ -2654,7 +3096,17 @@ class EAM:  #
         # ## pr0nt('pEOS_pt, pEOS_et',pEOS_pt, pEOS_et)
         return pEOS_pt, pEOS_et
     #
-    def E04min(self, V, pEOS):
+    def E04min(self, V: float, pEOS: np.ndarray) -> float:
+        """
+        Energy for minimization.
+
+        :param V: Volume.
+        :type V: float
+        :param pEOS: parameters.
+        :type pEOS: np.ndarray
+        :return: E0.
+        :rtype: float
+        """
 
         if type(V)==np.ndarray:
             return np.array([self.E04min(Vi,pEOS) for Vi in V])
@@ -2667,11 +3119,14 @@ class EAM:  #
 
         return self.E0(V)
 
-    def dE0dV_T(self, V):
+    def dE0dV_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (dE0/dV)_T
+        Internal energy volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: dE0dV_T(V)
+        :rtype: float|np.ndarray
         """
         if type(V) == np.ndarray:
             return np.array([self.dE0dV_T(Vi) for Vi in V])
@@ -2703,11 +3158,14 @@ class EAM:  #
 
         return (dFdV + dPhidV) * (self.mult_E) / (self.mult_V)
     #
-    def d2E0dV2_T(self, V):
+    def d2E0dV2_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d2E0/dV2)_T
+        Internal energy second volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d2E0dV2_T(V)
+        :rtype: float|np.ndarray
         """
         if type(V) == np.ndarray:
             return np.array([self.d2E0dV2_T(Vi) for Vi in V])
@@ -2745,11 +3203,14 @@ class EAM:  #
 
         return (d2FdV2 + d2PhidV2) * (self.mult_E) / (self.mult_V) ** 2
     #
-    def d3E0dV3_T(self, V):
+    def d3E0dV3_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d3E0/dV3)_T
+        Internal energy third volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d3E0dV3_T(V)
+        :rtype: float|np.ndarray
         """
         if type(V) == np.ndarray:
             return np.array([self.d3E0dV3_T(Vi) for Vi in V])
@@ -2790,11 +3251,14 @@ class EAM:  #
 
         return (d3FdV3 + d3PhidV3) * (self.mult_E) / (self.mult_V) ** 3
 
-    def d4E0dV4_T(self, V):
+    def d4E0dV4_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d4E0/dV4)_T
+        Internal energy fourth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d4E0dV4_T(V)
+        :rtype: float|np.ndarray
         """
         if type(V) == np.ndarray:
             return np.array([self.d4E0dV4_T(Vi) for Vi in V])
@@ -2844,11 +3308,14 @@ class EAM:  #
 
         return (d4FdV4 + d4PhidV4) * (self.mult_E) / (self.mult_V) ** 4
 
-    def d5E0dV5_T(self, V):
+    def d5E0dV5_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d5E0/dV5)_T
+        Internal energy fifth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d5E0dV5_T(V)
+        :rtype: float|np.ndarray
         """
         if type(V) == np.ndarray:
             return np.array([self.d5E0dV5_T(Vi) for Vi in V])
@@ -2905,11 +3372,14 @@ class EAM:  #
 
         return (d5FdV5 + d5PhidV5) * (self.mult_E) / (self.mult_V) ** 5
 
-    def d6E0dV6_T(self, V):
+    def d6E0dV6_T(self, V: float|np.ndarray) -> float|np.ndarray:
         """
-        (d6E0/dV6)_T
+        Internal energy sixth volume derivative.
 
-        :param float V: Volume.
+        :param V: Volume.
+        :type V: float|np.ndarray
+        :return: d6E0dV6_T(V)
+        :rtype: float|np.ndarray
         """
         if type(V) == np.ndarray:
             return np.array([self.d6E0dV6_T(Vi) for Vi in V])
@@ -2983,9 +3453,21 @@ class EAM:  #
         d6PhidV6 = np.sum(self.ab(d6phi_arr, self.npair)) * self.nats / 2
         return (d6FdV6 + d6PhidV6) * (self.mult_E) / (self.mult_V) ** 6
     #
-    def error2min(self, P, Vdata, Edata):
+    def error2min(self, P: np.ndarray, Vdata: np.ndarray, Edata: np.ndarray) -> np.ndarray:
+        """
+        Error for minimization.
+
+        :param P: E0 parameters.
+        :type P: np.ndarray
+        :param Vdata: Volume data.
+        :type Vdata: np.ndarray
+        :param Edata: Energy data.
+        :type Edata: np.ndarray
+        :return: Error.
+        :rtype: np.ndarray
+        """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return  Ecalc-Edata # [a_i - b_i for a_i, b_i in zip(Ecalc, Edata)]  #
+        return (Ecalc - Edata)**2
 
 
 def EVBBp_to_TBparams(pEOS):

@@ -5,15 +5,16 @@ import signal
 import sys
 import traceback
 
-import matplotlib as mpl
+import matplotlib# as mpl
 from matplotlib import _api, backend_tools, cbook
 from matplotlib._pylab_helpers import Gcf
 from matplotlib.backend_bases import (
     _Backend, FigureCanvasBase, FigureManagerBase, NavigationToolbar2,
     TimerBase, cursors, ToolContainerBase, MouseButton)
 import matplotlib.backends.qt_editor.figureoptions as figureoptions
-from matplotlib.backends import qt_compat
-from matplotlib.backends.qt_compat import (
+# from matplotlib.backends import qt_compat
+from debyetools.tpropsgui.backend_qt_patched import qt_compat
+from debyetools.tpropsgui.backend_qt_patched.qt_compat import (
     QtCore, QtGui, QtWidgets, __version__, QT_API,
     _enum, _to_int,
     _devicePixelRatioF, _isdeleted, _setDevicePixelRatio,
@@ -108,7 +109,7 @@ def _create_qApp():
         if app is None:
             # display_is_valid returns False only if on Linux and neither X11
             # nor Wayland display can be opened.
-            if not mpl._c_internal_utils.display_is_valid():
+            if not matplotlib._c_internal_utils.display_is_valid():
                 raise RuntimeError('Invalid DISPLAY variable')
             try:
                 QtWidgets.QApplication.setAttribute(
@@ -257,7 +258,7 @@ class FigureCanvasQT(QtWidgets.QWidget, FigureCanvasBase):
     def _update_pixel_ratio(self):
         if self._set_device_pixel_ratio(_devicePixelRatioF(self)):
             # The easiest way to resize the canvas is to emit a resizeEvent
-            # since we implement all the logic for resizing the canvas for
+            # since we imatplotlibement all the logic for resizing the canvas for
             # that event.
             event = QtGui.QResizeEvent(self.size(), self.size())
             self.resizeEvent(event)
@@ -568,7 +569,7 @@ class FigureManagerQT(FigureManagerBase):
 
         self.window.setCentralWidget(self.canvas)
 
-        if mpl.is_interactive():
+        if matplotlib.is_interactive():
             self.window.show()
             self.canvas.draw_idle()
 
@@ -602,9 +603,9 @@ class FigureManagerQT(FigureManagerBase):
     def _get_toolbar(self, canvas, parent):
         # must be inited after the window, drawingArea and figure
         # attrs are set
-        if mpl.rcParams['toolbar'] == 'toolbar2':
+        if matplotlib.rcParams['toolbar'] == 'toolbar2':
             toolbar = NavigationToolbar2QT(canvas, parent, True)
-        elif mpl.rcParams['toolbar'] == 'toolmanager':
+        elif matplotlib.rcParams['toolbar'] == 'toolmanager':
             toolbar = ToolbarQt(self.toolmanager, self.window)
         else:
             toolbar = None
@@ -622,7 +623,7 @@ class FigureManagerQT(FigureManagerBase):
 
     def show(self):
         self.window.show()
-        if mpl.rcParams['figure.raise_window']:
+        if matplotlib.rcParams['figure.raise_window']:
             self.window.activateWindow()
             self.window.raise_()
 
@@ -781,7 +782,7 @@ class NavigationToolbar2QT(NavigationToolbar2, QtWidgets.QToolBar):
         if self._subplot_dialog is None:
             self._subplot_dialog = SubplotToolQt(
                 self.canvas.figure, self.canvas.parent())
-            self.canvas.mpl_connect(
+            self.canvas.matplotlib_connect(
                 "close_event", lambda e: self._subplot_dialog.reject())
         self._subplot_dialog.update_from_current_subplotpars()
         self._subplot_dialog.show()
@@ -792,7 +793,7 @@ class NavigationToolbar2QT(NavigationToolbar2, QtWidgets.QToolBar):
         sorted_filetypes = sorted(filetypes.items())
         default_filetype = self.canvas.get_default_filetype()
 
-        startpath = os.path.expanduser(mpl.rcParams['savefig.directory'])
+        startpath = os.path.expanduser(matplotlib.rcParams['savefig.directory'])
         start = os.path.join(startpath, self.canvas.get_default_filename())
         filters = []
         selectedFilter = None
@@ -810,7 +811,7 @@ class NavigationToolbar2QT(NavigationToolbar2, QtWidgets.QToolBar):
         if fname:
             # Save dir for next time, unless empty str (i.e., use cwd).
             if startpath != "":
-                mpl.rcParams['savefig.directory'] = os.path.dirname(fname)
+                matplotlib.rcParams['savefig.directory'] = os.path.dirname(fname)
             try:
                 self.canvas.figure.savefig(fname)
             except Exception as e:
@@ -1010,7 +1011,7 @@ class SaveFigureQt(backend_tools.SaveFigureBase):
 
 
 @_api.deprecated("3.5", alternative="ToolSetCursor")
-class SetCursorQt(backend_tools.SetCursorBase):
+class SetCursorQt(backend_tools.ToolSetCursor):
     def set_cursor(self, cursor):
         NavigationToolbar2QT.set_cursor(
             self._make_classic_style_pseudo_toolbar(), cursor)

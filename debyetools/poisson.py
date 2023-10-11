@@ -1,10 +1,17 @@
-def poisson_ratio(EM, quiet=False):
+import numpy as np
+from typing import Tuple
+
+
+def poisson_ratio(EM: np.ndarray, quiet: bool = False) -> float|Tuple[float,float,float,float,float,float,float,float]:
     """
     Calculation of the Poisson's ratio from elastic moduli matrix.
 
-    :param list_of_lists_of_floats EM: Elastic moduli matrix.
-
-    :return float: Poisson's ratio.
+    :param EM: Elastic moduli matrix.
+    :type EM: np.ndarray
+    :param quiet: (optional) If verbose.
+    :type quiet: bool
+    :return: Poisson's ratio.
+    :rtype: float
     """
     if quiet:
         return quiet_pa(EM)
@@ -49,7 +56,15 @@ def poisson_ratio(EM, quiet=False):
 
     return nu
 
-def quiet_pa(EM):
+def quiet_pa(EM: np.ndarray) -> Tuple[float,float,float,float,float,float,float,float]:
+    """
+    Calculation of the Poisson's ratio from elastic moduli matrix.
+
+    :param EM: Elastic moduli matrix.
+    :type EM: np.ndarray
+    :return: BR, BV, B, GR, GV, S, AU, nu
+    :rtype: Tuple[float,float,float,float,float,float,float,float]
+    """
     C11, C12, C13 = EM[0,0]*1e-1, EM[0,1]*1e-1, EM[0,2]*1e-1
     C22, C23 = EM[1,1]*1e-1, EM[1,2]*1e-1
     C33 = EM[2,2]*1e-1

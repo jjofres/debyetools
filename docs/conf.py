@@ -30,7 +30,8 @@ author = 'Javier Jofre'
 extensions = [
     # 'recommonmark',
     'sphinx.ext.autodoc',
-    'sphinx.ext.viewcode'
+    'sphinx.ext.viewcode',
+    'sphinx_rtd_theme',
 ]
 
 # autodoc_mock_imports = ["matplotlib"]

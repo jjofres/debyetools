@@ -1,8 +1,8 @@
 .. _examples:
 
-=============
-More examples
-=============
+========
+Examples
+========
 
 .. contents:: Table of contents
    :local:

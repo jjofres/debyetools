@@ -8,8 +8,8 @@ Welcome to ``debyetools``'s documentation!
 ==========================================
 
 ``debyetools`` is a set of tools written in Python_
-for the calculation of thermodynamic properties. It's a library in The Python Package Index (PyPI_).
-The software presented here is based in the Debye approximation of the QHA using the crystal internal energetics parametrized at ground-state, (go to :ref:`input file formats <fileformats>` to see how DFT calculations results can be used as inputs) to project the :ref:`thermodynamics properties <thermoprops>` at high temperatures.
+for the calculation of thermodynamic and thermophysical properties. It's a library in The Python Package Index (PyPI_).
+The software presented here is based in the Debye approximation of the quasiharmonic approximation (QHA) using the crystal internal energetics parametrized at ground-state, (go to :ref:`input file formats <fileformats>` to see how DFT calculations results can be used as inputs) to project the :ref:`thermodynamics properties <thermoprops>` at high temperatures.
 We present here how each contribution to the free energy are considered and a description of the architecture of the calculation engine and of the :ref:`GUI`.
 
 The code_ is freely available under the GNU Affero General Public License.

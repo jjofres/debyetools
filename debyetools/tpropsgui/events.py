@@ -373,7 +373,7 @@ def plot_fsprops(window,event,fs_params,Tfrom,Tto,TPs_calculated_dict,jx):
     ix_Tfrom = np.where(np.round(TPs_calculated_dict[str_eos]['T'],2) == np.round(Tfrom,2))[0][0]
     ix_Tto = np.where(np.round(TPs_calculated_dict[str_eos]['T'],2) == np.round(Tto,2))[0][0]
     if window['--IC_fsprop2plt'+str_eos].get()=='Cp':
-        prop2plt = [Cp2fit(Ti,fs_params_Cp[0],fs_params_Cp[1],fs_params_Cp[2],fs_params_Cp[3],fs_params_Cp[4],fs_params_Cp[5]) for Ti in T_data[ix_Tfrom:ix_Tto+1]]
+        prop2plt = [Cp2fit(Ti,fs_params_Cp[0],fs_params_Cp[1],fs_params_Cp[2],fs_params_Cp[3]) for Ti in T_data[ix_Tfrom:ix_Tto+1]] #,fs_params_Cp[4],fs_params_Cp[5]
         prop_data = TPs_calculated_dict[str_eos]['Cp']
         txt1 = '#T $C_P=P_0T^0+P_1T^1+P_2T^{-2}+P_3T^2+P_4T^{-.5}+P_5T^{-3}$\n'
         txt2 = '#T $C_P$\n'

@@ -8,8 +8,8 @@ Welcome to ``debyetools``'s documentation!
 ==========================================
 
 ``debyetools`` is a set of tools written in Python_
-for the calculation of thermodynamic properties. It's a library in The Python Package Index (PyPI_).
-The software presented here is based in the Debye approximation of the QHA using the crystal internal energetics parametrized at ground-state, (go to :ref:`input file formats <fileformats>` to see how DFT calculations results can be used as inputs) to project the :ref:`thermodynamics properties <thermoprops>` at high temperatures.
+for the calculation of thermodynamic and thermophysical properties. It's a library in The Python Package Index (PyPI_).
+The software presented here is based in the Debye approximation of the quasiharmonic approximation (QHA) using the crystal internal energetics parametrized at ground-state, (go to :ref:`input file formats <fileformats>` to see how DFT calculations results can be used as inputs) to project the :ref:`thermodynamics properties <thermoprops>` at high temperatures.
 We present here how each contribution to the free energy are considered and a description of the architecture of the calculation engine and of the :ref:`GUI`.
 
 The code_ is freely available under the GNU Affero General Public License.
@@ -24,7 +24,7 @@ The code_ is freely available under the GNU Affero General Public License.
 How to cite:
 ============
 
-If you use  ``debyetools`` in a publication, please refer to the `source code`_.  If you use the implemented method for the calculation of the thermodynamic properties, please cite the following publication:
+If you use ``debyetools`` in a publication, please refer to the `source code`_.  If you use the implemented method for the calculation of the thermodynamic properties, please cite the following publication:
 
 Jofre, J., Gheribi, A. E., & Harvey, J.-P. Development of a flexible quasi-harmonic-based approach for fast generation of self-consistent thermodynamic properties used in computational thermochemistry. Calphad 83 (2023) 102624. doi: `10.1016/j.calphad.2023.102624`_.
 

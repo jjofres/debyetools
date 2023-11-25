@@ -31,6 +31,40 @@ atomic_symbols = [
     'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc',
     'Lv', 'Ts', 'Og']
 
+periods = {1:['H', 'He'], 2:['Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne'],3:['Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar'],
+          4:['K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr'],
+          5:['Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe'],
+          6:['Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu',
+             'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn'],
+          7:['Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr',
+             'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og']}
+groups = {'Ia': ['Li', 'Na', 'K', 'Rb', 'Cs', 'Fr'],
+          'IIa': ['Be', 'Mg', 'Ca', 'Sr', 'Ba', 'Ra'],
+          'IIIb': ['Sc', 'Y', 'La', 'Ac'],
+          'IVb': ['Ti', 'Zr', 'Hf'],
+          'Vb': ['V', 'Nb', 'Ta'],
+          'VIb': ['Cr', 'Mo', 'W'],
+          'VIIb': ['Mn', 'Tc', 'Re'],
+          'VIIIb': ['Fe', 'Co', 'Ni', 'Ru', 'Rh', 'Pd', 'Os', 'Ir', 'Pt'],
+          'Ib': ['Cu', 'Ag', 'Au'],
+          'IIb': ['Zn', 'Cd', 'Hg'],
+          'IIIa': ['B', 'Al', 'Ga', 'In', 'Tl', 'Nh'],
+          'IVa': ['C', 'Si', 'Ge', 'Sn', 'Pb', 'Fl'],
+          'Va': ['N', 'P', 'As', 'Sb', 'Bi', 'Mc'],
+          'VIa': ['O', 'S', 'Se', 'Te', 'Po', 'Lv'],
+          'VIIa': ['F', 'Cl', 'Br', 'I', 'At', 'Ts'],
+          'VIIIa': ['He', 'Ne', 'Ar', 'Kr', 'Xe', 'Rn', 'Og']}
+atoms_period ={}
+for symbol in atomic_symbols:
+    for period, list_at in periods.items():
+        if symbol in list_at:
+            atoms_period[symbol]=period
+atoms_group ={}
+for symbol in atomic_symbols:
+    for group, list_at in groups.items():
+        if symbol in list_at:
+            atoms_group[symbol]=group
+
 atomic_numbers = {}
 for Z, symbol in enumerate(atomic_symbols):
     atomic_numbers[symbol] = Z

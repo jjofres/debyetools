@@ -6,6 +6,24 @@ import re
 import itertools as it
 import debyetools.pairanalysis as pairanalysis
 
+def calculate_volume(aa, bb, cc):
+    """
+    Calculate the volume of a box defined by three 3D vectors.
+
+    Parameters:
+    a, b, c: 3D vectors (arrays or lists) representing three edges of the box.
+
+    Returns:
+    float: The volume of the box.
+    """
+    aa = np.array(aa)
+    bv = np.array(bb)
+    cc = np.array(cc)
+
+    # Calculate the scalar triple product
+    volume = np.abs(np.dot(aa, np.cross(bb, cc)))
+    return volume
+
 
 class BM:
     """
@@ -695,7 +713,10 @@ class MP:  # Morse
                                                                                                 :]
 
         self.comb_types = comb_types
-        Vstar = np.linalg.det(primitive_cell) / len(basis_vectors)
+        primitive_cell = np.array(primitive_cell)
+        aa, bb, cc = primitive_cell[0,:], primitive_cell[1,:], primitive_cell[2,:]
+        # Vstar = np.linalg.det(primitive_cell) / len(basis_vectors)
+        Vstar = calculate_volume(aa, bb, cc) / len(basis_vectors)
 
         self.ndist = neigbor_distances_at_Vstar
         self.npair = number_of_pairs_per_distance
@@ -2833,11 +2854,12 @@ class EAM:  #
         #
         # self.stat = 0
         self.nats = len(basis_vectors)
-        formula_ABCD = ''.join([Chr_fix[i] for i in range(len(re.findall('[A-Z][**A-Z]*', formula)))])
+        formula_ABCD = ''.join([Chr_fix[i] for i in range(len(re.findall('[A-Z][^A-Z]*', formula)))])
         self.formula_ABCD = formula_ABCD
         # # ## pr0nt(formula_ABCD)
         #
         atom_types = self.formula_ABCD
+        print('ssssss', atom_types, formula)
         neigbor_distances_at_Vstar, number_of_pairs_per_distance, comb_types = pairanalysis.pair_analysis(atom_types,
                                                                                                           cutoff,
                                                                                                           basis_vectors,
@@ -2848,7 +2870,11 @@ class EAM:  #
                                                                                                 :]
         #
         # self.comb_type_ABCD = comb_types
-        Vstar = np.linalg.det(primitive_cell) / len(basis_vectors)
+        primitive_cell = np.array(primitive_cell)
+        aa, bb, cc = primitive_cell[0, :], primitive_cell[1, :], primitive_cell[2, :]
+        # Vstar = np.linalg.det(primitive_cell) / len(basis_vectors)
+        Vstar = calculate_volume(aa, bb, cc) / len(basis_vectors)
+
         #
         self.ndist = neigbor_distances_at_Vstar
         self.ndist = np.reshape(self.ndist, (-1, 1))

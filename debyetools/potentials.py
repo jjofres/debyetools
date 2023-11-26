@@ -2859,7 +2859,7 @@ class EAM:  #
         # # ## pr0nt(formula_ABCD)
         #
         atom_types = self.formula_ABCD
-        print('ssssss', atom_types, formula)
+        # print('ssssss', atom_types, formula)
         neigbor_distances_at_Vstar, number_of_pairs_per_distance, comb_types = pairanalysis.pair_analysis(atom_types,
                                                                                                           cutoff,
                                                                                                           basis_vectors,
@@ -3020,7 +3020,7 @@ class EAM:  #
     def ntypes_A(self):
     #     # # pr0nt('ntypes_A')
         ix = 0
-        types_list = re.findall('[A-Z][**A-Z]*', self.formula)
+        types_list = re.findall('[A-Z][^A-Z]*', self.formula)
     #
         types_keys = {}
         types_dict = {}

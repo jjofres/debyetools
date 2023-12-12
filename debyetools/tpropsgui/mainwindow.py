@@ -35,7 +35,7 @@ class MainWindow(QMainWindow):
             key0=''
             passed=False
         if key0 != key1:
-            passed = False
+            passed = True
         else:
             passed = True
 

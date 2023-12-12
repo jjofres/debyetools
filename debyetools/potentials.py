@@ -17,7 +17,7 @@ def calculate_volume(aa, bb, cc):
     float: The volume of the box.
     """
     aa = np.array(aa)
-    bv = np.array(bb)
+    bb = np.array(bb)
     cc = np.array(cc)
 
     # Calculate the scalar triple product

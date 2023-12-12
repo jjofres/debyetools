@@ -9,23 +9,35 @@ Examples
    :backlinks: none
    :depth: 3
 
-Face centered cubic Aluminum thermodynamic properties
-=====================================================
+Al\ :sub:`3`\ Li L1\ :sub:`2`\  thermodynamic properties
+========================================================
 
 In order to calculate the thermodynamic properties of an element or compound, we need first to parametrize the function that will describe the internal energy of the system.
 In this case we have chosen the Birch-Murnaghan equation of state and fitted it against DFT data loaded using the ``load_V_E`` function.
 The ``BM`` object instantiates the representation og the EOS and its derivatives. In the module ``potentials`` there are all the implemented EOS.
 The method ``fitEOS`` with the option ``fit=True`` will fit the EOS parameters to (Volume, Energy) data using ``initial_parameters`` as initial guess.
-The following is an example for `Al fcc`.
+The following is an example for Al\ :sub:`3`\ Li L1\ :sub:`2`\.
+
+The following code allows to access the example files:
+
+>>> import os
+>>> import debyetools
+>>> file_path = debyetools.__file__
+>>> dir_path = os.path.dirname(file_path)
+
+
+Loading the energy curve and fitting the Birch-Murnaghan EOS:
 
 >>> from debyetools.aux_functions import load_V_E
 >>> import debyetools.potentials as potentials
->>> V_DFT, E_DFT = load_V_E('./tests/inpt_files/Al_fcc', './tests/inpt_files/Al_fcc/CONTCAR.5', units='J/mol')
->>> initial_parameters =  np.array([-3.6e+05, 9.9e-06, -7.8e+10, 4.7e+00, 1.e-10])
+>>> import numpy as np
+>>> V_DFT, E_DFT = load_V_E(dir_path+'/examples/Al3Li_L12/SUMMARY.fcc', dir_path+'/examples/Al3Li_L12/CONTCAR.5', units='J/mol')
+>>> initial_parameters =  np.array([-4e+05, 1e-05, 7e+10, 4])
 >>> eos_BM = potentials.BM()
 >>> eos_BM.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters, fit=True)
->>> eos_BM.pEOS
-[-3.61704789e+05  9.92993115e-06  7.61861944e+10  4.59192465e+00]
+>>> p_EOS = eos_BM.pEOS
+>>> p_EOS
+array([-3.26544606e+05,  9.82088168e-06,  6.31181335e+10,  4.32032416e+00])
 
 To fit the electronic contribution to eDOS data we can load them as `VASP` format `DOSCAR` files using the function ``load_doscar``.
 Then, at each ``V_DFT`` volume, the parameters of the electronic contribution will be fitted with the ``fit_electronic`` function from the ``electronic`` module, using ``p_el_initial`` as initial parameters.
@@ -33,17 +45,19 @@ Then, at each ``V_DFT`` volume, the parameters of the electronic contribution wi
 >>> from debyetools.aux_functions import load_doscar
 >>> from debyetools.electronic import fit_electronic
 >>> p_el_inittial = [3.8027342892e-01, -1.8875015171e-02, 5.3071034596e-04, -7.0100707467e-06]
->>> E, N, Ef = load_doscar('./tests/inpt_files/Al_fcc/DOSCAR.EvV.')
->>> fit_electronic(V_DFT, p_el_inittial,E,N,Ef)
-[ 2.89157792e-01 -1.08059850e+04  5.30710346e-04 -7.01007075e-06]
+>>> E, N, Ef = load_doscar(dir_path+'/examples/Al3Li_L12/DOSCAR.EvV.')
+>>> p_electronic = fit_electronic(V_DFT, p_el_inittial,E,N,Ef)
+>>> p_electronic
+array([ 1.73372534e-01, -6.87754210e+03,  5.30710346e-04, -7.01007075e-06])
 
 The Poisson's ratio and elastic constants can be calculated using the ``poisson_ratio`` method and the `elastic moduli matrix` in the `VASP` format `OUTCAR` obtained when using ``IBRION = 6`` in the `INCAR` file, loaded using ``load_EM``.
 
 >>> from debyetools.aux_functions import load_EM
 >>> from debyetools.poisson import poisson_ratio
->>> EM = EM = load_EM('./tests/inpt_files/Al_fcc/OUTCAR.eps')
->>> poisson_ratio(EM)
-0.31681328927273716
+>>> EM = load_EM(dir_path+'/examples/Al_fcc/OUTCAR.eps')
+>>> nu = poisson_ratio(EM)
+>>> nu
+0.33702122500881493
 
 For this example, all other contributions are set to zero.
 
@@ -58,20 +72,61 @@ The minimization og the Gibbs free energy is done by calling the method ``nDeb.m
 >>> from debyetools.ndeb import nDeb
 >>> from debyetools.aux_functions import gen_Ts
 >>> m = 0.026981500000000002
->>> ndeb_BM = nDeb(nu, m, p_intanh, eos_BM, p_electronic, p_defects, p_anh, EOS_name)
+>>> ndeb_BM = nDeb(nu, m, p_intanh, eos_BM, p_electronic, p_defects, p_anh)
 >>> T_initial, T_final, number_Temps = 0.1, 1000, 10
 >>> T = gen_Ts(T_initial, T_final, number_Temps)
 >>> T, V = ndeb_BM.min_G(T,p_EOS[1],P=0)
->>> T
-[1.0000e-01 1.1120e+02 2.2230e+02 2.9815e+02 3.3340e+02 4.4450e+02 5.5560e+02 6.6670e+02 7.7780e+02 8.8890e+02 1.0000e+03]
->>> V
-[1.00482370e-05 1.00634467e-05 1.01233950e-05 1.01755443e-05 1.02016291e-05 1.02892993e-05 1.03845055e-05 1.04876914e-05 1.05993279e-05 1.07193984e-05 1.08557462e-05]
+>>> T, V
+(array([1.0000e-01, 1.1120e+02, 2.2230e+02, 2.9815e+02, 3.3340e+02,
+        4.4450e+02, 5.5560e+02, 6.6670e+02, 7.7780e+02, 8.8890e+02,
+        1.0000e+03]),
+ array([9.93477130e-06, 9.95708573e-06, 1.00309860e-05, 1.00924551e-05,
+        1.01230085e-05, 1.02253260e-05, 1.03361669e-05, 1.04567892e-05,
+        1.05882649e-05, 1.07335434e-05, 1.08954899e-05]))
+
+To plot the volume as function of temperature:
+
+>>> from matplotlib import pyplot as plt
+>>> plt.figure()
+>>> plt.plot(T,V, label='Volume')
+>>> plt.legend()
+>>> plt.show()
+
+.. figure::  ./images/Al3Li_VvT.jpeg
+   :align:   center
 
 The thermodynamic properties are calculated by just evaluating the thermodynamic functions with ``nDeb.eval_props``. This will return a dictionary with the values of the different thermodynamic properties.
 
 >>> tprops_dict = ndeb_BM.eval_props(T,V,P=0)
->>> print(tprops_dict['Cp'])
-[nan 13.02154474 21.56815985 23.75327828 24.43028457 25.96493363 27.12420027 28.20133277 29.3286694  30.59560714 32.13417233]
+>>> Cp = tprops_dict['Cp']
+>>> Cp
+array([4.03108486e-05, 1.53280407e+01, 2.26806532e+01, 2.44706878e+01,
+       2.50389680e+01, 2.63913291e+01, 2.75000371e+01, 2.86033148e+01,
+       2.98237204e+01, 3.12758030e+01, 3.31133279e+01])
+>>> plt.figure()
+>>> plt.plot(T,Cp, label='Heat capacity')
+>>> plt.legend()
+>>> plt.show()
+
+.. figure::  ./images/Al3Li_Cp.jpeg
+   :align:   center
+
+The FactSage Cp polynomial is fitted to the previous calculation:
+
+>>> from debyetools.fs_compound_db import fit_FS
+>>> T_from = 298.15
+>>> T_to = 1000
+>>> FS_db_params = fit_FS(tprops_dict, T_from, T_to)
+>>> FS_db_params
+{'Cp': array([ 2.82760954e+01, -6.12271903e-03, -2.66975291e+05,  1.11891931e-05]),
+ 'a': array([-8.00942545e-05,  1.65169216e-07,  6.62935957e-02, -9.59227812e+00]),
+ '1/Ks': array([ 1.58260299e-11,  3.89418226e-15, -1.26886122e-18,  2.36654487e-21]),
+ 'Ksp': array([4.50472269e+00, 1.16376200e-03])}
+
+Plot the parameterized heat capacity:
+
+.. figure::  ./images/Al3Li_Cp_FS.jpeg
+   :align:   center
 
 Thermodynamic properties with the ``debyetools`` interface
 ===========================================================

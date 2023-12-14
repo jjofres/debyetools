@@ -280,3 +280,45 @@ class nDeb:
                 'd2E0dV2_T':d2E0dV2_T, 'dPdV_T':dPdV_T,
                 'dE0dV_T':dE0dV_T, 'd3E0dV3_T':d3E0dV3_T, 'Fa':Fa, 'Fdef':Fdef, 'Fel': Fel
                 }
+
+    def eval_Cp(self, T: np.ndarray, V: np.ndarray, P = None) -> dict:
+        """
+        Evaluates the Heat capacity of a given compound/element at (T,V).
+
+        :param np.ndarray T: The temperature in Kelvin.
+        :param np.ndarray V: The volume in "units".
+        :return: A dictionary with the following keys: 'T': temperature, 'V': volume, 'tD': Debye temperature, 'g': Gruneisen parameter, 'Kt': isothermal bulk modulus, 'Ktp': pressure derivative of the isothermal bulk modulus, 'Ktpp': second order pressure derivative of the isothermal bulk modulus, 'Cv': constant-volume heat capacity, 'a': thermal expansion, 'Cp': constant-pressure heat capacity, 'Ks': adiabatic bulk modulus , 'Ksp': pressure derivative of the adiabatic bulk modulus, 'G': Gibbs free energy, 'E': total internal energy, 'S': entropy, 'E0': 'cold' internal energy defined by the EOS, 'Fvib': vibrational free energy, 'Evib': vibrational internal energy, 'Svib': vibrational entropy, 'Cvvib': vibrational heat capacity, 'Pcold': 'cold' pressure, 'dPdT_V': (dP/dT)_V, 'G^2': Ktp**2-2*Kt*Ktpp, 'dSdP_T': (dS/dP)_T, 'dKtdT_P': (dKt/dT)_P, 'dadP_T': (da/dP)_T, 'dCpdP_T': (dCp/dP)_T, 'ddSdT_PdP_T': (d2S/dTdP).
+        :rtype: dict
+        """
+        del P
+
+        self.vib.set_int_anh(T, V)
+        self.vib.set_theta(T, V)
+
+        d2E0dV2_T = self.EOS.d2E0dV2_T(V)
+        d2E0dT2_V = 0
+        d2E0dVdT = 0
+
+        d2FvibdT2_V = self.vib.d2FdT2_V(T,V)
+        d2FvibdV2_T = self.vib.d2FdV2_T(T,V)
+        d2FvibdVdT = self.vib.d2FdVdT(T,V)
+
+        d2FeldT2_V = self.el.d2FdT2_V(T, V)
+        d2FeldV2_T = self.el.d2FdV2_T(T, V)
+        d2FeldVdT = self.el.d2FdVdT(T, V)
+
+        d2FdefdT2_V = self.deff.d2FdT2_V(T, V)
+        d2FdefdV2_T = self.deff.d2FdV2_T(T, V)
+        d2FdefdVdT = self.deff.d2FdVdT(T, V)
+
+        d2FadT2_V = self.anh.d2FdT2_V(T, V)
+        d2FadV2_T = self.anh.d2FdV2_T(T, V)
+        d2FadVdT = self.anh.d2FdVdT(T, V)
+
+        d2FdV2_T = d2E0dV2_T + d2FvibdV2_T + d2FeldV2_T + d2FdefdV2_T + d2FadV2_T
+        d2FdT2_V = d2E0dT2_V + d2FvibdT2_V + d2FeldT2_V + d2FdefdT2_V + d2FadT2_V
+        d2FdVdT = d2E0dVdT + d2FvibdVdT + d2FeldVdT + d2FdefdVdT + d2FadVdT
+
+        Cp = -T * (d2FdT2_V - (d2FdVdT) ** 2 / d2FdV2_T)
+
+        return { 'Cp': Cp}

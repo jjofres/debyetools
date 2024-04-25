@@ -40,7 +40,7 @@ periods = {1:['H', 'He'], 2:['Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne'],3:['Na',
              'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og']}
 groups = {'Ia': ['Li', 'Na', 'K', 'Rb', 'Cs', 'Fr'],
           'IIa': ['Be', 'Mg', 'Ca', 'Sr', 'Ba', 'Ra'],
-          'IIIb': ['Sc', 'Y', 'La', 'Ac'],
+          'IIIb': ['Sc', 'Y'],
           'IVb': ['Ti', 'Zr', 'Hf'],
           'Vb': ['V', 'Nb', 'Ta'],
           'VIb': ['Cr', 'Mo', 'W'],
@@ -53,7 +53,9 @@ groups = {'Ia': ['Li', 'Na', 'K', 'Rb', 'Cs', 'Fr'],
           'Va': ['N', 'P', 'As', 'Sb', 'Bi', 'Mc'],
           'VIa': ['O', 'S', 'Se', 'Te', 'Po', 'Lv'],
           'VIIa': ['F', 'Cl', 'Br', 'I', 'At', 'Ts'],
-          'VIIIa': ['He', 'Ne', 'Ar', 'Kr', 'Xe', 'Rn', 'Og']}
+          'VIIIa': ['He', 'Ne', 'Ar', 'Kr', 'Xe', 'Rn', 'Og'],
+          'Lanthanides': ['La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu'],
+          'Actinides': ['Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr']}
 atoms_period ={}
 for symbol in atomic_symbols:
     for period, list_at in periods.items():

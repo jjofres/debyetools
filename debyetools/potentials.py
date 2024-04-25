@@ -17,7 +17,7 @@ def calculate_volume(aa, bb, cc):
     float: The volume of the box.
     """
     aa = np.array(aa)
-    bv = np.array(bb)
+    bb = np.array(bb)
     cc = np.array(cc)
 
     # Calculate the scalar triple product
@@ -2115,7 +2115,13 @@ class MU2:  # Poirier-Tarantola
 
 Chr_fix = ['Aa', 'Ba', 'Ca', 'Da', 'Ea', 'Fa', 'Ga', 'Ha', 'Ia', 'Ja', 'Ka', 'La', 'Ma', 'Na', 'Oa', 'Pa', 'Qa', 'Ra',
            'Sa', 'Ta', 'Ua', 'Va', 'Wa', 'Xa', 'Ya', 'Za', 'Ab', 'Bb', 'Cb', 'Db', 'Eb', 'Fb', 'Gb', 'Hb', 'Ib', 'Jb',
-           'Kb', 'Lb', 'Mb', 'Nb', 'Ob', 'Pb', 'Qb', 'Rb', 'Sb', 'Tb', 'Ub', 'Vb', 'Wb', 'Xb', 'Yb', 'Zb']
+           'Kb', 'Lb', 'Mb', 'Nb', 'Ob', 'Pb', 'Qb', 'Rb', 'Sb', 'Tb', 'Ub', 'Vb', 'Wb', 'Xb', 'Yb', 'Zb',
+           'Ac', 'Bc', 'Cc', 'Dc', 'Ec', 'Fc', 'Gc', 'Hc', 'Ic', 'Jc', 'Kc', 'Lc', 'Mc', 'Nc', 'Oc', 'Pc', 'Qc', 'Rc',
+           'Sc', 'Tc', 'Uc', 'Vc', 'Wc', 'Xc', 'Yc', 'Zc', 'Ad', 'Bd', 'Cd', 'Dd', 'Ed', 'Fd', 'Gd', 'Hd', 'Id', 'Jd',
+           'Kd', 'Ld', 'Md', 'Nd', 'Od', 'Pd', 'Qd', 'Rd', 'Sd', 'Td', 'Ud', 'Vd', 'Wd', 'Xd', 'Yd', 'Zd',
+           'Ae', 'Be', 'Ce', 'De', 'Ee', 'Fe', 'Ge', 'He', 'Ie', 'Je', 'Ke', 'Le', 'Me', 'Ne', 'Oe', 'Pe', 'Qe', 'Re',
+           'Se', 'Te', 'Ue', 'Ve', 'We', 'Xe', 'Ye', 'Ze', 'Af', 'Bf', 'Cf', 'Df', 'Ef', 'Ff', 'Gf', 'Hf', 'If', 'Jf',
+           'Kf', 'Lf', 'Mf', 'Nf', 'Of', 'Pf', 'Qf', 'Rf', 'Sf', 'Tf', 'Uf', 'Vf', 'Wf', 'Xf', 'Yf', 'Zf']
 nparams_F = 4
 nparams_rhophi = 6
 
@@ -2859,7 +2865,7 @@ class EAM:  #
         # # ## pr0nt(formula_ABCD)
         #
         atom_types = self.formula_ABCD
-        print('ssssss', atom_types, formula)
+        # print('ssssss', atom_types, formula)
         neigbor_distances_at_Vstar, number_of_pairs_per_distance, comb_types = pairanalysis.pair_analysis(atom_types,
                                                                                                           cutoff,
                                                                                                           basis_vectors,
@@ -3020,7 +3026,7 @@ class EAM:  #
     def ntypes_A(self):
     #     # # pr0nt('ntypes_A')
         ix = 0
-        types_list = re.findall('[A-Z][**A-Z]*', self.formula)
+        types_list = re.findall('[A-Z][^A-Z]*', self.formula)
     #
         types_keys = {}
         types_dict = {}

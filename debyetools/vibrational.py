@@ -89,11 +89,7 @@ class Vibrational:
             self.lam = 1
 
         else:
-            hola
-            self.V0_DM = ''
-            self.b_DM = ''
-            self.a_DM = ''
-            self.lam = -1
+            raise Exception('This is an error message')
 
     def set_int_anh(self, T: float, V: float) -> None:
         """

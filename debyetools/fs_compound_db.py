@@ -2,7 +2,7 @@
 import numpy as np
 from scipy.optimize import curve_fit
 
-Cp2fit = lambda T, P0, P1, P2, P3: P0*T**0 + P1*T**1 + P2*T**(-2) + P3*T**2# + P4*T**(-.5) + P5*T**(-3)
+Cp2fit = lambda T, P0, P1, P2, P3, P4, P5: P0*T**0 + P1*T**1 + P2*T**(-2) + P3*T**2 + P4*T**(-.5) + P5*T**(-3)
 alpha2fit = lambda T, Q0, Q1, Q2, Q3: Q0*T**0 + Q1*T**1 + Q2*T**(-1) + Q3*T**(-2)
 Ksinv2fit = lambda T, R0, R1, R2, R3: R0*T**0 + R1*T**1 + R2*T**2 + R3*T**3
 Ksp2fit = lambda T, S0, S1: S0 + S1*(T-298.15)*np.log(T/298.15)

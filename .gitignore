@@ -129,3 +129,4 @@ dmypy.json
 .travis.*
 /_local_usage/
 /_local_tst/
+/dtoutput4cmpnd

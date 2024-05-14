@@ -6,9 +6,10 @@ from debyetools.aux_functions import load_V_E as dt_load_V_E
 def log_mean(lst):
     import numpy as np
     l = len(lst)
-    lm = np.sum([np.log(li)/l for li in lst])
-    m = np.exp(lm)
-    return m
+    # lm = np.sum([np.log(li)/l for li in lst])
+
+    # m = np.exp(lm)
+    return np.sum([li for li in lst])/l
 class dialogSUMMARY(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -44,11 +45,11 @@ class dialogSUMMARY(QDialog):
         elmntsall = []
         for e, m in zip(elmnts, mult):
             elmntsall = elmntsall + [e]*int(m)
-        masses = [float(atomic_mass[e])/100. for e in elmntsall]
-#        print(elmntsall, masses, log_mean(masses))
+        masses = [float(atomic_mass[e])/1000. for e in elmntsall]
         txt2paste = '#V\tE\n'
         for v, e in zip(V, E):
             txt2paste = txt2paste + '%.6e\t%.6e'%(v, e)+'\n'
         self.EvVtext.setPlainText(txt2paste)
         self.mass.setText(str(log_mean(masses)))
 #        print('event', event)
+

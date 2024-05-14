@@ -5,6 +5,9 @@ from debyetools.tpropsgui.dialog_doscar import dialogDOSCAR
 from debyetools.tpropsgui.dialog_summary import dialogSUMMARY
 from debyetools.tpropsgui.dialog_outcar import dialogOUTCAR
 from debyetools.tpropsgui.dialog_warning import dialogWarning
+from debyetools.tpropsgui.dialog_periodictable import dialogPeriodicTable
+
+
 from debyetools.tpropsgui.window_cp import windowCp
 from debyetools.tpropsgui.window_interatomicparams import windowInteratormic
 from debyetools.tpropsgui.plot_EV import windowPlot
@@ -21,6 +24,23 @@ from debyetools.aux_functions import load_doscar as dt_load_doscar
 from debyetools.electronic import fit_electronic as dt_fit_electronic
 
 from debyetools.tpropsgui.lock import keygen as kg
+
+import traceback
+import re
+
+def separate_atoms(formula):
+    # This pattern matches element symbols (one or two letters, starting with an uppercase letter)
+    # followed by optional counts (numbers)
+    pattern = r"([A-Z][a-z]*)(\d*)"
+    elements = re.findall(pattern, formula)
+    separated = []
+
+    for element, count in elements:
+        # If count is empty, it means there is one atom of this element
+        count = int(count) if count else 1
+        separated.extend([element] * count)
+
+    return separated
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None, app=None):
@@ -59,6 +79,10 @@ class MainWindow(QMainWindow):
         self.outcardialog = dialogOUTCAR(self)
         self.warningdialog = dialogWarning(self)
 
+        self.dialogperiodictable = dialogPeriodicTable(self)
+        self.dialogperiodictable.external_lineEdit = self.ui.lineEdit_11
+        self.dialogperiodictable.external_lineEdit2 = self.ui.lineEdit
+
         self.ui.pushButton.clicked.connect(self.on_pushButton_fitEOS)
         self.ui.pushButton_5.clicked.connect(self.on_pushButton_Cp)
         self.ui.pushButton_2.clicked.connect(self.on_pushButton_calc_nu)
@@ -70,7 +94,6 @@ class MainWindow(QMainWindow):
         self.molecule = Molecule()
 
         self.ui.comboBox.currentIndexChanged.connect(self.selectionchange)
-
 
         self.check_el, self.check_def, self.check_anh, self.check_xs = self.ui.checkBox, self.ui.checkBox_2, self.ui.checkBox_3, self.ui.checkBox_4
 
@@ -98,17 +121,25 @@ class MainWindow(QMainWindow):
         self.ui.actionSUMMARY.triggered.connect(self.on_pushButton_loadSUMMARY)
         self.ui.actionOUTCAR.triggered.connect(self.on_pushButton_loadOUTCAR)
 
-    def plotEV(self):
-        Xdata = self.Vdata/1e-5
-        Ydata = self.Edata/1e3
-        self.plotwindow.ax.cla()
-        self.plotwindow.ax.plot(Xdata, Ydata, ls = '', marker='.', label = 'data', mfc='None', mec='black', markersize=10,mew=1)
-        self.plotwindow.ax.plot(Xdata, [self.eos.E0(Vi)/1e3 for Vi in Xdata*1e-5], ls = '', marker='+', label = 'model', mfc='purple', mec='purple', markersize=10,mew=1)
+        self.ui.lineEdit_11.clicked.connect(self.showDialog)
 
-        spanX = (max(Xdata) - min(Xdata))/20
-        spanY = (max(Ydata) - min(Ydata))/20
-        self.plotwindow.ax.set_xlim((min(Xdata)-spanX, max(Xdata)+spanX))
-        self.plotwindow.ax.set_ylim((min(Ydata)-spanY, max(Ydata)+spanY))
+    def showDialog(self):
+        self.dialogperiodictable.ui.lineEdit.setText(self.ui.lineEdit_11.text())
+        self.dialogperiodictable.show()  # Assuming dialogxx is initialized and ready to be displayed
+
+    def plotEV(self):
+        Xdata = self.Vdata / 1e-5
+        Ydata = self.Edata / 1e3
+        self.plotwindow.ax.cla()
+        self.plotwindow.ax.plot(Xdata, Ydata, ls='', marker='.', label='data', mfc='None', mec='black', markersize=10,
+                                mew=1)
+        self.plotwindow.ax.plot(Xdata, [self.eos.E0(Vi) / 1e3 for Vi in Xdata * 1e-5], ls='', marker='+', label='model',
+                                mfc='purple', mec='purple', markersize=10, mew=1)
+
+        spanX = (max(Xdata) - min(Xdata)) / 20
+        spanY = (max(Ydata) - min(Ydata)) / 20
+        self.plotwindow.ax.set_xlim((min(Xdata) - spanX, max(Xdata) + spanX))
+        self.plotwindow.ax.set_ylim((min(Ydata) - spanY, max(Ydata) + spanY))
         self.plotwindow.ax.legend(loc=9)
         self.plotwindow.ax.set_xlabel(r'$10^{-5}m^3/mol$-$at$')
         self.plotwindow.ax.set_ylabel(r'$kJ/mol$-$at$')
@@ -116,8 +147,9 @@ class MainWindow(QMainWindow):
 
     def selectionchange(self, i):
         self.ui.progress_2.setValue(0)
-        dict_eos = {'Birch-Murnaghan':'BM', 'Rose-Vinet':'RV', 'Mie-Gruneisen':'MG', 'TB-SMA':'TB',
-                    'Murnaghan':'MU', 'Poirier-Tarantola':'PT', 'Morse int. potential':'MP', 'EAM int. potential':'EAM'}
+        dict_eos = {'Birch-Murnaghan': 'BM', 'Rose-Vinet': 'RV', 'Mie-Gruneisen': 'MG', 'TB-SMA': 'TB',
+                    'Murnaghan': 'MU', 'Poirier-Tarantola': 'PT', 'Morse int. potential': 'MP',
+                    'EAM int. potential': 'EAM'}
         self.eos_str = dict_eos[self.ui.comboBox.itemText(i)]
 
         self.ipotparamsdialog.args = (None,)
@@ -138,37 +170,38 @@ class MainWindow(QMainWindow):
         if self.ui.radioButton.isChecked():
             conv = [(1e-30 * 6.02e23), (0.160218e-18 * 6.02214e23)]
         elif self.ui.radioButton_3.isChecked():
-            conv =[1, 1]
+            conv = [1, 1]
 
         txt = self.ui.EvVText.toPlainText().split('\n')
         data_lst = []
         for ti in txt:
-            if len(ti)==0:continue
-            if ti[0]=='#': continue
+            if len(ti) == 0: continue
+            if ti[0] == '#': continue
             data_lst.append([float(tii) for tii in ti.split()])
         data = np.array(data_lst)
         ncols = len(data.T)
-        return (data[:,i]*conv[i] for i in range(ncols))
+        return (data[:, i] * conv[i] for i in range(ncols))
 
     def get_EOS_params(self):
         txt = self.ui.lineEdit_2.text()
-        if txt=='':
-            return -3e5,9e-6,7e10,4
-        return  [float(ti) for ti in txt.replace(' ','').split(',')]
+        if txt == '':
+            return -3e5, 9e-6, 7e10, 4
+        return [float(ti) for ti in txt.replace(' ', '').split(',')]
 
     def get_el_params(self):
         txt = self.ui.lineEdit_el.text()
-        if txt=='':
+        if txt == '':
             return 3e-01, -1e+04, 5e-04, 1e-06
-        return  [float(ti) for ti in txt.replace(' ','').split(',')]
+        return [float(ti) for ti in txt.replace(' ', '').split(',')]
 
     def get_C(self):
-        txt = self.ui.elastic_constants.toPlainText().replace('XX',' ').replace('YY',' ').replace('ZZ',' ').replace('XY',' ').replace('YZ',' ').replace('ZX',' ').split('\n')
+        txt = self.ui.elastic_constants.toPlainText().replace('XX', ' ').replace('YY', ' ').replace('ZZ', ' ').replace(
+            'XY', ' ').replace('YZ', ' ').replace('ZX', ' ').split('\n')
         data_lst = []
         for ti in txt:
-            if len(ti)==0:continue
-            if ti[0]=='#': continue
-            data_lst.append([float(tii) for tii in ti.replace('\t',' ').split()])
+            if len(ti) == 0: continue
+            if ti[0] == '#': continue
+            data_lst.append([float(tii) for tii in ti.replace('\t', ' ').split()])
         data = np.array(data_lst)
 
         return data
@@ -198,7 +231,7 @@ class MainWindow(QMainWindow):
         self.Edata = Edata
 
         initial_guess = self.get_EOS_params()
-        self.eos.fitEOS(Vdata, Edata, initial_parameters = initial_guess, fit=True)
+        self.eos.fitEOS(Vdata, Edata, initial_parameters=initial_guess, fit=True)
 
         self.ui.lineEdit_2.setText(', '.join(['%.9e' % (p) for p in self.eos.pEOS]))
         self.ui.progress_2.setValue(100)
@@ -206,35 +239,58 @@ class MainWindow(QMainWindow):
     def on_pushButton_calc_nu(self):
         C = self.get_C()
         BR, BV, B, GR, GV, S, AU, nu = dt_poisson_ratio(C, quiet=True)
-        self.ui.lineEdit_3.setText('%.3f'%(nu))
-        self.ui.lineEdit_4.setText('%.1f'%(BR*10))
-        self.ui.lineEdit_5.setText('%.1f'%(BV*10))
-        self.ui.lineEdit_6.setText('%.1f'%(B*10))
-        self.ui.lineEdit_9.setText('%.1f'%(GR*10))
-        self.ui.lineEdit_8.setText('%.1f'%(GV*10))
-        self.ui.lineEdit_7.setText('%.1f'%(S*10))
-        self.ui.lineEdit_10.setText('%.2f'%(AU))
+        self.ui.lineEdit_3.setText('%.3f' % (nu))
+        self.ui.lineEdit_4.setText('%.1f' % (BR * 10))
+        self.ui.lineEdit_5.setText('%.1f' % (BV * 10))
+        self.ui.lineEdit_6.setText('%.1f' % (B * 10))
+        self.ui.lineEdit_9.setText('%.1f' % (GR * 10))
+        self.ui.lineEdit_8.setText('%.1f' % (GV * 10))
+        self.ui.lineEdit_7.setText('%.1f' % (S * 10))
+        self.ui.lineEdit_10.setText('%.2f' % (AU))
 
     def on_pushButton_Cp(self):
-        self.molecule.nu = float(self.ui.lineEdit_3.text())
-        self.molecule.mass = float(self.ui.lineEdit.text())
+        try:
+            self.molecule.nu = float(self.ui.lineEdit_3.text())
+            self.molecule.mass = float(self.ui.lineEdit.text())
 
-        self.molecule.p_anh = [float(si) for si in self.ui.lineEdit_anh.text().replace(',',' ').split()] if self.state_anh else [0,1]
-        self.molecule.p_el = [float(si) for si in self.ui.lineEdit_el.text().replace(',',' ').split()] if self.state_el else [0,0,0,0]
-        self.molecule.p_def = [float(si) for si in self.ui.lineEdit_def.text().replace(',',' ').split()] if self.state_def else [100, 1, 1000, 0.1]
-        self.molecule.p_xs = [float(si) for si in self.ui.lineEdit_xs.text().replace(',',' ').split()] if self.state_xs else [0,0,0]
+            self.molecule.p_anh = [float(si) for si in
+                                   self.ui.lineEdit_anh.text().replace(',', ' ').split()] if self.state_anh else [0, 1]
+            self.molecule.p_el = [float(si) for si in
+                                  self.ui.lineEdit_el.text().replace(',', ' ').split()] if self.state_el else [0, 0, 0,
+                                                                                                               0]
+            self.molecule.p_def = [float(si) for si in
+                                   self.ui.lineEdit_def.text().replace(',', ' ').split()] if self.state_def else [100,
+                                                                                                                  1,
+                                                                                                                  1000,
+                                                                                                                  0.1]
+            self.molecule.p_xs = [float(si) for si in
+                                  self.ui.lineEdit_xs.text().replace(',', ' ').split()] if self.state_xs else [0, 0, 0]
 
-        self.molecule.initial_params = [float(si) for si in self.ui.lineEdit_2.text().replace(',',' ').split()]
+            self.molecule.initial_params = [float(si) for si in self.ui.lineEdit_2.text().replace(',', ' ').split()]
 
-        if self.eos_str in ['MP','EAM']:
-            args = [self.molecule.formula, self.molecule.cell, self.molecule.basis, self.molecule.cutoff, self.molecule.number_of_NNs]
-        else:
-            args = [None]
-        self.molecule.set_eos(self.eos_str, args)
+            if self.eos_str in ['MP', 'EAM']:
+                args = [self.molecule.formula, self.molecule.cell, self.molecule.basis, self.molecule.cutoff,
+                        self.molecule.number_of_NNs]
+            else:
+                args = [None]
+            self.molecule.set_eos(self.eos_str, args)
 
+            self.cp_window.ui.lineEdit.setText(self.ui.lineEdit_T.text())
+            self.cp_window.ui.lineEdit_2.setText(self.ui.lineEdit_P.text())
 
-        self.cp_window.debye_run(self.molecule, self.ui.progress)
-        self.cp_window.show()
+            types = separate_atoms(self.ui.lineEdit_11.text())
+            self.molecule.update_fomula(types)
+            self.cp_window.debye_run(self.molecule, self.ui.progress, self.ui.lineEdit_11.text())
+            self.cp_window.show()
+        except Exception as e:
+            print(e)
+            error_message = f"An error occurred: {e}\n"
+            error_traceback = traceback.format_exc()
+
+            # Combine the error message with the traceback
+            full_error_text = error_message + error_traceback
+            self.warningdialog.ui.label.setText(full_error_text)
+            self.warningdialog.show()
 
     def on_pushButton_loaddata(self):
         self.doscardialog.show()
@@ -252,11 +308,14 @@ class MainWindow(QMainWindow):
         Vdata, Edata = self.get_EvV()
         self.Vdata = Vdata
         try:
-            E, N, Ef = dt_load_doscar(self.doscardialog.filepath+'/DOSCAR.', list_filetags = [i+1 for i in range(len(Vdata))])
+            E, N, Ef = dt_load_doscar(self.doscardialog.filepath + '/DOSCAR.',
+                                      list_filetags=[i + 1 for i in range(len(Vdata))])
             p_el_initial = self.get_el_params()
-            p_electronic = dt_fit_electronic(self.Vdata, p_el_initial,E,N,Ef)
+            p_electronic = dt_fit_electronic(self.Vdata, p_el_initial, E, N, Ef)
             self.ui.lineEdit_el.setText(', '.join(['%.9e' % (p) for p in p_electronic]))
         except Exception as e:
             print(e)
-            self.warningdialog.ui.label.setText(str(e)+"\n\nProbably you haven't set a filepath to the eDOS data yet.")
+            self.warningdialog.ui.label.setText(
+                str(e) + "\n\nProbably you haven't set a filepath to the eDOS data yet.")
             self.warningdialog.show()
+

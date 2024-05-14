@@ -9,7 +9,6 @@ class dialogOUTCAR(QDialog):
         self.ui.setupUi(self)
 
         self.ui.browseoutcar.clicked.connect(self.getfilesoutcar)
-#        self.ui.browseposcar.clicked.connect(self.getfilesposcar)
         self.ui.ok.clicked.connect(self.on_pushButton_OK)
         self.filepath='.'
 
@@ -17,25 +16,13 @@ class dialogOUTCAR(QDialog):
         outcarpath, _ = QFileDialog.getOpenFileName(self, caption='Select an OUTCAR file')
         self.ui.outcarpath.setText(outcarpath)
 
-#    def getfilesposcar(self):
-#        poscarpath, _ = QFileDialog.getOpenFileName(self, caption='Select a POSCAR or CONTCAR file')
-#        self.ui.poscarpath.setText(poscarpath)
-
     def on_pushButton_OK(self):
         self.outcarpath = self.ui.outcarpath.text()
-#        self.poscarpath = self.ui.poscarpath.text()
         self.close()
     def closeEvent(self, event):
         EM = dt_load_EM(self.outcarpath)
-#        print(EM)
 
         txt2paste = ''
         for rowi in EM:
             txt2paste=txt2paste+' '.join(['%.2f'%(float(coli)/10) for coli in rowi])+'\n'
-#        print('event', event)
         self.elastic_constants.setText(txt2paste)
-
-# This Python file uses the following encoding: utf-8
-
-# if __name__ == "__main__":
-#     pass

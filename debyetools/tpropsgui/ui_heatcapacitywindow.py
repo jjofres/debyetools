@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'heatcapacitywindow.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.6.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -18,30 +18,202 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
 from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QHeaderView,
     QLabel, QLineEdit, QMainWindow, QMenuBar,
     QProgressBar, QPushButton, QRadioButton, QSizePolicy,
-    QStatusBar, QTableWidget, QTableWidgetItem, QWidget)
+    QSpacerItem, QStatusBar, QTableWidget, QTableWidgetItem,
+    QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(818, 578)
+        MainWindow.resize(808, 525)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.label_3 = QLabel(self.centralwidget)
-        self.label_3.setObjectName(u"label_3")
-        self.label_3.setGeometry(QRect(720, 50, 51, 20))
-        self.lineEdit_2 = QLineEdit(self.centralwidget)
-        self.lineEdit_2.setObjectName(u"lineEdit_2")
-        self.lineEdit_2.setGeometry(QRect(600, 50, 113, 24))
+        self.horizontalLayout_9 = QHBoxLayout(self.centralwidget)
+        self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
+        self.verticalLayout_2 = QVBoxLayout()
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+
+        self.verticalLayout_2.addLayout(self.horizontalLayout)
+
+        self.horizontalLayout_8 = QHBoxLayout()
+        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
+        self.horizontalSpacer_5 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_8.addItem(self.horizontalSpacer_5)
+
+        self.label_12 = QLabel(self.centralwidget)
+        self.label_12.setObjectName(u"label_12")
+
+        self.horizontalLayout_8.addWidget(self.label_12)
+
+        self.comboBox_2 = QComboBox(self.centralwidget)
+        self.comboBox_2.addItem("")
+        self.comboBox_2.addItem("")
+        self.comboBox_2.addItem("")
+        self.comboBox_2.addItem("")
+        self.comboBox_2.addItem("")
+        self.comboBox_2.addItem("")
+        self.comboBox_2.addItem("")
+        self.comboBox_2.addItem("")
+        self.comboBox_2.addItem("")
+        self.comboBox_2.addItem("")
+        self.comboBox_2.addItem("")
+        self.comboBox_2.setObjectName(u"comboBox_2")
+
+        self.horizontalLayout_8.addWidget(self.comboBox_2)
+
+
+        self.verticalLayout_2.addLayout(self.horizontalLayout_8)
+
+        self.verticalLayout_2.setStretch(0, 9)
+
+        self.horizontalLayout_9.addLayout(self.verticalLayout_2)
+
+        self.verticalLayout_3 = QVBoxLayout()
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.verticalLayout_3.setContentsMargins(-1, -1, -1, 0)
+        self.horizontalLayout_2 = QHBoxLayout()
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_2.addItem(self.horizontalSpacer)
+
         self.label = QLabel(self.centralwidget)
         self.label.setObjectName(u"label")
-        self.label.setGeometry(QRect(490, 20, 101, 21))
+        self.label.setMinimumSize(QSize(110, 0))
+        self.label.setMaximumSize(QSize(120, 16777215))
+
+        self.horizontalLayout_2.addWidget(self.label)
+
+        self.lineEdit = QLineEdit(self.centralwidget)
+        self.lineEdit.setObjectName(u"lineEdit")
+
+        self.horizontalLayout_2.addWidget(self.lineEdit)
+
+        self.label_4 = QLabel(self.centralwidget)
+        self.label_4.setObjectName(u"label_4")
+        self.label_4.setMinimumSize(QSize(20, 0))
+
+        self.horizontalLayout_2.addWidget(self.label_4)
+
+
+        self.verticalLayout_3.addLayout(self.horizontalLayout_2)
+
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_3.addItem(self.horizontalSpacer_2)
+
         self.label_2 = QLabel(self.centralwidget)
         self.label_2.setObjectName(u"label_2")
-        self.label_2.setGeometry(QRect(490, 50, 101, 21))
+        self.label_2.setMinimumSize(QSize(110, 0))
+        self.label_2.setMaximumSize(QSize(120, 16777215))
+
+        self.horizontalLayout_3.addWidget(self.label_2)
+
+        self.lineEdit_2 = QLineEdit(self.centralwidget)
+        self.lineEdit_2.setObjectName(u"lineEdit_2")
+
+        self.horizontalLayout_3.addWidget(self.lineEdit_2)
+
+        self.label_3 = QLabel(self.centralwidget)
+        self.label_3.setObjectName(u"label_3")
+        self.label_3.setMinimumSize(QSize(20, 0))
+
+        self.horizontalLayout_3.addWidget(self.label_3)
+
+
+        self.verticalLayout_3.addLayout(self.horizontalLayout_3)
+
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.radioButton = QRadioButton(self.centralwidget)
+        self.radioButton.setObjectName(u"radioButton")
+        self.radioButton.setChecked(True)
+
+        self.horizontalLayout_4.addWidget(self.radioButton)
+
+        self.radioButton_2 = QRadioButton(self.centralwidget)
+        self.radioButton_2.setObjectName(u"radioButton_2")
+
+        self.horizontalLayout_4.addWidget(self.radioButton_2)
+
+        self.radioButton_3 = QRadioButton(self.centralwidget)
+        self.radioButton_3.setObjectName(u"radioButton_3")
+
+        self.horizontalLayout_4.addWidget(self.radioButton_3)
+
+
+        self.verticalLayout_3.addLayout(self.horizontalLayout_4)
+
+        self.horizontalLayout_5 = QHBoxLayout()
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
+        self.label_7 = QLabel(self.centralwidget)
+        self.label_7.setObjectName(u"label_7")
+
+        self.horizontalLayout_5.addWidget(self.label_7)
+
+        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_5.addItem(self.horizontalSpacer_3)
+
+
+        self.verticalLayout_3.addLayout(self.horizontalLayout_5)
+
+        self.horizontalLayout_6 = QHBoxLayout()
+        self.horizontalLayout_6.setSpacing(2)
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.label_5 = QLabel(self.centralwidget)
+        self.label_5.setObjectName(u"label_5")
+
+        self.horizontalLayout_6.addWidget(self.label_5)
+
+        self.lineEdit_3 = QLineEdit(self.centralwidget)
+        self.lineEdit_3.setObjectName(u"lineEdit_3")
+
+        self.horizontalLayout_6.addWidget(self.lineEdit_3)
+
+        self.label_6 = QLabel(self.centralwidget)
+        self.label_6.setObjectName(u"label_6")
+
+        self.horizontalLayout_6.addWidget(self.label_6)
+
         self.label_9 = QLabel(self.centralwidget)
         self.label_9.setObjectName(u"label_9")
-        self.label_9.setGeometry(QRect(600, 170, 21, 21))
+
+        self.horizontalLayout_6.addWidget(self.label_9)
+
+        self.lineEdit_4 = QLineEdit(self.centralwidget)
+        self.lineEdit_4.setObjectName(u"lineEdit_4")
+
+        self.horizontalLayout_6.addWidget(self.lineEdit_4)
+
+        self.label_8 = QLabel(self.centralwidget)
+        self.label_8.setObjectName(u"label_8")
+
+        self.horizontalLayout_6.addWidget(self.label_8)
+
+        self.label_10 = QLabel(self.centralwidget)
+        self.label_10.setObjectName(u"label_10")
+
+        self.horizontalLayout_6.addWidget(self.label_10)
+
+        self.comboBox = QComboBox(self.centralwidget)
+        self.comboBox.setObjectName(u"comboBox")
+
+        self.horizontalLayout_6.addWidget(self.comboBox)
+
+        self.label_11 = QLabel(self.centralwidget)
+        self.label_11.setObjectName(u"label_11")
+
+        self.horizontalLayout_6.addWidget(self.label_11)
+
+
+        self.verticalLayout_3.addLayout(self.horizontalLayout_6)
+
         self.tableWidget = QTableWidget(self.centralwidget)
         if (self.tableWidget.columnCount() < 2):
             self.tableWidget.setColumnCount(2)
@@ -92,87 +264,53 @@ class Ui_MainWindow(object):
         __qtablewidgetitem17.setFlags(Qt.ItemIsSelectable|Qt.ItemIsDragEnabled|Qt.ItemIsDropEnabled|Qt.ItemIsUserCheckable|Qt.ItemIsEnabled);
         self.tableWidget.setItem(7, 1, __qtablewidgetitem17)
         self.tableWidget.setObjectName(u"tableWidget")
-        self.tableWidget.setGeometry(QRect(500, 200, 311, 271))
-        self.label_5 = QLabel(self.centralwidget)
-        self.label_5.setObjectName(u"label_5")
-        self.label_5.setGeometry(QRect(490, 170, 41, 21))
-        self.label_4 = QLabel(self.centralwidget)
-        self.label_4.setObjectName(u"label_4")
-        self.label_4.setGeometry(QRect(720, 20, 51, 20))
-        self.lineEdit_3 = QLineEdit(self.centralwidget)
-        self.lineEdit_3.setObjectName(u"lineEdit_3")
-        self.lineEdit_3.setGeometry(QRect(530, 170, 41, 24))
-        self.horizontalLayoutWidget = QWidget(self.centralwidget)
-        self.horizontalLayoutWidget.setObjectName(u"horizontalLayoutWidget")
-        self.horizontalLayoutWidget.setGeometry(QRect(10, 10, 471, 421))
-        self.horizontalLayout = QHBoxLayout(self.horizontalLayoutWidget)
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-        self.label_8 = QLabel(self.centralwidget)
-        self.label_8.setObjectName(u"label_8")
-        self.label_8.setGeometry(QRect(670, 170, 51, 21))
-        self.lineEdit = QLineEdit(self.centralwidget)
-        self.lineEdit.setObjectName(u"lineEdit")
-        self.lineEdit.setGeometry(QRect(600, 20, 113, 24))
-        self.label_6 = QLabel(self.centralwidget)
-        self.label_6.setObjectName(u"label_6")
-        self.label_6.setGeometry(QRect(580, 170, 16, 21))
+        self.tableWidget.setMinimumSize(QSize(0, 270))
+        self.tableWidget.setMaximumSize(QSize(320, 16777215))
+
+        self.verticalLayout_3.addWidget(self.tableWidget)
+
+        self.horizontalLayout_7 = QHBoxLayout()
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_7.addItem(self.horizontalSpacer_4)
+
+        self.verticalLayout = QVBoxLayout()
+        self.verticalLayout.setSpacing(1)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+
+        self.verticalLayout.addItem(self.verticalSpacer)
+
         self.pushButton = QPushButton(self.centralwidget)
         self.pushButton.setObjectName(u"pushButton")
         self.pushButton.setEnabled(True)
-        self.pushButton.setGeometry(QRect(700, 480, 80, 24))
-        self.lineEdit_4 = QLineEdit(self.centralwidget)
-        self.lineEdit_4.setObjectName(u"lineEdit_4")
-        self.lineEdit_4.setGeometry(QRect(620, 170, 41, 24))
-        self.label_7 = QLabel(self.centralwidget)
-        self.label_7.setObjectName(u"label_7")
-        self.label_7.setGeometry(QRect(490, 150, 121, 16))
-        self.comboBox = QComboBox(self.centralwidget)
-        self.comboBox.setObjectName(u"comboBox")
-        self.comboBox.setGeometry(QRect(720, 170, 61, 24))
-        self.label_10 = QLabel(self.centralwidget)
-        self.label_10.setObjectName(u"label_10")
-        self.label_10.setGeometry(QRect(700, 170, 21, 21))
-        self.label_11 = QLabel(self.centralwidget)
-        self.label_11.setObjectName(u"label_11")
-        self.label_11.setGeometry(QRect(790, 170, 21, 21))
-        self.comboBox_2 = QComboBox(self.centralwidget)
-        self.comboBox_2.addItem("")
-        self.comboBox_2.addItem("")
-        self.comboBox_2.addItem("")
-        self.comboBox_2.addItem("")
-        self.comboBox_2.addItem("")
-        self.comboBox_2.addItem("")
-        self.comboBox_2.addItem("")
-        self.comboBox_2.addItem("")
-        self.comboBox_2.addItem("")
-        self.comboBox_2.addItem("")
-        self.comboBox_2.addItem("")
-        self.comboBox_2.setObjectName(u"comboBox_2")
-        self.comboBox_2.setGeometry(QRect(350, 440, 131, 24))
-        self.label_12 = QLabel(self.centralwidget)
-        self.label_12.setObjectName(u"label_12")
-        self.label_12.setGeometry(QRect(258, 440, 91, 21))
+
+        self.verticalLayout.addWidget(self.pushButton)
+
         self.progress = QProgressBar(self.centralwidget)
         self.progress.setObjectName(u"progress")
-        self.progress.setGeometry(QRect(700, 500, 81, 16))
+        self.progress.setMaximumSize(QSize(16777215, 2))
         self.progress.setValue(0)
         self.progress.setTextVisible(False)
         self.progress.setInvertedAppearance(False)
-        self.radioButton = QRadioButton(self.centralwidget)
-        self.radioButton.setObjectName(u"radioButton")
-        self.radioButton.setGeometry(QRect(490, 90, 91, 22))
-        self.radioButton.setChecked(True)
-        self.radioButton_2 = QRadioButton(self.centralwidget)
-        self.radioButton_2.setObjectName(u"radioButton_2")
-        self.radioButton_2.setGeometry(QRect(550, 90, 141, 22))
-        self.radioButton_3 = QRadioButton(self.centralwidget)
-        self.radioButton_3.setObjectName(u"radioButton_3")
-        self.radioButton_3.setGeometry(QRect(690, 90, 121, 22))
+
+        self.verticalLayout.addWidget(self.progress)
+
+
+        self.horizontalLayout_7.addLayout(self.verticalLayout)
+
+
+        self.verticalLayout_3.addLayout(self.horizontalLayout_7)
+
+
+        self.horizontalLayout_9.addLayout(self.verticalLayout_3)
+
+        self.horizontalLayout_9.setStretch(0, 9)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 818, 21))
+        self.menubar.setGeometry(QRect(0, 0, 808, 21))
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName(u"statusbar")
@@ -185,11 +323,37 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"debyetools GUI (lite) - Heat Capacity", None))
-        self.label_3.setText(QCoreApplication.translate("MainWindow", u"GPa", None))
-        self.lineEdit_2.setText(QCoreApplication.translate("MainWindow", u"0 30 10", None))
+        self.label_12.setText(QCoreApplication.translate("MainWindow", u"                                                                                           property to plot:", None))
+        self.comboBox_2.setItemText(0, QCoreApplication.translate("MainWindow", u"New Item", None))
+        self.comboBox_2.setItemText(1, QCoreApplication.translate("MainWindow", u"New Item", None))
+        self.comboBox_2.setItemText(2, QCoreApplication.translate("MainWindow", u"New Item", None))
+        self.comboBox_2.setItemText(3, QCoreApplication.translate("MainWindow", u"New Item", None))
+        self.comboBox_2.setItemText(4, QCoreApplication.translate("MainWindow", u"New Item", None))
+        self.comboBox_2.setItemText(5, QCoreApplication.translate("MainWindow", u"New Item", None))
+        self.comboBox_2.setItemText(6, QCoreApplication.translate("MainWindow", u"New Item", None))
+        self.comboBox_2.setItemText(7, QCoreApplication.translate("MainWindow", u"New Item", None))
+        self.comboBox_2.setItemText(8, QCoreApplication.translate("MainWindow", u"New Item", None))
+        self.comboBox_2.setItemText(9, QCoreApplication.translate("MainWindow", u"New Item", None))
+        self.comboBox_2.setItemText(10, QCoreApplication.translate("MainWindow", u"New Item", None))
+
         self.label.setText(QCoreApplication.translate("MainWindow", u"Temperature range:", None))
+        self.lineEdit.setText(QCoreApplication.translate("MainWindow", u"0.1 1000.1 100", None))
+        self.label_4.setText(QCoreApplication.translate("MainWindow", u"K", None))
         self.label_2.setText(QCoreApplication.translate("MainWindow", u"Pressure:", None))
-        self.label_9.setText(QCoreApplication.translate("MainWindow", u"to:", None))
+        self.lineEdit_2.setText(QCoreApplication.translate("MainWindow", u"0 30 10", None))
+        self.label_3.setText(QCoreApplication.translate("MainWindow", u"GPa", None))
+        self.radioButton.setText(QCoreApplication.translate("MainWindow", u"Slater", None))
+        self.radioButton_2.setText(QCoreApplication.translate("MainWindow", u"Dugdale-MacDonald", None))
+        self.radioButton_3.setText(QCoreApplication.translate("MainWindow", u"mean-free-volume", None))
+        self.label_7.setText(QCoreApplication.translate("MainWindow", u"FactSage parameters:", None))
+        self.label_5.setText(QCoreApplication.translate("MainWindow", u"From:", None))
+        self.lineEdit_3.setText(QCoreApplication.translate("MainWindow", u"298.15", None))
+        self.label_6.setText(QCoreApplication.translate("MainWindow", u"K", None))
+        self.label_9.setText(QCoreApplication.translate("MainWindow", u"   to:", None))
+        self.lineEdit_4.setText(QCoreApplication.translate("MainWindow", u"1000.1", None))
+        self.label_8.setText(QCoreApplication.translate("MainWindow", u"K", None))
+        self.label_10.setText(QCoreApplication.translate("MainWindow", u"    P:", None))
+        self.label_11.setText(QCoreApplication.translate("MainWindow", u"GPa", None))
         ___qtablewidgetitem = self.tableWidget.horizontalHeaderItem(0)
         ___qtablewidgetitem.setText(QCoreApplication.translate("MainWindow", u"Values", None));
         ___qtablewidgetitem1 = self.tableWidget.verticalHeaderItem(0)
@@ -229,32 +393,6 @@ class Ui_MainWindow(object):
         ___qtablewidgetitem16.setText(QCoreApplication.translate("MainWindow", u"T^(-3)", None));
         self.tableWidget.setSortingEnabled(__sortingEnabled)
 
-        self.label_5.setText(QCoreApplication.translate("MainWindow", u"From:", None))
-        self.label_4.setText(QCoreApplication.translate("MainWindow", u"K", None))
-        self.lineEdit_3.setText(QCoreApplication.translate("MainWindow", u"298.15", None))
-        self.label_8.setText(QCoreApplication.translate("MainWindow", u"K", None))
-        self.lineEdit.setText(QCoreApplication.translate("MainWindow", u"0.1 1000.1 100", None))
-        self.label_6.setText(QCoreApplication.translate("MainWindow", u"K", None))
         self.pushButton.setText(QCoreApplication.translate("MainWindow", u"re-calculate", None))
-        self.lineEdit_4.setText(QCoreApplication.translate("MainWindow", u"1000.1", None))
-        self.label_7.setText(QCoreApplication.translate("MainWindow", u"FactSage parameters:", None))
-        self.label_10.setText(QCoreApplication.translate("MainWindow", u"P:", None))
-        self.label_11.setText(QCoreApplication.translate("MainWindow", u"GPa", None))
-        self.comboBox_2.setItemText(0, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.comboBox_2.setItemText(1, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.comboBox_2.setItemText(2, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.comboBox_2.setItemText(3, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.comboBox_2.setItemText(4, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.comboBox_2.setItemText(5, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.comboBox_2.setItemText(6, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.comboBox_2.setItemText(7, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.comboBox_2.setItemText(8, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.comboBox_2.setItemText(9, QCoreApplication.translate("MainWindow", u"New Item", None))
-        self.comboBox_2.setItemText(10, QCoreApplication.translate("MainWindow", u"New Item", None))
-
-        self.label_12.setText(QCoreApplication.translate("MainWindow", u"property to plot:", None))
-        self.radioButton.setText(QCoreApplication.translate("MainWindow", u"Slater", None))
-        self.radioButton_2.setText(QCoreApplication.translate("MainWindow", u"Dugdale-MacDonald", None))
-        self.radioButton_3.setText(QCoreApplication.translate("MainWindow", u"mean-free-volume", None))
     # retranslateUi
 

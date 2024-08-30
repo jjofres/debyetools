@@ -107,7 +107,7 @@ class windowCp(QMainWindow):
 
             c = cm.PuRd((i+1)/len_Ps,1)
             self._ax.plot(X, Y, label='debyetools', color=c)
-            self._ax.text(X[-1]-100,Y[-1],'P='+Pi_str+'GPa', size=5)
+            self._ax.text(X[-2]-100,Y[-2],'P='+Pi_str+'GPa', size=8)
 
         self._ax.set_xlabel(str_x)
         self._ax.set_ylabel(str_y)

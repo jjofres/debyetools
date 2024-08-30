@@ -47,7 +47,7 @@ def Cp_LiFePO4(T, params,eval=''):
         tprops_dict = ndeb_MU.eval_Cp(T, V, P=0)
         return [tprops_dict['Cp']]
     else:
-        tprops_dict = ndeb_MU.eval_propssmall(T, V, P=0)
+        tprops_dict = ndeb_MU.eval_props(T, V, P=0)
         return tprops_dict['Cp'], tprops_dict['Sa'], tprops_dict['Fel'], tprops_dict['Fdef'], tprops_dict['tD'], \
                tprops_dict['a'], tprops_dict['Kt'], tprops_dict['G'], tprops_dict['V'], tprops_dict['dSdP_T'], \
                tprops_dict['dadP_T'], tprops_dict['dKtdT_P']

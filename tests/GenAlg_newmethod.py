@@ -1,0 +1,184 @@
+import numpy as np
+import debyetools.potentials as potentials
+import numpy.random as rnd
+from debyetools.ndeb import nDeb
+import time
+# import debyetools.tpropsgui.plotter as plot
+from matplotlib import pyplot as plt
+
+start = time.perf_counter()
+tag = rnd.randint(0,100)
+print('tag',str(tag)+'ax')
+
+def props(T, params, mass,  eos_pot, Tmelting):
+    print('>',end='')
+    E0, V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef, vdef, pel0, pel1, pel2, pel3 = params
+    p_intanh = np.array([a0, m0])
+    p_anh =  np.array([s0, s1, s2])
+    p_electronic = np.array([pel0, pel1, pel2, pel3])
+    p_defects = np.array([edef, np.sqrt(sdef ** 2), Tmelting, vdef])
+
+    # EOS parametrization
+    #=========================
+    initial_parameters = [E0, V0, K0, K0p]
+    eos_pot.fitEOS([V0], 0, initial_parameters=initial_parameters, fit=False)
+    p_EOS = eos_pot.pEOS
+    #=========================
+
+    # F minimization
+    #=========================
+    ndeb_MU = nDeb(nu, mass, p_intanh, eos_pot, p_electronic, p_defects, p_anh, mode='jjsl')
+    T, V = ndeb_MU.min_G(T, p_EOS[1], P=0)
+    #=========================
+
+    # Evaluations
+    #=========================
+    tprops_dict = ndeb_MU.eval_props(T, V, P=0)
+    #=========================
+
+    return tprops_dict
+
+norm_factor = [-6.74512999E+05, 6.405559904e-06, 1.555283892e+11, 4.095209375e+00]
+
+# Fitness function
+def eval_error(f, pf, Xdata, Ydata):
+    pfdenorm = [pfi*nfi for nfi, pfi in zip(norm_factor, pf)]
+    Ymodel = f(Xdata, pfdenorm)
+    return np.sqrt(np.mean((Ydata - Ymodel)**2)),
+
+def bounded_mutate(individual, low, up, indpb):
+    size = len(individual)
+    for i in range(size):
+        if random.random() < indpb:
+            individual[i] += random.gauss(0, 1)
+            if individual[i] < low:
+                individual[i] = low
+            elif individual[i] > up:
+                individual[i] = up
+    return individual,
+
+#########
+from deap import base, creator, tools, algorithms
+import random
+
+
+def ga_optim(f, Xdata, Ydata, initial_guess):
+    # Define bounds for each parameter
+
+    # Genetic Algorithm setup
+    creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
+    creator.create("Individual", list, fitness=creator.FitnessMin)
+
+    toolbox = base.Toolbox()
+    toolbox.register("attr_float", random.uniform, 0.8, 1.2)  # Parameter range
+    toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_float, n=len(initial_guess))
+    toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+
+    toolbox.register("mate", tools.cxBlend, alpha=0.5)
+    #toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=1, indpb=0.2)
+    toolbox.register("mutate", bounded_mutate, low=0.8, up=1.2, indpb=0.2)
+    toolbox.register("select", tools.selTournament, tournsize=3)
+    evaluate = lambda individual_norm: eval_error(f, individual_norm, Xdata, Ydata)
+    toolbox.register("evaluate", evaluate)
+
+
+    population = toolbox.population(n=20)  # Initial population
+    # population.append(initial_individual)  # Add the initial guess to the population
+
+    NGEN = 100  # Number of generations
+    CXPB, MUTPB = 0.5, 0.2  # Crossover and mutation probabilities
+    tolerance = 1e-6  # Convergence tolerance
+    stagnant_generations = 20  # Number of generations to check for stagnation
+    prev_best = None
+    stagnant_count = 0
+    # Evolutionary process
+    for gen in range(NGEN):
+        print('gen:', gen)
+        offspring = algorithms.varAnd(population, toolbox, cxpb=CXPB, mutpb=MUTPB)
+        fits = map(toolbox.evaluate, offspring)
+
+        for fit, ind in zip(fits, offspring):
+            print(fit, ind)
+            ind.fitness.values = fit
+
+        population = toolbox.select(offspring, k=len(population))
+
+        # Check for convergence
+        best_ind = tools.selBest(population, 1)[0]
+        best_fitness = best_ind.fitness.values[0]
+        print(f"Generation {gen}: Best fitness = {best_fitness}")
+
+        if prev_best is not None:
+            if abs(best_fitness - prev_best) < tolerance:
+                stagnant_count += 1
+            else:
+                stagnant_count = 0
+
+        prev_best = best_fitness
+
+        if stagnant_count >= stagnant_generations:
+            print("Convergence criterion met. Stopping.")
+            break
+
+    best_ind = tools.selBest(population, 1)[0]
+    print('Best individual:', best_ind)
+    print('Fitness:', best_ind.fitness.values)
+
+
+if __name__ == '__main__':
+    print('start')
+
+    #data
+    T_exp    = np.array([126.9565217,147.826087,167.826087,186.9565217,207.826087,226.9565217,248.6956522,267.826087,288.6956522,306.9565217,326.9565217,349.5652174,366.9565217,391.3043478,408.6956522,428.6956522,449.5652174,467.826087,488.6956522,510.4347826,530.4347826,548.6956522,571.3043478,590.4347826,608.6956522,633.0434783,649.5652174,670.4347826,689.5652174,711.3043478,730.4347826,750.4347826,772.173913])
+    Cp_exp   = np.array([9.049180328,10.14519906,11.29742389,12.05620609,12.92740047,13.82669789,14.61358314,15.45667447,16.07494145,16.55269321,17.00234192,17.73302108,18.21077283,18.60421546,19.25058548,19.53161593,19.78454333,20.12177986,20.4028103,20.90866511,21.18969555,21.52693208,21.89227166,22.4824356,22.96018735,23.40983607,23.69086651,23.88758782,23.71896956,23.7470726,23.85948478,23.83138173,24.19672131])
+    T_exp22  = np.array([2.03,2.2,2.38,2.58,2.8,3.04,3.29,3.56,3.86,4.19,4.54,4.92,5.33,5.78,6.26,6.78,7.35,7.97,8.64,9.36,10.14,10.23,10.75,11.26,11.77,12.28,12.8,13.31,13.83,14.34,14.85,15.36,15.88,16.39,16.9,17.41,17.93,18.44,18.95,19.47,19.9752,20.49,21.0062,21.51,22.03,22.54,23.05,23.56,24.08,24.59,25.1,25.61,26.13,26.64,27.15,27.67,28.18,28.69,29.2,29.71,30.22,30.73,31.24,31.76,32.27,32.78,33.29,33.8,34.31,34.82,35.34,35.85,37.02,38.89,40.75,42.62,44.48,45.5,45.72,45.92,46.14,46.34,46.55,46.75,46.97,47.16,47.38,47.58,47.8,47.99,48.2,48.4,48.62,48.82,49.03,49.22,49.44,49.64,49.85,50.05,50.27,50.47,50.69,50.89,51.08,51.29,51.5,51.7,51.9,52.12,52.32,52.53,52.72,52.94,53.14,53.35,53.55,53.77,53.96,54.18,54.38,54.59,54.79,55,55.2,55.41,55.62,56.61,57.71,58.79,59.89,60.97,62.06,63.15,64.24,65.33,66.42,67.51,68.59,69.68,70.77,71.15,73.24,75.34,77.43,79.53,81.62,83.72,85.81,87.9,90,92.09,94.19,96.28,98.38,100.47,102.56,104.65,106.73,108.85,110.94,113.02,115.13,117.22,119.27,119.96,120.69,121.4,122.12,122.83,123.54,124.25,124.96,125.68,126.36,127.07,127.81,131.36,141.32,151.46,161.54,171.6,181.68,191.78,201.84,211.78,222.01,232.1,242.04,252.15,262.34,272.43,282.56,292.55,302.7,293.2,313.2,333.2,353.2,284.9,294.8,304.6,314.5,324.4,334.4,344.3,354.2,364.1,374,383.9,393.8,403.8,413.7,423.6,433.5,443.4,453.3,463.3,473.2,483.1,493,502.9,512.8,522.7,532.6,542.5,552.4,562.3,572.3,582.2,592.1,602,611.9,621.8,631.7,641.6,651.6,661.5,671.8,681.3,691.3,701.2,711.1,721,730.9,740.8,750.8,760.7,770.6])
+    Cp_exp22 = np.array([0.0162,0.0187,0.0224,0.0243,0.0271,0.0309,0.0325,0.0401,0.048,0.0562,0.059,0.0709,0.0742,0.0903,0.101,0.12,0.138,0.173,0.22,0.276,0.364,0.46,0.535,0.615,0.706,0.808,0.917,1.038,1.171,1.314,1.467,1.631,1.797,1.977,2.169,2.363,2.571,2.79,3.015,3.249,3.484,3.75,3.99,4.26,4.55,4.83,5.13,5.43,5.74,6.06,6.4,6.75,7.09,7.45,7.84,8.22,8.63,9.04,9.47,9.92,10.36,10.82,11.31,11.78,12.28,12.78,13.28,13.81,14.35,14.9,15.46,16.03,17.18,19.19,21.8,24.74,28.1,30.18,30.67,31.15,31.65,32.17,32.68,33.24,33.77,34.33,34.9,35.53,36.14,36.79,37.43,38.11,38.7,39.3,39.72,40.03,39.73,38.83,36.64,33.84,30.69,28.52,26.66,25.59,24.86,24.3,23.89,23.58,23.36,23.13,22.99,22.88,22.83,22.74,22.69,22.66,22.66,22.66,22.66,22.69,22.68,22.73,22.77,22.82,22.85,22.91,22.95,23.28,23.69,24.17,24.67,25.19,25.78,26.36,26.97,27.59,28.2,28.84,29.48,30.12,30.78,31.26,32.53,33.86,35.17,36.46,37.8,39.15,40.41,41.69,42.91,44.24,45.59,46.89,48.18,49.44,50.67,52.08,53.17,54.37,55.54,56.62,58.05,59.3,60.39,60.87,61.12,61.55,61.93,62.24,62.63,63.1,63.45,63.84,64.12,64.49,64.96,66.82,71.82,76.8,81.23,85.36,89.21,93.16,97.49,100.3,103.27,105.66,108.22,110.6,112.67,114.97,117.79,120.06,120.5,120.85,125.4,128,130.1,120.8,122.5,126.1,128.2,129.7,132.2,134.8,136.3,137.9,140.2,142.9,145.5,147,148.9,150.3,151.6,152.8,154,155,156.3,157.5,159,160,161,162.2,163.4,165,166.2,167.1,168.3,169.6,170.4,171.1,173,173.6,174.2,174.9,175.7,176.8,177.4,178,178.7,179.4,180.6,181.6,182.4,183.5,184.5,185.7,186.9])
+    T_ph     = np.array([1.967263911, 24.08773869, 40.16838464, 51.99817063, 62.61346532, 71.62728127, 82.14182721, 95.16347545, 108.6874128, 123.7174904, 140.2528445, 158.7958422, 179.3467704, 202.4077519, 226.4743683, 250.5441451, 274.6162229, 299.1922033, 323.2681948, 347.8476048, 371.9269543, 396.0073777, 420.0891204, 444.171937, 468.7572464, 492.8416261, 516.9264916, 541.5140562, 565.6001558, 589.6869304, 613.7740731, 638.3634207, 662.4510066, 686.0373117, 711.1294163, 734.2134743, 764.3270346])
+    Cp_ph    = np.array([-0.375850956, -0.178378686, 1.227397939, 2.313383473, 3.431619848, 4.344789455, 5.478898585, 6.723965937, 7.953256737, 9.166990283, 10.40292814, 11.64187702, 12.87129914, 14.08268875, 15.21632722, 16.2118242, 17.10673273, 17.9153379, 18.63917154, 19.29786266, 19.87491167, 20.4050194, 20.87745642, 21.30295216, 21.70376428, 22.06093438, 22.39686914, 22.69910457, 22.98109412, 23.23357771, 23.46996716, 23.69426517, 23.91128202, 24.1000059, 24.28807125, 24.49073617, 24.58375529])
+
+
+
+    T = np.linspace(0.1, 800, 100)
+    Tmelting = 780
+    eos_pot =potentials.BM()
+    mass = 0.02253677142857143
+
+    E0, V0, K0, K0p =  -6.74512999E+05, 6.405559904e-06, 1.555283892e+11, 4.095209375e+00
+    nu = 0.27
+    a0, m0 = 0, 1
+    s0, s1, s2 = 0, 0, 0
+    edef, sdef, vdef =1e10, 0, 0.1
+    pel0, pel1, pel2, pel3 = 0, 0, 0, 0
+    params = E0, V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef, vdef, pel0, pel1, pel2, pel3
+
+    f2fit = lambda T, pf: props(T, (pf[0], pf[1], pf[2], pf[3], nu, a0, m0, s0, s1, s2, edef, sdef, vdef, pel0, pel1, pel2, pel3),mass, eos_pot,Tmelting)['Cp']
+
+    initial_guess = -6.74512999E+05, 6.405559904e-06, 1.555283892e+11, 4.095209375e+00
+
+    ix_T_exp = range(len(T_exp))
+    #random sample of 10 numbers from ix_T_exp
+    ix_sample = random.sample(ix_T_exp, 10)
+    T_data_fit = T_exp[ix_sample]
+    Cp_data_fit = Cp_exp[ix_sample]
+
+    best_params = ga_optim (f2fit, T_data_fit, Cp_data_fit, initial_guess)
+    tprops = props(T, params, mass, eos_pot, Tmelting)
+    Cp = tprops['Cp']
+
+
+    parameters_MU = [6.405559904e-06, 1.555283892e+11, 4.095209375e+00, 0.2747222272342077,0, 1,0,0,0, 200, 0]
+
+    fig, ax = plt.subplots()
+    ax.plot(T, Cp, 'k-')
+
+    ax.plot(T_exp, Cp_exp, marker='o', linestyle='None', color='violet', label='Cp exp', markerfacecolor='None')
+    ax.plot(T_exp22, Cp_exp22/7, marker='s', linestyle='None', color='deepskyblue', label='Cp exp 22', markerfacecolor='None')
+    ax.plot(T_ph, Cp_ph, marker='None', linestyle='--', color='k', label='Cp ph')
+
+    ax.set_title(r'$C_{P}(T)$', y=0.8)
+    ax.set_xlabel(r'Temperature $[K]$')
+    ax.set_ylabel(r'$[J/(K\cdot mol-at)]$')
+    ax.legend()
+    plt.show()
+    end = time.perf_counter()
+    print(end - start)

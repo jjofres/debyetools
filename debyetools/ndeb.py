@@ -192,7 +192,7 @@ class nDeb:
         d3FdefdVdT2 = self.deff.d3FdVdT2(T, V)
 
         # Ea = self.anh.E(T, V)
-        # Sa = self.anh.S(T, V)
+        Sa = self.anh.S(T, V)
         Fa = self.anh.F(T, V)
         dFadV_T = self.anh.dFdV_T(T, V)
         d2FadT2_V = self.anh.d2FdT2_V(T, V)
@@ -278,7 +278,7 @@ class nDeb:
                 'P': -dFdV_T,
                 'dtDdV_T':self.vib.dtDdV_T,'d2tDdV2_T':self.vib.d2tDdV2_T, 'D_3':D_3(tD/T),
                 'd2E0dV2_T':d2E0dV2_T, 'dPdV_T':dPdV_T,
-                'dE0dV_T':dE0dV_T, 'd3E0dV3_T':d3E0dV3_T, 'Fa':Fa, 'Fdef':Fdef, 'Fel': Fel
+                'dE0dV_T':dE0dV_T, 'd3E0dV3_T':d3E0dV3_T, 'Fa':Fa, 'Fdef':Fdef, 'Fel': Fel, 'Sa': Sa
                 }
 
     def eval_Cp(self, T: np.ndarray, V: np.ndarray, P = None) -> dict:

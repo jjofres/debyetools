@@ -5,6 +5,8 @@ from debyetools.ndeb import nDeb
 import time
 # import debyetools.tpropsgui.plotter as plot
 from matplotlib import pyplot as plt
+import random
+from debyetools.ga_fitting import ga_optim
 
 start = time.perf_counter()
 tag = rnd.randint(0,100)
@@ -38,91 +40,22 @@ def props(T, params, mass,  eos_pot, Tmelting):
 
     return tprops_dict
 
-norm_factor = [-6.74512999E+05, 6.405559904e-06, 1.555283892e+11, 4.095209375e+00]
-
-# Fitness function
-def eval_error(f, pf, Xdata, Ydata):
-    pfdenorm = [pfi*nfi for nfi, pfi in zip(norm_factor, pf)]
-    Ymodel = f(Xdata, pfdenorm)
-    return np.sqrt(np.mean((Ydata - Ymodel)**2)),
-
-def bounded_mutate(individual, low, up, indpb):
-    size = len(individual)
-    for i in range(size):
-        if random.random() < indpb:
-            individual[i] += random.gauss(0, 1)
-            if individual[i] < low:
-                individual[i] = low
-            elif individual[i] > up:
-                individual[i] = up
-    return individual,
-
-#########
-from deap import base, creator, tools, algorithms
-import random
 
 
-def ga_optim(f, Xdata, Ydata, initial_guess):
-    # Define bounds for each parameter
+def get_params_list(params,params_alt, lst_str_alt):
+    #E0, V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef, vdef, pel0, pel1, pel2, pel3
+    lst_str = ['E0', 'V0', 'K0', 'K0p', 'nu', 'a0', 'm0', 's0', 's1', 's2', 'edef', 'sdef', 'vdef', 'pel0', 'pel1', 'pel2', 'pel3']
+    dict_params = dict(zip(lst_str, params))
+    dict_params_alt = dict(zip(lst_str_alt, params_alt))
+    lst_params=[]
+    for k in lst_str:
+        if k in lst_str_alt:
+            lst_params.append(dict_params_alt[k])
+        else:
+            lst_params.append(dict_params[k])
 
-    # Genetic Algorithm setup
-    creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-    creator.create("Individual", list, fitness=creator.FitnessMin)
+    return lst_params
 
-    toolbox = base.Toolbox()
-    toolbox.register("attr_float", random.uniform, 0.8, 1.2)  # Parameter range
-    toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_float, n=len(initial_guess))
-    toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-
-    toolbox.register("mate", tools.cxBlend, alpha=0.5)
-    #toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=1, indpb=0.2)
-    toolbox.register("mutate", bounded_mutate, low=0.8, up=1.2, indpb=0.2)
-    toolbox.register("select", tools.selTournament, tournsize=3)
-    evaluate = lambda individual_norm: eval_error(f, individual_norm, Xdata, Ydata)
-    toolbox.register("evaluate", evaluate)
-
-
-    population = toolbox.population(n=20)  # Initial population
-    # population.append(initial_individual)  # Add the initial guess to the population
-
-    NGEN = 100  # Number of generations
-    CXPB, MUTPB = 0.5, 0.2  # Crossover and mutation probabilities
-    tolerance = 1e-6  # Convergence tolerance
-    stagnant_generations = 20  # Number of generations to check for stagnation
-    prev_best = None
-    stagnant_count = 0
-    # Evolutionary process
-    for gen in range(NGEN):
-        print('gen:', gen)
-        offspring = algorithms.varAnd(population, toolbox, cxpb=CXPB, mutpb=MUTPB)
-        fits = map(toolbox.evaluate, offspring)
-
-        for fit, ind in zip(fits, offspring):
-            print(fit, ind)
-            ind.fitness.values = fit
-
-        population = toolbox.select(offspring, k=len(population))
-
-        # Check for convergence
-        best_ind = tools.selBest(population, 1)[0]
-        best_fitness = best_ind.fitness.values[0]
-        print(f"Generation {gen}: Best fitness = {best_fitness}")
-
-        if prev_best is not None:
-            if abs(best_fitness - prev_best) < tolerance:
-                stagnant_count += 1
-            else:
-                stagnant_count = 0
-
-        prev_best = best_fitness
-
-        if stagnant_count >= stagnant_generations:
-            print("Convergence criterion met. Stopping.")
-            break
-
-    best_ind = tools.selBest(population, 1)[0]
-    print('Best individual:', best_ind)
-    print('Fitness:', best_ind.fitness.values)
 
 
 if __name__ == '__main__':
@@ -151,9 +84,9 @@ if __name__ == '__main__':
     pel0, pel1, pel2, pel3 = 0, 0, 0, 0
     params = E0, V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef, vdef, pel0, pel1, pel2, pel3
 
-    f2fit = lambda T, pf: props(T, (pf[0], pf[1], pf[2], pf[3], nu, a0, m0, s0, s1, s2, edef, sdef, vdef, pel0, pel1, pel2, pel3),mass, eos_pot,Tmelting)['Cp']
-
-    initial_guess = -6.74512999E+05, 6.405559904e-06, 1.555283892e+11, 4.095209375e+00
+    initial_guess = [-6.74512999E+05, 6.405559904e-06, 1.555283892e+11, 4.095209375e+00, 0.27,1e-5,1]
+    str_params2fit = ['E0', 'V0', 'K0', 'K0p', 'nu', 'a0', 'm0']
+    f2fit = lambda T, pf: props(T, get_params_list(params, pf, str_params2fit),mass, eos_pot,Tmelting)['Cp']
 
     ix_T_exp = range(len(T_exp))
     #random sample of 10 numbers from ix_T_exp
@@ -161,12 +94,13 @@ if __name__ == '__main__':
     T_data_fit = T_exp[ix_sample]
     Cp_data_fit = Cp_exp[ix_sample]
 
-    best_params = ga_optim (f2fit, T_data_fit, Cp_data_fit, initial_guess)
-    tprops = props(T, params, mass, eos_pot, Tmelting)
+    best_params = ga_optim (f2fit, T_data_fit, Cp_data_fit, initial_guess, param_range=(0.8, 1.2),
+                            stagnant_gens=10, npop=10, ngen=50)
+    print('best_params:', best_params)
+
+    params_afer_fit = get_params_list(params, best_params, str_params2fit)
+    tprops = props(T, params_afer_fit, mass, eos_pot, Tmelting)
     Cp = tprops['Cp']
-
-
-    parameters_MU = [6.405559904e-06, 1.555283892e+11, 4.095209375e+00, 0.2747222272342077,0, 1,0,0,0, 200, 0]
 
     fig, ax = plt.subplots()
     ax.plot(T, Cp, 'k-')

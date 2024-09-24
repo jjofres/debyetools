@@ -10,11 +10,15 @@ from debyetools.ga_fitting import ga_optim
 
 start = time.perf_counter()
 tag = rnd.randint(0,100)
-print('tag',str(tag)+'ax')
+print('tag', str(tag)+'ax')
 
+time_eos = 0
+time_Fmin = 0
+time_tprops = 0
 def props(T, params, mass,  eos_pot, Tmelting):
-    print('>',end='')
-    E0, V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef, vdef, pel0, pel1, pel2, pel3 = params
+    print('>>> ', end=' ')
+    global time_eos, time_Fmin, time_tprops
+    E0, V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef, vdef, pel0, pel1, pel2, pel3, xs0, xs1, xs2, xs3, xs4, xs5 = params
     p_intanh = np.array([a0, m0])
     p_anh =  np.array([s0, s1, s2])
     p_electronic = np.array([pel0, pel1, pel2, pel3])
@@ -22,20 +26,32 @@ def props(T, params, mass,  eos_pot, Tmelting):
 
     # EOS parametrization
     #=========================
+    tic_eos = time.time()
     initial_parameters = [E0, V0, K0, K0p]
     eos_pot.fitEOS([V0], 0, initial_parameters=initial_parameters, fit=False)
     p_EOS = eos_pot.pEOS
+    time_eos += time.time()-tic_eos
+    print('EOS time:', time_eos, end=' ')
     #=========================
 
     # F minimization
     #=========================
-    ndeb_MU = nDeb(nu, mass, p_intanh, eos_pot, p_electronic, p_defects, p_anh, mode='jjsl')
+    tic_Fmin = time.time()
+    ndeb_MU = nDeb(nu, mass, p_intanh, eos_pot, p_electronic, p_defects, p_anh, mode='jjsl',
+                   xsparams=[xs0, xs1, xs2, xs3, xs4, xs5], r=4)
+    # ndeb_MU.r = 4
     T, V = ndeb_MU.min_G(T, p_EOS[1], P=0)
+    time_Fmin += time.time()-tic_Fmin
+    print('Fmin time:', time_Fmin, end=' ')
     #=========================
 
     # Evaluations
     #=========================
+    tic_tprops = time.time()
     tprops_dict = ndeb_MU.eval_props(T, V, P=0)
+    time_tprops += time.time()-tic_tprops
+    print('Tprops time:', time_tprops, end=' ')
+
     #=========================
 
     return tprops_dict
@@ -44,7 +60,8 @@ def props(T, params, mass,  eos_pot, Tmelting):
 
 def get_params_list(params,params_alt, lst_str_alt):
     #E0, V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef, vdef, pel0, pel1, pel2, pel3
-    lst_str = ['E0', 'V0', 'K0', 'K0p', 'nu', 'a0', 'm0', 's0', 's1', 's2', 'edef', 'sdef', 'vdef', 'pel0', 'pel1', 'pel2', 'pel3']
+    lst_str = ['E0', 'V0', 'K0', 'K0p', 'nu', 'a0', 'm0', 's0', 's1', 's2',
+               'edef', 'sdef', 'vdef', 'pel0', 'pel1', 'pel2', 'pel3', 'xs0', 'xs1', 'xs2', 'xs3', 'xs4', 'xs5']
     dict_params = dict(zip(lst_str, params))
     dict_params_alt = dict(zip(lst_str_alt, params_alt))
     lst_params=[]
@@ -71,7 +88,7 @@ if __name__ == '__main__':
 
 
 
-    T = np.linspace(0.1, 800, 100)
+    T = np.linspace(1, 800, 100)
     Tmelting = 780
     eos_pot =potentials.BM()
     mass = 0.02253677142857143
@@ -82,21 +99,32 @@ if __name__ == '__main__':
     s0, s1, s2 = 0, 0, 0
     edef, sdef, vdef =1e10, 0, 0.1
     pel0, pel1, pel2, pel3 = 0, 0, 0, 0
-    params = E0, V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef, vdef, pel0, pel1, pel2, pel3
+    xs0, xs1, xs2, xs3, xs4, xs5 = 0, 0, 0, 0, 0, 0
+    params = E0, V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef, vdef, pel0, pel1, pel2, pel3, xs0, xs1, xs2, xs3, xs4, xs5
 
-    initial_guess = [-6.74512999E+05, 6.405559904e-06, 1.555283892e+11, 4.095209375e+00, 0.27,1e-5,1]
-    str_params2fit = ['E0', 'V0', 'K0', 'K0p', 'nu', 'a0', 'm0']
-    f2fit = lambda T, pf: props(T, get_params_list(params, pf, str_params2fit),mass, eos_pot,Tmelting)['Cp']
+    # initial_guess = [-6.74512999E+05, 6.405559904e-06, 1.555283892e+11, 4.095209375e+00, 0.27,1e-5,1, 1, 1, 1, 1]
+    # str_params2fit = ['E0', 'V0', 'K0', 'K0p', 'nu', 'a0', 'm0', 'xs0', 'xs1', 'xs2', 'xs3']
+    initial_guess = [-6.74512999E+05, 6.405559904e-06, 1.555283892e+11, 4.095209375e+00, 0.27,
+                     1e-5, 1,
+                     -10e0,-10e-3,-10e-6,-10e-9, -1e-4, -10e-4]
 
-    ix_T_exp = range(len(T_exp))
-    #random sample of 10 numbers from ix_T_exp
-    ix_sample = random.sample(ix_T_exp, 10)
-    T_data_fit = T_exp[ix_sample]
-    Cp_data_fit = Cp_exp[ix_sample]
+    str_params2fit = ['E0', 'V0', 'K0', 'K0p', 'nu', 'a0', 'm0', 'xs0', 'xs1', 'xs2', 'xs3', 'xs4', 'xs5']
+    for iiii in range(10):
 
-    best_params = ga_optim (f2fit, T_data_fit, Cp_data_fit, initial_guess, param_range=(0.8, 1.2),
-                            stagnant_gens=10, npop=10, ngen=50)
-    print('best_params:', best_params)
+        def f2fit(Temp, pf):
+            return props(Temp, get_params_list(params, pf, str_params2fit), mass, eos_pot, Tmelting)['Cp']
+
+        ix_T_exp = range(len(T_exp))
+        # Take a random sample of 10 numbers from ix_T_exp
+        ix_sample = random.sample(ix_T_exp, 10)
+        T_data_fit = T_exp[ix_sample]
+        Cp_data_fit = Cp_exp[ix_sample]
+
+        best_params = ga_optim (f2fit, T_data_fit, Cp_data_fit, initial_guess, param_range=(0.7, 1.3),
+                                stagnant_gens=20, npop=20, ngen=10, pcross=0.5, pmut=0.4)
+                                # stagnant_gens = 1, npop = 1, ngen = 1, pcross = 0.5, pmut = 0.4)
+        print('best_params:', best_params)
+        initial_guess = best_params
 
     params_afer_fit = get_params_list(params, best_params, str_params2fit)
     tprops = props(T, params_afer_fit, mass, eos_pot, Tmelting)
@@ -115,4 +143,4 @@ if __name__ == '__main__':
     ax.legend()
     plt.show()
     end = time.perf_counter()
-    print(end - start)
+    print('Total time:', end - start)

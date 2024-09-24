@@ -58,14 +58,14 @@ def ga_optim(f, Xdata, Ydata, initial_guess, param_range=(0.8, 1.2), npop = 20, 
         fits = map(toolbox.evaluate, offspring)
 
         for fit, ind in zip(fits, offspring):
-            print(fit, ind)
+            print(f'fitness: {fit[0]:.7f}', 'ind', ind)
             ind.fitness.values = fit
 
         population = toolbox.select(offspring, k=len(population))
 
         # Check for convergence
         best_ind = tools.selBest(population, 1)[0]
-        best_fitness = best_ind.fitness.values[0]
+        best_fitness = round(best_ind.fitness.values[0], 7)
         print(f"Generation {gen}: Best fitness = {best_fitness}, stagnant count:{stagnant_count}")
 
         if prev_best is not None:
@@ -77,7 +77,7 @@ def ga_optim(f, Xdata, Ydata, initial_guess, param_range=(0.8, 1.2), npop = 20, 
         prev_best = best_fitness
 
         if stagnant_count >= stagnant_generations:
-            print("Convergence criterion met. Stopping.")
+            print("Convergence criterion met (stagnant_count). Stopping.")
             break
 
     best_ind = tools.selBest(population, 1)[0]

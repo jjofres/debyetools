@@ -58,6 +58,7 @@ class windowInteratormic(QMainWindow):
 #        print('bkp1')
 
         ds, ns, cts = self.molecule.distances, self.molecule.num_bonds_per_formula, self.molecule.combs_types
+        print('xxxx', cts)
 
         self.ui.plainTextEdit.setPlainText('')
         print_to_box(self.ui.plainTextEdit,'Pair analysis:\n')
@@ -76,7 +77,7 @@ class windowInteratormic(QMainWindow):
                         6.61e-02, 3.01e-01, 5.31e-05]*int(ntypes)
 
         params = ', '.join([str(pi) for pi in params])
-        self.params_interatomic = ', '.join([params for _ in range(len(cts))])
+        self.params_interatomic = params#', '.join([params for _ in range(len(cts))])
 
         self.ui.lineEdit_3.setText(self.params_interatomic)
 

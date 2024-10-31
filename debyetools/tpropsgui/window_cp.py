@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt
 from debyetools.tpropsgui.ui_heatcapacitywindow import Ui_MainWindow as Ui_Cp
 
 from debyetools.fs_compound_db import fit_FS as dt_fit_FS
+from debyetools.tpropsgui.atomtools import atom_energy
 #from debyetools.fs_compound_db import Cp2fit as dt_Cp2fit
 
 # from  debyetools.tpropsgui.backend_qt_patched.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -24,7 +25,7 @@ class windowCp(QMainWindow):
         super().__init__(parent)
         self.ui = Ui_Cp()
         self.ui.setupUi(self)
-        # self.app = app
+#        self.app = app
 
         self.fig = Figure(figsize=(3, 3))
         self.canvas = FigureCanvas(self.fig)
@@ -106,7 +107,7 @@ class windowCp(QMainWindow):
 
             c = cm.PuRd((i+1)/len_Ps,1)
             self._ax.plot(X, Y, label='debyetools', color=c)
-            self._ax.text(X[-1]-100,Y[-1],'P='+Pi_str+'GPa', size=5)
+            self._ax.text(X[-2]-100,Y[-2],'P='+Pi_str+'GPa', size=8)
 
         self._ax.set_xlabel(str_x)
         self._ax.set_ylabel(str_y)
@@ -114,7 +115,9 @@ class windowCp(QMainWindow):
         self.canvas.draw()
 
 
-    def debye_run(self, molecule, ui_progress):
+    def debye_run(self, molecule, ui_progress, formula):
+        self.formula=formula
+        txt4output = f'{formula}$'
         if self.ui.radioButton.isChecked():
             mode ='jjsl'
         elif self.ui.radioButton_2.isChecked():
@@ -164,12 +167,28 @@ class windowCp(QMainWindow):
             self.dict_S298['%.1f'%(P/1e9)] = molecule.tprops_dict['S'][ix_T0]
 
 #            self.plot_Cp(self.dict_tp['%.1f'%(P/1e9)], self.dict_FS['%.1f'%(P/1e9)])
+            nats = len(molecule.types)
+            if P==0:
+                # print(molecule.__dict__.keys())
+                Ef = molecule.eos.E0(molecule.eos.V0)-sum([atom_energy[ti] for ti in molecule.types])*(0.160218e-18 * 6.02214e23)/len(molecule.types)
+                txt4output += f'{Ef*nats:.7e}'
+
+        txt4output += f'${self.dict_S298['%.1f'%(0/1e9)]*nats:.7e}$'
 
         self.ui.tableWidget.setItem(0,0,QTableWidgetItem('%.5e' % (self.dict_H298['%.1f'%(0/1e9)])))
         self.ui.tableWidget.setItem(1,0,QTableWidgetItem('%.5e' % (self.dict_S298['%.1f'%(0/1e9)])))
-        for ix, p in enumerate(self.dict_FS['%.1f'%(0/1e9)]['Cp']):
-            self.ui.tableWidget.setItem(ix+2,0,QTableWidgetItem('%.5e' % (p)))
 
+        lst4output = []
+        for ix, p in enumerate(self.dict_FS['%.1f'%(0/1e9)]['Cp']):
+            lst4output.append(f'{p*nats:.7e}')
+            self.ui.tableWidget.setItem(ix+2,0,QTableWidgetItem('%.5e' % (p)))
+        txt4output += '&'.join(lst4output)
+        txt4output += '$'
+        t4out = [f'{p:.2e}' for p in [self.FS_Tfrom, self.FS_Tto]]
+        txt4output += '&'.join(t4out)
+
+        with open('dtoutput4cmpnd', 'w') as f:
+            f.write(txt4output)
 #            self._ax.text(Y[-1],X[-1],'P=')
 
 
@@ -229,7 +248,7 @@ class windowCp(QMainWindow):
 
     def on_click_recalc(self):
         self._ax.cla()
-        self.debye_run(self.molecule, self.ui.progress)
+        self.debye_run(self.molecule, self.ui.progress, self.formula)
 
     def update_FS_Tto(self):
         try:
@@ -237,3 +256,4 @@ class windowCp(QMainWindow):
             self.ui.lineEdit_4.setText(str(Tf))
         except:
             pass
+

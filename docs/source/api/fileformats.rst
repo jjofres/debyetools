@@ -10,7 +10,7 @@ Input file formats
    :depth: 3
 
 Folder structure
-----------------
+================
 
 The input files must be located in the same folder of a given compound and that folder have to be ideally be named by the formula followed by the space group, for example for Al2O3 R3c the folder name would be `Al2O3_R3c`.
 There is also a naming rule for the  input files. `SUMMARY.fcc` contains the output total energies for the NVT calculations. `CONTCAR.5` contain the cell coordinates and basis vectors of the crystal structure. `OUTCAR.eps` is the output of the calculations of the elastic properties and have the Elastic moduli tensor. 'DOSCAR.EvV.x' are a set of files containing the electronic DOS, and are outputs of the NVT calculations.
@@ -35,7 +35,7 @@ There is also a naming rule for the  input files. `SUMMARY.fcc` contains the out
               |-- SUMMARY.fcc
 
 NPT calculations
-----------------
+================
 
 `CONTCAR.5`
 
@@ -61,7 +61,7 @@ NPT calculations
 
 
 NVT calculations
-----------------
+================
 
 `SUMMARY.fcc`:
 
@@ -183,7 +183,7 @@ Extract of `DOCAR.EvV.-0.01`.
          20.233  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00
 
 Elastic properties calculations
--------------------------------
+===============================
 
 Extract of `OUTCAR.eps`.
 
@@ -211,3 +211,50 @@ Extract of `OUTCAR.eps`.
      YZ        -0     -0       0      -0           1320     200
      ZX         0      0       0      -0           200    1510
      --------------------------------------------------------------------------------
+
+Direct inputs
+=============
+
+Instead of files, the input data can be entered directly as `numpy.arrays` or,
+in the case if the GUI, as plain text. For example, the energy curve for Al\ :sub:`3`\ Li L1\ :sub:`2`\
+in eV/A\ :sup:`3`\ per atom:
+
+.. code-block:: python
+
+    #V	E
+    1.188839e+01	-2.971644e+00
+    1.228909e+01	-3.061733e+00
+    1.269870e+01	-3.138113e+00
+    1.311730e+01	-3.202274e+00
+    1.354501e+01	-3.255126e+00
+    1.398191e+01	-3.297945e+00
+    1.442811e+01	-3.331133e+00
+    1.488370e+01	-3.355852e+00
+    1.534878e+01	-3.372588e+00
+    1.582345e+01	-3.382024e+00
+    1.630781e+01	-3.384997e+00
+    1.680195e+01	-3.382070e+00
+    1.730598e+01	-3.373913e+00
+    1.781999e+01	-3.360960e+00
+    1.834407e+01	-3.343770e+00
+    1.887833e+01	-3.322563e+00
+    1.942286e+01	-3.298003e+00
+    1.997777e+01	-3.270464e+00
+    2.054315e+01	-3.240472e+00
+    2.111909e+01	-3.208295e+00
+    2.170570e+01	-3.174068e+00
+
+
+
+The elastic constants for Al\ :sub:`3`\ Li L1\ :sub:`2`\ in GPa:
+
+.. code-block:: python
+
+    122.26  35.00  35.00 -0.00  0.00  0.00
+     35.00 122.22  34.95 -0.00  0.00 -0.00
+     35.00  34.95 122.22  0.00  0.00  0.00
+     -0.00  -0.00   0.00 41.47  0.00  0.00
+     0.00    0.00   0.00  0.00 41.39  0.00
+     0.00   -0.00   0.00  0.00  0.00 41.47
+
+

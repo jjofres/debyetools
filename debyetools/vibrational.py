@@ -5,7 +5,7 @@ np.seterr(divide='ignore',invalid='ignore')
 hbar = 0.1054571800e-33
 NAv = 0.6022140857e24
 kB = 0.138064852e-22
-r = 1
+# r = 1
 
 
 class Vibrational:
@@ -21,7 +21,10 @@ class Vibrational:
     :param intAnharmonicity_instance intanh: Intrinsic anharmonicity object.
     """
 
-    def __init__(self, nu: float, EOS_obj: object, m: float, intanh: np.ndarray, mode: str):
+    def __init__(self, nu: float, EOS_obj: object, m: float, intanh: np.ndarray, mode: str, rin=1):
+
+        self.r = rin
+        r=self.r
         self.d4tDdV4_T = None
         self.d3tDdVdT2 = None
         self.d3tDdV2dT = None
@@ -136,6 +139,7 @@ class Vibrational:
         """
         kv = self.kv
         m = self.m
+        r =self.r
 
         b_DM = self.b_DM
         a_DM = self.a_DM
@@ -286,6 +290,7 @@ class Vibrational:
         :return: F_vib.
         :rtype:  float
         """
+        r = self.r
 
         x = self.tD/T
         D3 = D_3(x)
@@ -293,7 +298,7 @@ class Vibrational:
         if type(V) is not np.ndarray:
             if x < 0.04:
                 return 1e10
-        return 3*r*NAv*kB*(self.tD*3/8+T*np.log(1-np.exp(-x))-D3*T/3)
+        return 3*NAv*kB*(self.tD*3/8+T*np.log(1-np.exp(-x))-D3*T/3)
 
     def dFdV_T(self, T: float, V: float) -> float:
         """
@@ -304,11 +309,11 @@ class Vibrational:
         :return: dFdV_T.
         :rtype:  float
         """
-
+        r = self.r
         x = self.tD/T
         D3 = D_3(x)
         dD3 = dD_3dx(x, D3)
-        return 3*r*NAv*kB*(3*(self.dtDdV_T)*(1/8)+(self.dtDdV_T)*np.exp(-x)/(1-np.exp(-x))-(1/3)*dD3*(self.dtDdV_T))
+        return 3*NAv*kB*(3*(self.dtDdV_T)*(1/8)+(self.dtDdV_T)*np.exp(-x)/(1-np.exp(-x))-(1/3)*dD3*(self.dtDdV_T))
 
     def dFdT_V(self, T: float, V: float) -> float:
         """
@@ -319,6 +324,7 @@ class Vibrational:
         :return: dFdT_V.
         :rtype:  float
         """
+        r = self.r
 
         x = self.tD / T
         ixs = np.where(x >= 653)
@@ -329,7 +335,7 @@ class Vibrational:
         ex = np.exp(x)
         D3 = D_3(x)
         dD3dx = dD_3dx(x, D3)
-        return 9*r*NAv*kB*(self.dtDdT_V)*(1/8) + 3*kB*r*NAv*np.log(1-np.exp(-x)) + 3*r*NAv*kB*(self.dtDdT_V)/(ex*(1-1/ex)) - 3*r*NAv*kB*self.tD/(T*ex*(1-1/ex)) - r*NAv*kB*dD3dx*(self.dtDdT_V) + r*NAv*kB*dD3dx*self.tD/T - r*NAv*kB*D3
+        return 9*NAv*kB*(self.dtDdT_V)*(1/8) + 3*kB*r*NAv*np.log(1-np.exp(-x)) + 3*r*NAv*kB*(self.dtDdT_V)/(ex*(1-1/ex)) - 3*r*NAv*kB*self.tD/(T*ex*(1-1/ex)) - r*NAv*kB*dD3dx*(self.dtDdT_V) + r*NAv*kB*dD3dx*self.tD/T - r*NAv*kB*D3
 
     def d2FdT2_V(self, T: float, V: float) -> float:
         """
@@ -340,7 +346,7 @@ class Vibrational:
         :return: d2FdT2_V.
         :rtype:  float
         """
-
+        r = self.r
         x = self.tD / T
         ixs = np.where(x >= 653)
         if len(ixs[0]) > 0:
@@ -349,7 +355,7 @@ class Vibrational:
                     x[i] = 653
         ex = np.exp(x)
         D3 = D_3(x)
-        return 3 * r * NAv * ((ex - 1) * T * (
+        return 3  * NAv * ((ex - 1) * T * (
                     T ** 2 * self.d2tDdT2_V * self.tD - 4 * (self.dtDdT_V * T - self.tD) ** 2) * D3 + 3 * self.tD * (
                              self.d2tDdT2_V * self.tD * ex * T ** 2 - T ** 2 * self.d2tDdT2_V * self.tD + 8 * (
                               self.dtDdT_V * T - self.tD) ** 2) * (1 / 8)) * kB / (
@@ -364,10 +370,11 @@ class Vibrational:
         :return: d2FdV2_T.
         :rtype:  float
         """
+        r = self.r
         x = self.tD / T
         D3 = D_3(x)
         dD3dx = dD_3dx(x, D3)
-        return 3 * r * NAv * kB * (
+        return 3  * NAv * kB * (
                     8 * self.dtDdV_T ** 2 * self.tD * dD3dx - 8 * self.dtDdV_T ** 2 * D3 * T + 8 * self.d2tDdV2_T * D3 * self.tD * T + 3 * self.d2tDdV2_T * self.tD ** 2) / (
                            8 * self.tD ** 2)
 
@@ -380,11 +387,12 @@ class Vibrational:
         :return: d3FdV3_T.
         :rtype:  float
         """
+        r = self.r
         x = self.tD / T
         D3 = D_3(x)
         dD3dx = dD_3dx(x, D3)
         d2D3dx2 = d2D_3dx2(x, D3, dD3dx)
-        return 3 * r * (T ** 2 * (
+        return 3  * (T ** 2 * (
                     self.d3tDdV3_T * self.tD ** 2 - 3 * self.dtDdV_T * self.d2tDdV2_T * self.tD + 2 * self.dtDdV_T ** 3) * D3 + (
                                     3 * self.dtDdV_T * self.d2tDdV2_T * T * self.tD ** 2 - 2 * self.dtDdV_T ** 3 * T * self.tD) * dD3dx + d2D3dx2 * self.dtDdV_T ** 3 * self.tD ** 2 + 3 * self.d3tDdV3_T * self.tD ** 3 * T * (
                                     1 / 8)) * kB * NAv / (T * self.tD ** 3)
@@ -398,13 +406,14 @@ class Vibrational:
         :return: d4FdV4_T.
         :rtype:  float
         """
+        r = self.r
         x = self.tD / T
         D3 = D_3(x)
         dD3dx = dD_3dx(x, D3)
         d2D3dx2 = d2D_3dx2(x, D3, dD3dx)
         d3D3dx3 = d3D_3dx3(x, D3, dD3dx, d2D3dx2)
 
-        return -12 * r * (T ** 3 * (-(1 / 4) * self.d4tDdV4_T * self.tD ** 3 + (
+        return -12  * (T ** 3 * (-(1 / 4) * self.d4tDdV4_T * self.tD ** 3 + (
                     self.d3tDdV3_T * self.dtDdV_T + 3 * self.d2tDdV2_T ** 2 * (
                         1 / 4)) * self.tD ** 2 - 3 * self.dtDdV_T ** 2 * self.d2tDdV2_T * self.tD + 3 * self.dtDdV_T ** 4 * (
                                                 1 / 2)) * D3 - self.tD * (T ** 2 * ((
@@ -426,10 +435,11 @@ class Vibrational:
         :return: d2FdVdT.
         :rtype:  float
         """
+        r = self.r
         x = self.tD / T
         D3 = D_3(x)
         dD3dx = dD_3dx(x, D3)
-        return 3 * r * (dD3dx * (self.dtDdT_V / T - self.tD / T ** 2) * T + D3 + 3 * self.dtDdT_V * (
+        return 3  * (dD3dx * (self.dtDdT_V / T - self.tD / T ** 2) * T + D3 + 3 * self.dtDdT_V * (
                     1 / 8)) * kB * self.dtDdV_T * NAv / self.tD + 3 * r * (
                            D3 * T + 3 * self.tD * (1 / 8)) * kB * self.d2tDdVdT * NAv / self.tD - 3 * r * (
                            D3 * T + 3 * self.tD * (1 / 8)) * kB * self.dtDdV_T * NAv * self.dtDdT_V / self.tD ** 2
@@ -443,12 +453,13 @@ class Vibrational:
         :return: d3FdV2dT.
         :rtype:  float
         """
+        r = self.r
         x = self.tD / T
         D3 = D_3(x)
         dD3dx = dD_3dx(x, D3)
         d2D3dx2 = d2D_3dx2(x, D3, dD3dx)
 
-        return -3 * r * (T ** 2 * ((-T * self.d3tDdV2dT - self.d2tDdV2_T) * self.tD ** 2 + (
+        return -3  * (T ** 2 * ((-T * self.d3tDdV2dT - self.d2tDdV2_T) * self.tD ** 2 + (
                     T * self.d2tDdV2_T * self.dtDdT_V + 2 * T * self.dtDdV_T * self.d2tDdVdT + self.dtDdV_T ** 2) * self.tD - 2 * T * self.dtDdT_V * self.dtDdV_T ** 2) * D3 - self.tD * (
                                      (-self.d2tDdV2_T * self.tD ** 2 + (
                                                  T * self.d2tDdV2_T * self.dtDdT_V + 2 * T * self.dtDdV_T * self.d2tDdVdT + self.dtDdV_T ** 2) * self.tD - 2 * T * self.dtDdT_V * self.dtDdV_T ** 2) * T * dD3dx + 3 * self.tD * (
@@ -465,6 +476,7 @@ class Vibrational:
         :return: d3FdVdT2.
         :rtype:  float
         """
+        r = self.r
         x = self.tD / T
         D3 = D_3(x)
         dD3dx = dD_3dx(x, D3)
@@ -476,4 +488,4 @@ class Vibrational:
                                               1 / 16) * (3 * (
                                       8 * self.dtDdV_T * (T * self.dtDdT_V - self.tD) ** 2 * d2D3dx2 * (
                                           1 / 3) + self.tD * self.d3tDdVdT2 * T ** 3)) * self.tD) * self.tD)) * r * kB * NAv / (
-                           T ** 3 * self.tD ** 3)
+                           T ** 3 * self.tD ** 3)/self.r

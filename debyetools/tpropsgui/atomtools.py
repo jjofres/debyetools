@@ -31,42 +31,6 @@ atomic_symbols = [
     'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc',
     'Lv', 'Ts', 'Og']
 
-periods = {1:['H', 'He'], 2:['Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne'],3:['Na', 'Mg', 'Al', 'Si', 'P', 'S', 'Cl', 'Ar'],
-          4:['K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni', 'Cu', 'Zn', 'Ga', 'Ge', 'As', 'Se', 'Br', 'Kr'],
-          5:['Rb', 'Sr', 'Y', 'Zr', 'Nb', 'Mo', 'Tc', 'Ru', 'Rh', 'Pd', 'Ag', 'Cd', 'In', 'Sn', 'Sb', 'Te', 'I', 'Xe'],
-          6:['Cs', 'Ba', 'La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu',
-             'Hf', 'Ta', 'W', 'Re', 'Os', 'Ir', 'Pt', 'Au', 'Hg', 'Tl', 'Pb', 'Bi', 'Po', 'At', 'Rn'],
-          7:['Fr', 'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr',
-             'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt', 'Ds', 'Rg', 'Cn', 'Nh', 'Fl', 'Mc', 'Lv', 'Ts', 'Og']}
-groups = {'Ia': ['Li', 'Na', 'K', 'Rb', 'Cs', 'Fr'],
-          'IIa': ['Be', 'Mg', 'Ca', 'Sr', 'Ba', 'Ra'],
-          'IIIb': ['Sc', 'Y'],
-          'IVb': ['Ti', 'Zr', 'Hf'],
-          'Vb': ['V', 'Nb', 'Ta'],
-          'VIb': ['Cr', 'Mo', 'W'],
-          'VIIb': ['Mn', 'Tc', 'Re'],
-          'VIIIb': ['Fe', 'Co', 'Ni', 'Ru', 'Rh', 'Pd', 'Os', 'Ir', 'Pt'],
-          'Ib': ['Cu', 'Ag', 'Au'],
-          'IIb': ['Zn', 'Cd', 'Hg'],
-          'IIIa': ['B', 'Al', 'Ga', 'In', 'Tl', 'Nh'],
-          'IVa': ['C', 'Si', 'Ge', 'Sn', 'Pb', 'Fl'],
-          'Va': ['N', 'P', 'As', 'Sb', 'Bi', 'Mc'],
-          'VIa': ['O', 'S', 'Se', 'Te', 'Po', 'Lv'],
-          'VIIa': ['F', 'Cl', 'Br', 'I', 'At', 'Ts'],
-          'VIIIa': ['He', 'Ne', 'Ar', 'Kr', 'Xe', 'Rn', 'Og'],
-          'Lanthanides': ['La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy', 'Ho', 'Er', 'Tm', 'Yb', 'Lu'],
-          'Actinides': ['Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md', 'No', 'Lr']}
-atoms_period ={}
-for symbol in atomic_symbols:
-    for period, list_at in periods.items():
-        if symbol in list_at:
-            atoms_period[symbol]=period
-atoms_group ={}
-for symbol in atomic_symbols:
-    for group, list_at in groups.items():
-        if symbol in list_at:
-            atoms_group[symbol]=group
-
 atomic_numbers = {}
 for Z, symbol in enumerate(atomic_symbols):
     atomic_numbers[symbol] = Z
@@ -341,7 +305,8 @@ covalent_radii = np.array([
 atomic_radii = {k:v for k, v in zip(atomic_symbols, covalent_radii)}
 
 
-atomic_colors = np.array([[1.    ,0.   , 0.   ],
+atomic_colors = np.array([
+[1.    ,0.   , 0.   ],
 [1.    ,1.   , 1.   ],
 [0.851 ,1.   , 1.   ],
 [0.8   ,0.502, 1.   ],
@@ -453,6 +418,141 @@ atomic_colors = np.array([[1.    ,0.   , 0.   ],
 [0.922 ,0.   , 0.149]])
 atomic_color = {k:v for k, v in zip(atomic_symbols, atomic_colors)}
 
+atom_energy = {
+'VA': -0.00001,
+'Ac': -4.04728,
+'Ag': -2.71722,
+'Ag_pv': -2.70313,
+'Al': -3.74653,
+'Am': -13.82696,
+'As': -4.66991,
+'As_d': -4.67909,
+'Au': -3.22003,
+'B': -6.7048,
+'Ba_sv': -1.90828,
+'Ba': -1.90828,
+'Be': -3.76614,
+'Be_sv': -3.76461,
+'Bi': -3.87346,
+'C': -8.08239,
+'Ca_pv': -1.92023,
+'Ca_sv': -1.92906,
+'Ca': -1.92906,
+'Cd': -0.74601,
+'Ce': -5.92536,
+'Ce_3': -4.73202,
+'Ce_h': -5.93196,
+'Co': -7.035,
+'Co_pv': -7.03163,
+'Co_sv': -7.11559,
+'Cr': -9.49622,
+'Cr_pv': -9.52262,
+'Cs_sv': -0.85218,
+'Cs': -0.85218,
+'Cu': -3.7272,
+'Cu_pv': -3.74814,
+'Dy': -10.23055,
+'Dy_3': -4.53395,
+'Er': -1.5556,
+'Er_2': -1.5556,
+'Er_3': -4.4975,
+'Eu': -1.86128,
+'Eu_2': -1.86128,
+'Eu_3': -4.47305,
+'Fe': -8.2367,
+'Fe_pv': -8.25688,
+'Fe_sv': -8.34199,
+'Ga': -2.74138,
+'Gd': -13.78906,
+'Gd_3': -4.58055,
+'Ge': -4.14661,
+'Ge_d': -4.51857,
+'Hf': -9.95772,
+'Hf_pv': -9.92169,
+'Hf_sv': -12.73094,
+'Hg': -0.17556,
+'Ho': -4.51272,
+'Ho_3': -4.51272,
+'In': -2.55989,
+'Ir': -8.84813,
+'K_pv': -1.02764,
+'K': -1.02764,
+'La': -4.88525,
+'Li': -1.89944,
+'Li_sv': -1.9043,
+'Lu': -4.52114,
+'Mg': -1.50604,
+'Mg_pv': 1.65841,
+'Mg_sv': 10.21228,
+'Mn': -8.97821,
+'Mn_pv': -8.99024,
+'Mo': -10.94954,
+'Mo_pv': -10.92331,
+'Mo_sv': -10.93445,
+'Na': -1.30717,
+'Na_pv': -1.31099,
+'Nb': -10.09319,
+'Nb_pv': -10.09319,
+'Nb_sv': -10.21612,
+'Nd': -7.63427,
+'Ni': -5.46695,
+'Ni_pv': -5.48727,
+'Os': -11.24042,
+'Os_pv': -11.22026,
+'Pb': -3.57266,
+'Pb_d': -3.56435,
+'Pd': -5.21615,
+'Pd_pv': -5.20817,
+'Pm': -6.64195,
+'Pr': -6.50444,
+'Pt': -6.09738,
+'Pt_pv': -6.08161,
+'Rb': -0.91693,
+'Rb_pv': -0.91693,
+'Rb_sv': -0.93605,
+'Re': -12.42685,
+'Re_pv': -12.37354,
+'Rh': -7.2755,
+'Rh_pv': -7.25713,
+'Ru': -9.25325,
+'Ru_pv': -9.2409,
+'Ru_sv': -9.27694,
+'Sb': 0,
+'Sc': -6.20186,
+'Sc_sv': -6.24773,
+'Se': -3.49831,
+'Si': -5.17948,
+'Sm': 0,
+'Sn': -3.82696,
+'Sn_A4': -3.82696,
+'Sn_A5': -3.62817,
+'Sr': -1.63716,
+'Sr_sv': -1.63716,
+'Ta': -11.86253,
+'Ta_pv': -11.81241,
+'Tb': -12.02392,
+'Tc': -10.37716,
+'Tc_pv': -10.35554,
+'Tc_sv': -10.14387,
+'Te': -3.14231,
+'Ti': -7.76229,
+'Ti_pv': -7.80217,
+'Ti_sv': -7.81431,
+'Tl': -2.24522,
+'Tl_d': -2.22995,
+'Tm': -4.47605,
+'Tm_3': -4.47605,
+'V': -8.94078,
+'V_pv': -8.95594,
+'V_sv': -8.99057,
+'W': -13.0194,
+'W_pv': -12.95615,
+'Y': -6.43328,
+'Y_sv': -6.43328,
+'Yb': -1.70986,
+'Zn': -1.10764,
+'Zr_sv': -8.52067,
+}
 
 class atomSingle:
     def __init__(self, type, coords):
@@ -460,6 +560,7 @@ class atomSingle:
         self.position = coords
         self.mass = atomic_mass[type]
         self.radii = atomic_radii[type]
+        self.energy = atom_energy[type]
 
 class atomsPositions:
     def __init__(self, formula, cell, basis):

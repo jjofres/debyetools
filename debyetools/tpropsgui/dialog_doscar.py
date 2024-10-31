@@ -19,3 +19,4 @@ class dialogDOSCAR(QDialog):
     def on_pushButton_OK(self):
         self.filepath = self.ui.filepath.text()
         self.close()
+

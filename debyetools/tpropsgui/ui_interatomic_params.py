@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'interatomic_params.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.6.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -59,6 +59,7 @@ class Ui_Form(object):
         self.plainTextEdit.setCenterOnScroll(False)
         self.OKbutton = QPushButton(Form)
         self.OKbutton.setObjectName(u"OKbutton")
+        self.OKbutton.setEnabled(False)
         self.OKbutton.setGeometry(QRect(680, 340, 80, 24))
         self.pushButton = QPushButton(Form)
         self.pushButton.setObjectName(u"pushButton")

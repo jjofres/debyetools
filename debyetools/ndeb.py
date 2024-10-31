@@ -8,6 +8,7 @@ from debyetools.defects import Defects
 from debyetools.vibrational import Vibrational
 # import debyetools.potentials as pots
 from debyetools.debfunct import D_3#, dD_3dx, d2D_3dx2, d3D_3dx3
+from debyetools.XS import Xs
 
 from typing import Tuple
 
@@ -34,14 +35,16 @@ class nDeb:
     """
 
     def __init__(self, nu: float, m: float, p_intanh: np.ndarray, EOS: object, p_electronic: np.ndarray, p_defects: np.ndarray, p_anh: np.ndarray, *args: object, units: str = 'J/mol',
-                 mode: str = 'jjsl'):
+                 mode: str = 'jjsl', xsparams=(0,0,0,0,0,0), r =1):
 
         a0, m0 = p_intanh
         q0, q1, q2, q3 = p_electronic
         Evac00, Svac00, Tm, a = p_defects
         s0, s1, s2 = p_anh
 
-        self.nu, self.r, self.m = nu, 1, m
+        xs0, xs1, xs2, xs3, xs4, xs5 = xsparams
+
+        self.nu, self.r, self.m = nu, r, m
         self.mode = mode
 
         self.kv = (2. / 3. * ((2. + 2. * nu) / (3. - 6. * nu)) ** (3. / 2.) + 1. / 3. * (
@@ -54,10 +57,12 @@ class nDeb:
 
         self.EOS = EOS  # getattr(pots,EOS_name)(*args,units=units, parameters = p_EOS)
         # self.EOS.pEOS = p_EOS
-        self.vib = Vibrational(nu, self.EOS, m, self.intanh, mode)
+        self.vib = Vibrational(nu, self.EOS, m, self.intanh, mode, rin=self.r)
 
-        r = 1
+        # r = 1
         self.xDcte = hbar * 6 ** (1 / 3.) * (np.pi ** 2 * NAv * r) ** (1 / 3.)
+
+        self.xs = Xs(xs0, xs1, xs2, xs3, xs4, xs5)
 
     def f2min(self, T: float, V: float, P: float) -> float:
         """
@@ -80,7 +85,8 @@ class nDeb:
         Fel = self.el.F(T,V)
         Fdef = self.deff.F(T,V)
         Fa = self.anh.F(T,V)
-        F = E0 + Fvib + Fel + Fdef + Fa
+        Fxs = self.xs.F(T,V)
+        F = E0 + Fvib + Fel + Fdef + Fa + Fxs
         return F+P*V#(dFdV_T + P)**2
 
     def min_G(self, T: np.ndarray, initial_V: float, P: float) -> Tuple[np.ndarray,np.ndarray]:
@@ -94,6 +100,7 @@ class nDeb:
         :rtype: Tuple[np.ndarray,np.ndarray]
 
         """
+
         V0i = initial_V
         V = []
         for Ti in T[0:1]:
@@ -192,7 +199,7 @@ class nDeb:
         d3FdefdVdT2 = self.deff.d3FdVdT2(T, V)
 
         # Ea = self.anh.E(T, V)
-        # Sa = self.anh.S(T, V)
+        Sa = self.anh.S(T, V)
         Fa = self.anh.F(T, V)
         dFadV_T = self.anh.dFdV_T(T, V)
         d2FadT2_V = self.anh.d2FdT2_V(T, V)
@@ -204,16 +211,28 @@ class nDeb:
         d3FadV2dT = self.anh.d3FdV2dT(T, V)
         d3FadVdT2 = self.anh.d3FdVdT2(T, V)
 
-        dFdV_T = dE0dV_T + dFvibdV_T + dFeldV_T + dFdefdV_T + dFadV_T
-        d2FdV2_T = d2E0dV2_T + d2FvibdV2_T + d2FeldV2_T + d2FdefdV2_T + d2FadV2_T
-        d3FdV3_T = d3E0dV3_T + d3FvibdV3_T + d3FeldV3_T + d3FdefdV3_T + d3FadV3_T
-        d4FdV4_T = d4E0dV4_T + d4FvibdV4_T + d4FeldV4_T + d4FdefdV4_T + d4FadV4_T
-        d2FdT2_V = d2E0dT2_V + d2FvibdT2_V + d2FeldT2_V + d2FdefdT2_V + d2FadT2_V
-        d2FdVdT = d2E0dVdT + d2FvibdVdT + d2FeldVdT + d2FdefdVdT + d2FadVdT
-        d3FdV2dT = d3E0dV2dT + d3FvibdV2dT + d3FeldV2dT + d3FdefdV2dT + d3FadV2dT
-        d3FdVdT2 = d3E0dVdT2 + d3FvibdVdT2 + d3FeldVdT2 + d3FdefdVdT2 + d3FadVdT2
+        Fxs = self.xs.F(T, V)
+        dFxsdT_V = self.xs.dFdT_V(T, V)
+        dFxsdV_T = self.xs.dFdV_T(T, V)
+        d2FxsdV2_T = self.xs.d2FdV2_T(T, V)
+        d3FxsdV3_T = self.xs.d3FdV3_T(T, V)
+        d4FxsdV4_T = self.xs.d4FdV4_T(T, V)
+        d2FxsdT2_V = self.xs.d2FdT2_V(T, V)
+        d2FxsdVdT = self.xs.d2FdVdT(T, V)
+        d3FxsdV2dT = self.xs.d3FdV2dT(T, V)
+        d3FxsdVdT2 =self.xs.d3FdVdT2(T, V)
 
-        dFdT_V = dE0dT_V + dFvibdT_V + dFeldT_V + dFdefdT_V + dFadT_V
+
+        dFdV_T = dE0dV_T + dFvibdV_T + dFeldV_T + dFdefdV_T + dFadV_T + dFxsdV_T
+        d2FdV2_T = d2E0dV2_T + d2FvibdV2_T + d2FeldV2_T + d2FdefdV2_T + d2FadV2_T + d2FxsdV2_T
+        d3FdV3_T = d3E0dV3_T + d3FvibdV3_T + d3FeldV3_T + d3FdefdV3_T + d3FadV3_T + d3FxsdV3_T
+        d4FdV4_T = d4E0dV4_T + d4FvibdV4_T + d4FeldV4_T + d4FdefdV4_T + d4FadV4_T + d4FxsdV4_T
+        d2FdT2_V = d2E0dT2_V + d2FvibdT2_V + d2FeldT2_V + d2FdefdT2_V + d2FadT2_V + d2FxsdT2_V
+        d2FdVdT = d2E0dVdT + d2FvibdVdT + d2FeldVdT + d2FdefdVdT + d2FadVdT + d2FxsdVdT
+        d3FdV2dT = d3E0dV2dT + d3FvibdV2dT + d3FeldV2dT + d3FdefdV2dT + d3FadV2dT + d3FxsdV2dT
+        d3FdVdT2 = d3E0dVdT2 + d3FvibdVdT2 + d3FeldVdT2 + d3FdefdVdT2 + d3FadVdT2 + d3FxsdVdT2
+
+        dFdT_V = dE0dT_V + dFvibdT_V + dFeldT_V + dFdefdT_V + dFadT_V + dFxsdT_V
 
         tD = self.vib.tD
         g = -V / (tD) * self.vib.dtDdV_T
@@ -245,7 +264,7 @@ class nDeb:
 
         S = -dFdT_V
 
-        F = E0 + Fvib + Fel + Fdef + Fa
+        F = E0 + Fvib + Fel + Fdef + Fa + Fxs
         E = F + T*S
         G = F - dFdV_T*V
 
@@ -278,8 +297,8 @@ class nDeb:
                 'P': -dFdV_T,
                 'dtDdV_T':self.vib.dtDdV_T,'d2tDdV2_T':self.vib.d2tDdV2_T, 'D_3':D_3(tD/T),
                 'd2E0dV2_T':d2E0dV2_T, 'dPdV_T':dPdV_T,
-                'dE0dV_T':dE0dV_T, 'd3E0dV3_T':d3E0dV3_T, 'Fa':Fa, 'Fdef':Fdef, 'Fel': Fel
-                }
+                'dE0dV_T':dE0dV_T, 'd3E0dV3_T':d3E0dV3_T, 'Fa':Fa, 'Fdef':Fdef, 'Fel': Fel, 'Sa': Sa,
+                'Fxs':Fxs}
 
     def eval_Cp(self, T: np.ndarray, V: np.ndarray, P = None) -> dict:
         """

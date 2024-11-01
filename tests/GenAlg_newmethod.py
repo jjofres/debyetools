@@ -6,7 +6,7 @@ import time
 # import debyetools.tpropsgui.plotter as plot
 from matplotlib import pyplot as plt
 import random
-from debyetools.ga_fitting import ga_optim
+from debyetools.optim import ga_optim
 
 start = time.perf_counter()
 tag = rnd.randint(0,100)

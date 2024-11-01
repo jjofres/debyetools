@@ -163,7 +163,7 @@ mass = VASPrun_Data.mass
 # lst_str = ['E0', 'V0', 'K0', 'K0p', 'nu', 'a0', 'm0', 's0', 's1', 's2',
 #                'edef', 'sdef', 'vdef', 'pel0', 'pel1', 'pel2', 'pel3', 'xs0', 'xs1', 'xs2', 'xs3', 'xs4', 'xs5']
 str_params2fit = ['edef', 'sdef']
-initial_guess = [5, 1.5]
+initial_guess = [10, 1]
 
 # for iiii in range(1):
 
@@ -183,14 +183,86 @@ ix_sample = [int(s) for s in sampled_data[0]]
 T_data_fit = T_exp[ix_sample]
 Cp_data_fit = Cp_exp[ix_sample]
 
-best_params = ga_fitting (f2fit, T_data_fit, Cp_data_fit, initial_guess, param_range=(0.95, 1.05),
-                        stagnant_gens=10, npop=20, ngen=20, pcross=0.5, pmut=0.4)
-                        # stagnant_gens = 1, npop = 1, ngen = 1, pcross = 0.5, pmut = 0.4)
-# print(iiii, 'best_params:', best_params)
-initial_guess = best_params
+print('Fitting: '+', '.join(str_params2fit))
+best_params = ga_fitting (f2fit, T_data_fit, Cp_data_fit, initial_guess, param_range=(0.8, 1.2),
+                        stagnant_gens=10, npop=20, ngen=50, pcross=0.5, pmut=0.5, verbose=True)
+
+print('\tBest parameters:', ', '.join([f'{s}:{b}' for s, b in zip(str_params2fit, best_params)]))
+#------------------------------------------------------------
+
+################
+# Plot Fitting #
+################
+#------------------------------------------------------------
+T= np.linspace(0.1, Tmdef, 100)
+params_afer_fit = get_params_list(params, best_params, str_params2fit)
+tprops = props(T, params_afer_fit, mass, eos_BM, Tmdef, v=True)
+Cp = tprops['Cp']
+a = tprops['a']
+Ks = tprops['Ks']
+
+fig1, ax1 = plt.subplots()
+ax1.plot(T, Cp, 'k-')
+ax1.plot(T_data_fit, Cp_data_fit, 'o')
+
+ax1.set_xlabel('Temperature [K]')
+ax1.set_ylabel(r'$C_P/k_B$ ')
+
+#------------------------------------------------------------
+
+######################################
+# plot thermodynamic properties vs T #
+######################################
+#------------------------------------------------------------
+
+# load literature data
+kB = 8.31446261815324
+
+dL = type('dataLiterature', (object,), {})()
+list_lit = ['exp', 'DFT', 'MTP', 'eMTP', 'eMTPup']
+for lit in list_lit:
+    for prop in ['Cp', 'alpha', 'Ks']:
+        setattr(dL, f'{prop}_{lit}', np.loadtxt(f'data_literature/data{prop}_{lit}'))
+
+# plot Cp vs T, alpha vs T, Ks vs T
+fig, ax = plt.subplots(1,3, figsize=(16,5))
+
+labelst = [r'debyetools (vib+el)', r'debyetools (vib+el+def$^{fitted}$)', 'Exp', 'DFT', 'MTP', 'eMTP', 'eMTPup']
+mtype = ['o', '-', '-', '-', '-', '-']
+zorders = [11, 2, 2, 2, 2, 2]
+colors = ['C0', 'purple', 'pink', 'skyblue', 'gray']
 
 
+ax[0].plot(T_dt_vib_el,Cp_dt_vib_el/kB, label=labelst[0], c='k', linewidth=3, zorder=10)
+ax[1].plot(T_dt_vib_el,a_dt_vib_el/3/1e-5, label=labelst[0], c='k', linewidth=3, zorder=10)
+ax[2].plot(T_dt_vib_el,Ks_dt_vib_el/1e9, label=labelst[0], c='k', linewidth=3, zorder=10)
 
+ax[0].plot(T,Cp/kB, label=labelst[1], c='b', linewidth=3, zorder=10)
+ax[1].plot(T,a/3/1e-5, label=labelst[1], c='b', linewidth=3, zorder=10)
+ax[2].plot(T,Ks/1e9, label=labelst[1], c='b', linewidth=3, zorder=10)
+
+
+for i, lit in enumerate(list_lit):
+    for j, prop in enumerate(['Cp', 'alpha', 'Ks']):
+        XY = getattr(dL, f'{prop}_{lit}')
+        ax[j].plot(XY[:,0], XY[:,1],mtype[i], label=labelst[i+2], zorder=zorders[i], linewidth=3, color=colors[i], markerfacecolor='none')
+
+ax[0].set_xlabel(r'Temperature $(K)$')
+ax[0].set_ylabel(r'$C_P/k_B$ ')
+ax[0].legend()
+
+ax[1].set_xlabel(r'Temperature $(K)$')
+ax[1].set_ylabel(r'$\alpha_L$ $(10^{-5}/K)$')
+ax[1].legend()
+
+ax[2].set_xlabel(r'Temperature $(K)$')
+ax[2].set_ylabel(r'$K_s$ $(GPa)$')
+ax[2].set_ylim(110, 180)
+ax[2].legend()
+
+#------------------------------------------------------------
+
+plt.show()
 
 
 

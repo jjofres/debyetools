@@ -185,7 +185,7 @@ Cp_data_fit = Cp_exp[ix_sample]
 
 print('Fitting: '+', '.join(str_params2fit))
 best_params = ga_fitting (f2fit, T_data_fit, Cp_data_fit, initial_guess, param_range=(0.8, 1.2),
-                        stagnant_gens=10, npop=20, ngen=50, pcross=0.5, pmut=0.5, verbose=True)
+                        stagnant_gens=10, npop=20, ngen=50, pcross=0.5, pmut=0.5, verbose=True, tol=0.1)
 
 print('\tBest parameters:', ', '.join([f'{s}:{b}' for s, b in zip(str_params2fit, best_params)]))
 #------------------------------------------------------------
@@ -225,7 +225,7 @@ for lit in list_lit:
         setattr(dL, f'{prop}_{lit}', np.loadtxt(f'data_literature/data{prop}_{lit}'))
 
 # plot Cp vs T, alpha vs T, Ks vs T
-fig, ax = plt.subplots(1,3, figsize=(16,5))
+fig, ax = plt.subplots(1,3, figsize=(14,5))
 
 labelst = [r'debyetools (vib+el)', r'debyetools (vib+el+def$^{fitted}$)', 'Exp', 'DFT', 'MTP', 'eMTP', 'eMTPup']
 mtype = ['o', '-', '-', '-', '-', '-']

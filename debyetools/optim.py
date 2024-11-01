@@ -92,10 +92,10 @@ def props(T, params, mass,  eos_pot, Tmelting, v=False):
     return tprops_dict
 
 # Fitness function
-def eval_error(f, pf, Xdata, Ydata, norm_factor):
-    pfdenorm = [pfi*nfi for nfi, pfi in zip(norm_factor, pf)]
-    Ymodel = f(Xdata, pfdenorm)
-    return np.sqrt(np.mean(((Ydata - Ymodel)/Xdata)**2)),
+# def eval_error(f, pf, Xdata, Ydata, norm_factor):
+#     pfdenorm = [pfi*nfi for nfi, pfi in zip(norm_factor, pf)]
+#     Ymodel = f(Xdata, pfdenorm)
+#     return np.sqrt(np.mean(((Ydata - Ymodel)/Xdata)**2)),
 
 
 def bounded_mutate(individual, low, up, indpb):
@@ -109,71 +109,118 @@ def bounded_mutate(individual, low, up, indpb):
                 individual[i] = up
     return individual,
 
-def ga_fitting(f, Xdata, Ydata, initial_guess, param_range=(0.8, 1.2), npop = 20, ngen=100, tol=1e-6,
-             pcross=0.5, pmut=0.2, stagnant_gens=20, verbose=True):
+
+import random
+import numpy as np
+
+
+# Step 1: Define fitness function
+def eval_error(f, individual, Xdata, Ydata, norm_factor):
+    # Denormalize parameters
+    denorm_individual = [param * factor for param, factor in zip(individual, norm_factor)]
+    # Calculate the error as fitness (e.g., mean squared error between predicted and actual Y)
+    predictions = f(Xdata, denorm_individual)
+    mse = np.mean((Ydata - predictions) ** 2)
+    return mse
+
+
+# Step 2: Initialize population
+def initialize_population(npop, n_params, plimdn, plimup):
+    population = [[random.uniform(plimdn, plimup) for _ in range(n_params)] for _ in range(npop)]
+    return population
+
+
+# Step 3: Selection (Tournament Selection)
+def tournament_selection(population, fitnesses, tournsize=3):
+    selected = []
+    for _ in range(len(population)):
+        tournament = random.sample(list(zip(population, fitnesses)), tournsize)
+        selected.append(min(tournament, key=lambda x: x[1])[0])  # Minimize fitness
+    return selected
+
+
+# Step 4: Crossover (Blend Crossover)
+def blend_crossover(parent1, parent2, alpha=0.5):
+    return [(alpha * p1 + (1 - alpha) * p2) for p1, p2 in zip(parent1, parent2)]
+
+
+# Step 5: Mutation (Bounded Mutation)
+def bounded_mutate(individual, low, up, pmut):
+    return [random.uniform(low, up) if random.random() < pmut else gene for gene in individual]
+
+
+# Step 6: Genetic Algorithm Main Function
+def ga_fitting(f, Xdata, Ydata, initial_guess, param_range=(0.8, 1.2), npop=20, ngen=100, tol=1e-6,
+               pcross=0.5, pmut=0.2, stagnant_gens=20, verbose=True):
     norm_factor = initial_guess
-    # Define bounds for each parameter
-    plimdn, plimup =param_range
-    # Genetic Algorithm setup
-    creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-    creator.create("Individual", list, fitness=creator.FitnessMin)
+    plimdn, plimup = param_range
+    n_params = len(initial_guess)
 
-    toolbox = base.Toolbox()
-    toolbox.register("attr_float", random.uniform, plimdn, plimup)  # Parameter range
-    toolbox.register("individual", tools.initRepeat, creator.Individual, toolbox.attr_float, n=len(initial_guess))
-    toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+    # Initialize population
+    population = initialize_population(npop, n_params, plimdn, plimup)
 
-    toolbox.register("mate", tools.cxBlend, alpha=0.5)
-    #toolbox.register("mutate", tools.mutGaussian, mu=0, sigma=1, indpb=0.2)
-    toolbox.register("mutate", bounded_mutate, low=plimdn, up=plimup, indpb=pmut)
-    toolbox.register("select", tools.selTournament, tournsize=3)
-    evaluate = lambda individual_norm: eval_error(f, individual_norm, Xdata, Ydata, norm_factor)
-    toolbox.register("evaluate", evaluate)
-
-
-    population = toolbox.population(n=npop)  # Initial population
-    # population.append(initial_individual)  # Add the initial guess to the population
-
-    NGEN = ngen  # Number of generations
-    CXPB, MUTPB = pcross, pmut  # Crossover and mutation probabilities
-    tolerance = tol  # Convergence tolerance
-    stagnant_generations = stagnant_gens  # Number of generations to check for stagnation
     prev_best = None
     stagnant_count = 0
-    # Evolutionary process
 
+    best_individual = [1 for _ in range(n_params)]
     if verbose:
-        print('Initial fitness:', list(map(toolbox.evaluate, [[1,1]]))[0][0])
-    for gen in range(NGEN):
-        offspring = algorithms.varAnd(population, toolbox, cxpb=CXPB, mutpb=MUTPB)
-        fits = map(toolbox.evaluate, offspring)
+        print('Initial fitness:', eval_error(f, best_individual, Xdata, Ydata, norm_factor))
 
-        for fit, ind in zip(fits, offspring):
-            # print(f'fitness: {fit[0]:.7f}', 'ind', ind)
-            ind.fitness.values = fit
+    for gen in range(ngen):
+        # Step 1: Evaluate fitness
+        population = population + [best_individual]
+        fitnesses = [eval_error(f, ind, Xdata, Ydata, norm_factor) for ind in population]
 
-        population = toolbox.select(offspring, k=len(population))
+        # Step 2: Check for convergence
+        best_fitness = min(fitnesses)
+        best_individual = population[fitnesses.index(best_fitness)]
+        best_individual_denorm = [p * f for p, f in zip(best_individual, norm_factor)]
+        norm_factor = best_individual_denorm
 
-        # Check for convergence
-        best_ind = tools.selBest(population, 1)[0]
-        best_fitness = round(best_ind.fitness.values[0], 7)
         if verbose:
-            print(f"Generation {gen}: Best fitness = {best_fitness}, stagnant count:{stagnant_count}")
+            print(
+                f"Generation {gen}: Best fitness = {best_fitness}, stagnant count: {stagnant_count}")
 
         if prev_best is not None:
-            if abs(best_fitness - prev_best) < tolerance:
+            if abs(best_fitness - prev_best) < tol:
+
                 stagnant_count += 1
+            elif abs(best_fitness - prev_best) < tol/10:
+                stagnant_count = stagnant_gens
             else:
                 stagnant_count = 0
-
         prev_best = best_fitness
 
-        if stagnant_count >= stagnant_generations:
-            print("Convergence criterion met (stagnant_count). Stopping.")
+        if stagnant_count >= stagnant_gens:
+            if verbose:
+                print("Convergence criterion met. Stopping.")
             break
 
-    best_ind = tools.selBest(population, 1)[0]
-    print('Best individual:', best_ind)
-    print('Fitness:', best_ind.fitness.values)
+        # Step 3: Selection
+        selected = tournament_selection(population, fitnesses)
 
-    return [pfi*nfi for nfi, pfi in zip(norm_factor, best_ind)]
+        # Step 4: Crossover and Mutation
+        offspring = []
+        while len(offspring) < npop:
+            if random.random() < pcross:
+                # Perform crossover
+                parent1, parent2 = random.sample(selected, 2)
+                child = blend_crossover(parent1, parent2)
+            else:
+                # No crossover, just copy
+                child = random.choice(selected)
+
+            # Perform mutation
+            child = bounded_mutate(child, plimdn, plimup, pmut)
+            offspring.append(child)
+
+        # Replace population with offspring
+        population = offspring
+
+
+
+    # Return denormalized best individual
+    print("Best individual:", best_individual_denorm)
+    print("Best fitness:", best_fitness)
+
+    return best_individual_denorm

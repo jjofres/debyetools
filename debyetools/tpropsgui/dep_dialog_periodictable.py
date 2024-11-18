@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QDialog
-from debyetools.tpropsgui.ui_dialog_periodictable import Ui_Dialog as Ui_Dialog
-from debyetools.tpropsgui.atomtools import atomic_mass
+from debyetools.tpropsgui.dep_ui_dialog_periodictable import Ui_Dialog as Ui_Dialog
+from debyetools.tpropsgui.dep_atomtools import atomic_mass
 def create_formula_from_dict(d):
     result = ""
     for key, value in d.items():

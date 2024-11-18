@@ -1,4 +1,4 @@
-import debyetools.tpropsgui.elements as elmt
+import debyetools.tpropsgui.xdep_elements as elmt
 
 lo_fs_Cp = lambda i : [[elmt.T('C_P:','fs_Cp'+str(i),pad=(3,0),right_click_menu=['',['copy to clipboard::Cp_'+str(i)]])],
                        [elmt.Ipad('','fsCp_P0'+str(i),10, pad=(0,0)),elmt.T('*T^0','fs_Cp_P0'+str(i),pad = ((0,0),(0,0)))],

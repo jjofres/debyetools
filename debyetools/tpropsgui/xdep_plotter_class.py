@@ -1,4 +1,4 @@
-import debyetools.tpropsgui.functions0 as fn
+import debyetools.tpropsgui.xdep_functions0 as fn
 import PySimpleGUI as sg
 sg.set_options(element_padding=(0, 0))
 

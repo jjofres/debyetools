@@ -1,4 +1,4 @@
-import debyetools.tpropsgui.plotter_class as plotter
+import debyetools.tpropsgui.xdep_plotter_class as plotter
 import numpy as np
 import re
 def find_rec_in_str(all_lines,pattrn):

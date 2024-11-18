@@ -1,13 +1,13 @@
 from PySide6.QtWidgets import QMainWindow
 
-from debyetools.tpropsgui.ui_interatomic_params import Ui_Form as Ui_iparams
+from debyetools.tpropsgui.dep_ui_interatomic_params import Ui_Form as Ui_iparams
 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import numpy as np
 
-import debyetools.tpropsgui.get_functions as get
-from debyetools.tpropsgui.atomtools import atomic_color, atomic_radii, atomsPositions
+import debyetools.tpropsgui.dep_get_functions as get
+from debyetools.tpropsgui.dep_atomtools import atomic_color, atomic_radii, atomsPositions
 
 def print_to_box(ptedit, txt=''):
     txt = ptedit.toPlainText()+txt

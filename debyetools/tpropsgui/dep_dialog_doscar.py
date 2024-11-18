@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import  QDialog, QFileDialog
-from debyetools.tpropsgui.ui_dialog_doscar import Ui_Dialog as Ui_DOSCAR
+from debyetools.tpropsgui.dep_ui_dialog_doscar import Ui_Dialog as Ui_DOSCAR
 
 
 class dialogDOSCAR(QDialog):

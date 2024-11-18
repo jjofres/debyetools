@@ -1,7 +1,7 @@
 # import re
 import numpy as np
-import debyetools.tpropsgui.toolbox as tbox
-import debyetools.tpropsgui.plotter as plot
+import debyetools.tpropsgui.xdep_toolbox as tbox
+import debyetools.tpropsgui.xdep_plotter as plot
 from debyetools.fs_compound_db import Cp2fit, alpha2fit, Ksinv2fit, Ksp2fit
 #
 def fbrowser_fill_browser(window,event):

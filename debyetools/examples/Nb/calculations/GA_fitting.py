@@ -114,6 +114,7 @@ xs0, xs1, xs2, xs3, xs4, xs5 = [ndeb_BM.xs.xs0, ndeb_BM.xs.xs1, ndeb_BM.xs.xs2, 
 params = E0, V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef, adef, pel0, pel1, pel2, pel3, xs0, xs1, xs2, xs3, xs4, xs5
 
 
+
 T_dt_vib_el = T
 Cp_dt_vib_el = Cp
 a_dt_vib_el = a
@@ -153,12 +154,14 @@ print('Variables reset.')
 # Genetic algorithm parameter fitting #
 #######################################
 #------------------------------------------------------------
-from debyetools.optim import ga_fitting, props, random_sample_with_min_distance_2d, get_params_list
+from debyetools.optim import (ga_fitting, props,
+                              random_sample_with_min_distance_2d, get_params_list)
 
 eos_BM = potentials.BM()
 eos_BM.fitEOS([V0], [E0], initial_parameters=[E0, V0, K0, K0p], fit=False)
 
 mass = VASPrun_Data.mass
+
 
 # lst_str = ['E0', 'V0', 'K0', 'K0p', 'nu', 'a0', 'm0', 's0', 's1', 's2',
 #                'edef', 'sdef', 'vdef', 'pel0', 'pel1', 'pel2', 'pel3', 'xs0', 'xs1', 'xs2', 'xs3', 'xs4', 'xs5']
@@ -185,7 +188,7 @@ Cp_data_fit = Cp_exp[ix_sample]
 
 print('Fitting: '+', '.join(str_params2fit))
 best_params = ga_fitting (f2fit, T_data_fit, Cp_data_fit, initial_guess, param_range=(0.8, 1.2),
-                        stagnant_gens=10, npop=20, ngen=50, pcross=0.5, pmut=0.5, verbose=True, tol=0.1)
+                        stagnant_gens=20, npop=20, ngen=50, pcross=0.5, pmut=0.5, verbose=True, tol=0.1)
 
 print('\tBest parameters:', ', '.join([f'{s}:{b}' for s, b in zip(str_params2fit, best_params)]))
 #------------------------------------------------------------
@@ -259,6 +262,11 @@ ax[2].set_xlabel(r'Temperature $(K)$')
 ax[2].set_ylabel(r'$K_s$ $(GPa)$')
 ax[2].set_ylim(110, 180)
 ax[2].legend()
+
+# separation between subplots, adjust
+plt.subplots_adjust(wspace=0.5)
+plt.tight_layout()
+
 
 #------------------------------------------------------------
 

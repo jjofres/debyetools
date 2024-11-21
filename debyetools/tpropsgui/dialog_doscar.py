@@ -88,7 +88,7 @@ class dialogDoscar(QDialog):
             options=options
         )
 
-
+        files.sort()
         if files:
             print("Selected files:")
             for file in files:

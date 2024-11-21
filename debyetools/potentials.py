@@ -33,7 +33,7 @@ class BM:
 
     def __init__(self, *args, units='J/mol', parameters=''):
         self.V0 = None
-        if parameters != '':
+        if list(parameters):
             self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
@@ -188,7 +188,7 @@ class RV:  # Rose-Vinet
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
-        if parameters != '':
+        if list(parameters):
             self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
@@ -366,7 +366,7 @@ class MG:  # Mie-Gruneisen
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
-        if parameters != '':
+        if list(parameters):
             self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
@@ -533,7 +533,7 @@ class TB:  # TB-SMA
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
-        if parameters != '':
+        if list(parameters):
             self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
@@ -731,7 +731,7 @@ class MP:  # Morse
             self.mult_E = 1
         self.ixsss = 0
 
-        if parameters != '':
+        if list(parameters):
             self.pEOS = parameters
         #### pr0nt('xxx',self.ndist,self.npair,self.Vstar)
 
@@ -987,7 +987,7 @@ class MU:  # Murnaghan
 
     def __init__(self, *args, units='J/mol', parameters=''):
         self.V0 = None
-        if parameters != '':
+        if list(parameters):
             self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
@@ -1140,7 +1140,7 @@ class BM3:  # Birch-Murnaghan
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
-        if parameters != '':
+        if list(parameters):
             self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
@@ -1305,7 +1305,7 @@ class PT:  # Poirier-Tarantola
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
-        if parameters != '':
+        if list(parameters):
             self.pEOS = parameters[:4]
 
     def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
@@ -1469,7 +1469,7 @@ class BM4:  # Poirier-Tarantola
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
-        if parameters != '':
+        if list(parameters):
             self.pEOS = parameters[:5]
             self.pEOS[2] = -self.pEOS[2]
 
@@ -1841,7 +1841,7 @@ class MU2:  # Poirier-Tarantola
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
-        if parameters != '':
+        if list(parameters):
             self.pEOS = parameters[:5]
             # self.pEOS[2] = - self.pEOS[2]
 
@@ -2177,7 +2177,7 @@ nparams_rhophi = 6
 #         # ## pr0nt('#####',formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
 #         self.ntypes_A()
 #
-#         if parameters != '':
+#         if list(parameters):
 #             self.pEOS = parameters
 #             pEOS_pt, pEOS_et = self.paramos_raw_2_pt_et(self.pEOS)
 #
@@ -2898,7 +2898,7 @@ class EAM:  #
         # # ## pr0nt('#####',formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
         self.ntypes_A()
         #
-        # if parameters != '':
+        # if list(parameters):
         #     self.pEOS = parameters
         #     pEOS_pt, pEOS_et = self.paramos_raw_2_pt_et(self.pEOS)
         #

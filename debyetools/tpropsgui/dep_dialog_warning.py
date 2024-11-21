@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QDialog
-from debyetools.tpropsgui.ui_warning import Ui_Dialog as Ui_Warning
+from debyetools.tpropsgui.dep_ui_warning import Ui_Dialog as Ui_Warning
 
 class dialogWarning(QDialog):
     def __init__(self, parent=None):

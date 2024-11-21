@@ -1,5 +1,5 @@
 import numpy as np
-import debyetools.tpropsgui.plotter as plot
+import debyetools.tpropsgui.xdep_plotter as plot
 
 T_exp = np.array(
     [126.9565217, 147.826087, 167.826087, 186.9565217, 207.826087, 226.9565217, 248.6956522, 267.826087, 288.6956522,

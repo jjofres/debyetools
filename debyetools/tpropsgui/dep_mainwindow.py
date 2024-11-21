@@ -1,19 +1,19 @@
 from PySide6.QtWidgets import QMainWindow
 from PySide6.QtGui import QIcon
 
-from debyetools.tpropsgui.dialog_doscar import dialogDOSCAR
-from debyetools.tpropsgui.dialog_summary import dialogSUMMARY
-from debyetools.tpropsgui.dialog_outcar import dialogOUTCAR
-from debyetools.tpropsgui.dialog_warning import dialogWarning
-from debyetools.tpropsgui.dialog_periodictable import dialogPeriodicTable
+from debyetools.tpropsgui.dep_dialog_doscar import dialogDOSCAR
+from debyetools.tpropsgui.dep_dialog_summary import dialogSUMMARY
+from debyetools.tpropsgui.dep_dialog_outcar import dialogOUTCAR
+from debyetools.tpropsgui.dep_dialog_warning import dialogWarning
+from debyetools.tpropsgui.dep_dialog_periodictable import dialogPeriodicTable
 
 
-from debyetools.tpropsgui.window_cp import windowCp
-from debyetools.tpropsgui.window_interatomicparams import windowInteratormic
-from debyetools.tpropsgui.plot_EV import windowPlot
+from debyetools.tpropsgui.dep_window_cp import windowCp
+from debyetools.tpropsgui.dep_window_interatomicparams import windowInteratormic
+from debyetools.tpropsgui.dep_plot_EV import windowPlot
 
-from debyetools.tpropsgui.ui_mainwindow import Ui_MainWindow as Ui_MW
-from debyetools.tpropsgui.ui_missingkey import Ui_Form as Ui_KEY
+from debyetools.tpropsgui.dep_ui_mainwindow import Ui_MainWindow as Ui_MW
+from debyetools.tpropsgui.dep_ui_missingkey import Ui_Form as Ui_KEY
 
 from debyetools.tpropsgui.atomtools import Molecule, dt_potentials
 
@@ -23,7 +23,7 @@ from debyetools.poisson import poisson_ratio as dt_poisson_ratio
 from debyetools.aux_functions import load_doscar as dt_load_doscar
 from debyetools.electronic import fit_electronic as dt_fit_electronic
 
-from debyetools.tpropsgui.lock import keygen as kg
+from debyetools.tpropsgui.dep_lock import keygen as kg
 
 import traceback
 import re

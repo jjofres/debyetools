@@ -1,9 +1,6 @@
 from PySide6.QtWidgets import QDialog
-
+from debyetools.tpropsgui.dep_ui_dialog_periodictable import Ui_Dialog as Ui_Dialog
 from debyetools.tpropsgui.atomtools import atomic_mass
-from debyetools.tpropsgui.ui_dialog_periodictable import Ui_Dialog as Ui_Dialog
-
-
 def create_formula_from_dict(d):
     result = ""
     for key, value in d.items():
@@ -20,13 +17,13 @@ class dialogPeriodicTable(QDialog):
         self.ui = Ui_Dialog()
         self.ui.setupUi(self)
 
-        self.formula = ''
-        self.mass = 0  # 0.02698
+        self.formula = 'Al4'
+        self.mass = 0.02698
         self.dict_formula = {k:0 for k in [getattr(self.ui, 'pushB'+str(i)).text() for i in range(118)]}
-        # self.dict_formula['Al']=0#4
+        self.dict_formula['Al']=4
         # Example setup with multiple counting buttons
         self.buttons = [getattr(self.ui, 'pushB'+str(i)) for i in range(118)]
-        self.buttons[12].counter = 0  #4
+        self.buttons[12].counter=4
         for btn in self.buttons:
             btn.counterChanged2.connect(self.updateFormula)
             # self.layout.addWidget(btn)

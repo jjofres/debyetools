@@ -33,7 +33,7 @@ class MplWidget(QWidget):
         # Create canvas
         self.canvas = FigureCanvas(Figure())
         # Set constrained layout
-        # self.canvas.figure.set_constrained_layout(True)
+        self.canvas.figure.set_constrained_layout(True)
         # Create layout
         layout = QVBoxLayout()
         # Add canvas

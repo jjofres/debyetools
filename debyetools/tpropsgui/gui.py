@@ -1,8 +1,25 @@
 import sys
 from PySide6.QtWidgets import QApplication
 
-from debyetools.tpropsgui.mainwindow import MainWindow
+from debyetools.tpropsgui.dep_mainwindow import MainWindow
+from debyetools.tpropsgui.start_window import StartWindow
+
+
+def dtgui():
+    """
+    Function that calls the mainWindow class from  debyetools.tpropsgui.startwindow.
+    """
+    app = QApplication(sys.argv)
+    widget = StartWindow()
+    widget.app = app
+    widget.show()
+    sys.exit(app.exec())
+
+
 def interface() -> None:
+    from warnings import warn
+
+    warn('This is deprecated', DeprecationWarning, stacklevel=2)
     """
     Function that calls the mainWindow class from  debyetools.tpropsgui.mainwindow.
     """
@@ -20,8 +37,8 @@ def gui():
     warn('This is deprecated', DeprecationWarning, stacklevel=2)
 
     import PySimpleGUI as sg
-    from debyetools.tpropsgui.layout import layout
-    import debyetools.tpropsgui.events as events
+    from debyetools.tpropsgui.xdep_layout import layout
+    import debyetools.tpropsgui.xdep_events as events
     # import debyetools.tpropsgui.toolbox as tbox
     from debyetools.aux_functions import load_doscar, load_V_E, load_EM, load_cell
     import debyetools.potentials as potentials
@@ -33,7 +50,7 @@ def gui():
     from debyetools.fs_compound_db import fit_FS
     import numpy as np
     # from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-    import debyetools.tpropsgui.plotter_class as plotter
+    import debyetools.tpropsgui.xdep_plotter_class as plotter
 
 
     sg.set_options(element_padding=(0, 0))
@@ -493,7 +510,7 @@ def gui():
 
             else:
                 anh_arr_MU = np.c_[tuple([tprops_dict_all['MU'][j] for j in keys_TPs])]
-                import debyetools.tpropsgui.elements as elmt
+                import debyetools.tpropsgui.xdep_elements as elmt
                 # print('XXXXXXXXXXXXXXXXXXXXXXXXX')
                 lo_tabs_anh = [[elmt.Tab(eos_str,[[elmt.sCol([[elmt.M('','anh_'+eos_str,1000,7)]], 'anh_'+eos_str, 470, 80)]],'anh_'+eos_str,False) for eos_str in ['','MP','BM','RV','MG','TB','MU','PT','BM4','MU2','EAM','*MP','*BM','*RV','*MG','*TB','*MU','*PT','*BM4','*MU2','*EAM']]]
 

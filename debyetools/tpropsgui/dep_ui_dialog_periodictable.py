@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'dialog_periodictable.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.0
+## Created by: Qt User Interface Compiler version 6.6.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -25,7 +25,6 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         if not Dialog.objectName():
             Dialog.setObjectName(u"Dialog")
-        Dialog.setWindowModality(Qt.WindowModality.WindowModal)
         Dialog.resize(470, 299)
         self.verticalLayout = QVBoxLayout(Dialog)
         self.verticalLayout.setObjectName(u"verticalLayout")
@@ -34,7 +33,7 @@ class Ui_Dialog(object):
         self.gridLayout.setObjectName(u"gridLayout")
         self.pushB88 = CountingButton(Dialog)
         self.pushB88.setObjectName(u"pushB88")
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.pushB88.sizePolicy().hasHeightForWidth())
@@ -1138,7 +1137,7 @@ class Ui_Dialog(object):
     # setupUi
 
     def retranslateUi(self, Dialog):
-        Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"debyetools - [define compound...]", None))
+        Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Periodic Table of Elements", None))
         self.pushB88.setText(QCoreApplication.translate("Dialog", u"Ac", None))
         self.pushB66.setText(QCoreApplication.translate("Dialog", u"Ho", None))
         self.pushB85.setText(QCoreApplication.translate("Dialog", u"Rn", None))

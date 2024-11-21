@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QMainWindow, QTableWidgetItem, QMenu
 from PySide6.QtCore import Qt
 
-from debyetools.tpropsgui.ui_heatcapacitywindow import Ui_MainWindow as Ui_Cp
+from debyetools.tpropsgui.dep_ui_heatcapacitywindow import Ui_MainWindow as Ui_Cp
 
 from debyetools.fs_compound_db import fit_FS as dt_fit_FS
 from debyetools.tpropsgui.atomtools import atom_energy

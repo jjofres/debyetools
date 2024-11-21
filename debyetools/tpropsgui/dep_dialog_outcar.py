@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import  QDialog, QFileDialog
-from debyetools.tpropsgui.ui_dialog_outcar import Ui_Dialog as Ui_OUTCAR
+from debyetools.tpropsgui.dep_ui_dialog_outcar import Ui_Dialog as Ui_OUTCAR
 from debyetools.aux_functions import load_EM as dt_load_EM
 
 class dialogOUTCAR(QDialog):

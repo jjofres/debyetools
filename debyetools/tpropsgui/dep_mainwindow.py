@@ -15,7 +15,7 @@ from debyetools.tpropsgui.dep_plot_EV import windowPlot
 from debyetools.tpropsgui.dep_ui_mainwindow import Ui_MainWindow as Ui_MW
 from debyetools.tpropsgui.dep_ui_missingkey import Ui_Form as Ui_KEY
 
-from debyetools.tpropsgui.dep_atomtools import Molecule, dt_potentials
+from debyetools.tpropsgui.atomtools import Molecule, dt_potentials
 
 import numpy as np
 

@@ -2,7 +2,24 @@ import sys
 from PySide6.QtWidgets import QApplication
 
 from debyetools.tpropsgui.dep_mainwindow import MainWindow
+from debyetools.tpropsgui.start_window import StartWindow
+
+
+def dtgui():
+    """
+    Function that calls the mainWindow class from  debyetools.tpropsgui.startwindow.
+    """
+    app = QApplication(sys.argv)
+    widget = StartWindow()
+    widget.app = app
+    widget.show()
+    sys.exit(app.exec())
+
+
 def interface() -> None:
+    from warnings import warn
+
+    warn('This is deprecated', DeprecationWarning, stacklevel=2)
     """
     Function that calls the mainWindow class from  debyetools.tpropsgui.mainwindow.
     """

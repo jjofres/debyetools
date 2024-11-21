@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt
 from debyetools.tpropsgui.dep_ui_heatcapacitywindow import Ui_MainWindow as Ui_Cp
 
 from debyetools.fs_compound_db import fit_FS as dt_fit_FS
-from debyetools.tpropsgui.dep_atomtools import atom_energy
+from debyetools.tpropsgui.atomtools import atom_energy
 #from debyetools.fs_compound_db import Cp2fit as dt_Cp2fit
 
 # from  debyetools.tpropsgui.backend_qt_patched.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas

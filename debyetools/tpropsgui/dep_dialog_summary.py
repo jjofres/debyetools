@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import  QDialog, QFileDialog
 from debyetools.tpropsgui.dep_ui_dialogSUMMARY import Ui_Dialog as Ui_SUMMARY
-from debyetools.tpropsgui.dep_atomtools import atomic_mass
+from debyetools.tpropsgui.atomtools import atomic_mass
 from debyetools.aux_functions import load_V_E as dt_load_V_E
 
 def log_mean(lst):

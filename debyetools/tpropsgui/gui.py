@@ -1,7 +1,6 @@
 import sys
 from PySide6.QtWidgets import QApplication
 
-from debyetools.tpropsgui.dep_mainwindow import MainWindow
 from debyetools.tpropsgui.start_window import StartWindow
 
 

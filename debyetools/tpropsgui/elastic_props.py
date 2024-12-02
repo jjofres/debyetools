@@ -119,8 +119,8 @@ def check_born_stability(Cmat):
 
 
 def get_min_max_directions(Smat, fstr, opt_ix=0):
-    t = np.linspace(0, 2*np.pi, 6)
-    p = np.linspace(0, 2*np.pi, 6)
+    t = np.linspace(0, 2*np.pi, 5)
+    p = np.linspace(0, 2*np.pi, 5)
     initial_guesses = list(product(t, p))
     # initial_guesses = [[0,0],[np.pi/2, np.pi], [0, np.pi/3], [0, 2*np.pi/3], [0, 3*np.pi/3], [0, 4*np.pi/3], [0, 5*np.pi/3], [0, 6*np.pi/3],
     #                 [np.pi/3,0], [np.pi/3, np.pi/3], [np.pi/3, 2*np.pi/3], [np.pi/3, 3*np.pi/3], [np.pi/3, 4*np.pi/3], [np.pi/3, 5*np.pi/3], [np.pi/3, 6*np.pi/3],
@@ -163,6 +163,7 @@ def get_min_max_directions(Smat, fstr, opt_ix=0):
 
 def run_script(EM):
     # input
+    resdata = {}
     txt2output = ''
     txt2output =txt2output + 'Stiffness matrix: (in GPa)\n'
     for c in EM:
@@ -170,11 +171,13 @@ def run_script(EM):
             txt2output = txt2output + f'{ci:.3f}' + '\t'
         txt2output = txt2output + '\n'
     txt2output = txt2output + '\n'
+    resdata['Cijs'] = EM
 
-    # # Check stability
+    # Check stability
     # stability_results = check_born_stability(EM)
     # txt2output = txt2output + 'Born staibily: \n'+ stability_results + '\n'
     # txt2output = txt2output + '\n'
+    # resdata['Born_stability'] = stability_results
 
     #- Eigenvalues of the stiffness matrix (lambda 1 to 6).
     # Calculate the eigenvalues of the stiffness matrix
@@ -188,6 +191,8 @@ def run_script(EM):
         txt2output = txt2output + 'The material is mechanically stable' + '\n'
     txt2output = txt2output + '\n'
 
+    resdata['eigenvalues'] = eigenvalues
+
 
     #Average properties (Bulk modulus, Young's modulus, Shear modulus, Poisson's ratio) according to Voigt, Reuss, Hill.
     Smat = calc_Smat(EM)
@@ -196,19 +201,17 @@ def run_script(EM):
     KV, GV, EV, nuV = Voigt
     KR, GR, ER, nuR = Reuss
     KH, GH, EH, nuH = Hill
+    resdata['average_properties'] = {'Voigt': Voigt, 'Reuss': Reuss, 'Hill': Hill}
 
     # Print results
-    txt2output = txt2output + "Average properties\n(Bulk mod. (K), Young's mod. (E), Shear mod. (G), Poisson's ratio (ν)):" + '\n'
+    txt2output = txt2output + "Average properties (Bulk modulus (K), Young's modulus (E), Shear modulus (G), Poisson's ratio (ν)):" + '\n'
     txt2output = txt2output + "Method:    K(GPa)\tE(GPa)\tG(GPa)\tν" + '\n'
     txt2output = txt2output + f'Voigt:    {KV:.3f}\t{EV:.3f}\t{GV:.3f}\t{nuV:.3f}' + '\n'
     txt2output = txt2output + f'Reuss:    {KR:.3f}\t{ER:.3f}\t{GR:.3f}\t{nuR:.3f}' + '\n'
     txt2output = txt2output + f'Hill:     {KH:.3f}\t{EH:.3f}\t{GH:.3f}\t{nuH:.3f}' + '\n'
+    txt2output = txt2output + f'Universal anisotropy index (A^U): {KV/KR+5*GV/GR -6:.4f}'+'\n'
+    txt2output = txt2output + f'G/K: {GH/KH:.5f}' + '\n'
     txt2output = txt2output + '\n'
-
-    # Young_funct = lambda t, p: Young_tp(t, p, Smat)
-    # LinearCompressibility_funct = lambda t, p: LinearCompressibility_tp(t, p, Smat)
-    # Shear2D_funct = lambda t, p: shear2D([t, p], Smat)
-    # Poisson2D_funct = lambda t, p: Poisson2D([t, p], Smat)
 
     minf_Y, maxf_Y, cd_min_Y, cd_max_Y = get_min_max_directions(Smat,'Young_tp')
     anis_Y = minf_Y/maxf_Y
@@ -222,6 +225,14 @@ def run_script(EM):
     anis_P1 = minf_P1/maxf_P1
     minf_P2, maxf_P2, cd_min_P2, cd_max_P2 = get_min_max_directions(Smat,'Poisson2D', 2)
     anis_P2 = minf_P2/maxf_P2
+
+    resdata['variation_properties'] = {'Young': {'min': minf_Y, 'max': maxf_Y, 'anisotropy': anis_Y, 'min_direction': cd_min_Y, 'max_direction': cd_max_Y},
+                                        'LinearCompressibility': {'min': minf_LC, 'max': maxf_LC, 'anisotropy': anis_LC, 'min_direction': cd_min_LC, 'max_direction': cd_max_LC},
+                                        'Shear': {'min': minf_S0, 'max': maxf_S0, 'anisotropy': anis_S0, 'min_direction': cd_min_S0, 'max_direction': cd_max_S0},
+                                        'Shear2': {'min': minf_S1, 'max': maxf_S1, 'anisotropy': anis_S1, 'min_direction': cd_min_S1, 'max_direction': cd_max_S1},
+                                        'Poisson': {'min': minf_P1, 'max': maxf_P1, 'anisotropy': anis_P1, 'min_direction': cd_min_P1, 'max_direction': cd_max_P1},
+                                        'Poisson2': {'min': minf_P2, 'max': maxf_P2, 'anisotropy': anis_P2, 'min_direction': cd_min_P2, 'max_direction': cd_max_P2}
+                                        }
 
     txt2output = txt2output +  "Variations of the elastic moduli:" + '\n'
     txt2output = txt2output +  "           Young's mod. | Lin. comp. | Shear mod.| Poisson's ratio" + '\n'
@@ -251,7 +262,7 @@ def run_script(EM):
     txt2output = txt2output + '\n'
 
 
-    return txt2output
+    return txt2output, resdata
 
 
 def run_script_plots(axs, EM):
@@ -315,6 +326,19 @@ def run_script_plots(axs, EM):
     axP[2].plot(theta, r_yzP[0], color='g')
     axP[2].plot(theta, r_yzP[1], color='r')
     axP[2].plot(theta, r_yzP[2], color='b')
+
+    axY[0].text(np.pi, axY[0].get_rmax() * 1.7, r'$E(\theta, \phi)~[GPa]$', rotation=90)
+    axL[0].text(np.pi, axL[0].get_rmax() * 1.7, r'$\beta(\theta, \phi)$', rotation=90)
+    axS[0].text(np.pi, axS[0].get_rmax() * 1.7, r'$G(\theta, \phi, \chi)~[GPa]$', rotation=90)
+    axP[0].text(np.pi, axP[0].get_rmax()*1.7, r'$\nu(\theta, \phi, \chi)$', rotation=90)
+
+    axY[0].set_title('x-y plane')
+    axY[1].set_title('x-z plane')
+    axY[2].set_title('y-z plane')
+
+    for ax in [axY, axL, axS, axP]:
+        for i in range(3):
+            ax[i].tick_params(axis='y', labelsize=8, labelrotation=292.5)
     # plt.show()
 
     return axs

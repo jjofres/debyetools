@@ -6,7 +6,7 @@ import time
 # import debyetools.tpropsgui.plotter as plot
 from matplotlib import pyplot as plt
 import random
-from debyetools.ga_fitting import ga_optim
+from debyetools.optim import ga_fitting
 
 start = time.perf_counter()
 tag = rnd.randint(0,100)
@@ -16,7 +16,7 @@ time_eos = 0
 time_Fmin = 0
 time_tprops = 0
 def props(T, params, mass,  eos_pot, Tmelting):
-    print('>>> ', end=' ')
+    # print('>>> ', end=' ')
     global time_eos, time_Fmin, time_tprops
     E0, V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef, vdef, pel0, pel1, pel2, pel3, xs0, xs1, xs2, xs3, xs4, xs5 = params
     p_intanh = np.array([a0, m0])
@@ -31,7 +31,7 @@ def props(T, params, mass,  eos_pot, Tmelting):
     eos_pot.fitEOS([V0], 0, initial_parameters=initial_parameters, fit=False)
     p_EOS = eos_pot.pEOS
     time_eos += time.time()-tic_eos
-    print('EOS time:', time_eos, end=' ')
+    # print('EOS time:', time_eos, end=' ')
     #=========================
 
     # F minimization
@@ -42,7 +42,7 @@ def props(T, params, mass,  eos_pot, Tmelting):
     # ndeb_MU.r = 4
     T, V = ndeb_MU.min_G(T, p_EOS[1], P=0)
     time_Fmin += time.time()-tic_Fmin
-    print('Fmin time:', time_Fmin, end=' ')
+    # print('Fmin time:', time_Fmin, end=' ')
     #=========================
 
     # Evaluations
@@ -50,7 +50,7 @@ def props(T, params, mass,  eos_pot, Tmelting):
     tic_tprops = time.time()
     tprops_dict = ndeb_MU.eval_props(T, V, P=0)
     time_tprops += time.time()-tic_tprops
-    print('Tprops time:', time_tprops, end=' ')
+    # print('Tprops time:', time_tprops, end=' ')
 
     #=========================
 
@@ -109,7 +109,7 @@ if __name__ == '__main__':
                      -10e0,-10e-3,-10e-6,-10e-9, -1e-4, -10e-4]
 
     str_params2fit = ['E0', 'V0', 'K0', 'K0p', 'nu', 'a0', 'm0', 'xs0', 'xs1', 'xs2', 'xs3', 'xs4', 'xs5']
-    for iiii in range(10):
+    for iiii in range(2):
 
         def f2fit(Temp, pf):
             return props(Temp, get_params_list(params, pf, str_params2fit), mass, eos_pot, Tmelting)['Cp']
@@ -120,8 +120,8 @@ if __name__ == '__main__':
         T_data_fit = T_exp[ix_sample]
         Cp_data_fit = Cp_exp[ix_sample]
 
-        best_params = ga_optim (f2fit, T_data_fit, Cp_data_fit, initial_guess, param_range=(0.7, 1.3),
-                                stagnant_gens=20, npop=20, ngen=10, pcross=0.5, pmut=0.4)
+        best_params = ga_fitting (f2fit, T_data_fit, Cp_data_fit, initial_guess, param_range=(0.9, 1.1),
+                                stagnant_gens=10, npop=10, ngen=10, pcross=0.5, pmut=0.4)
                                 # stagnant_gens = 1, npop = 1, ngen = 1, pcross = 0.5, pmut = 0.4)
         print('best_params:', best_params)
         initial_guess = best_params

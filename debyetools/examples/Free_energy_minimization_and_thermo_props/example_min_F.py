@@ -12,8 +12,7 @@ V_data, E_data = V_data*(1E-30*6.02E+23), E_data*(1.60218E-19 * 6.02214E+23)
 
 params_initial_guess = [-3e5, 1e-5, 7e10, 4]
 eos = potentials.BM()
-params_eos = eos.fitEOS(V_data, E_data, params_initial_guess)
-
+eos.fitEOS(V_data, E_data, params_initial_guess)
 
 EM = load_EM( '../Al3Li_L12/OUTCAR_elastic')
 nu = poisson_ratio (EM)

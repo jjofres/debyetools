@@ -21,7 +21,7 @@ class FSBBTestCase(unittest.TestCase):
         print('#######')
         print(fit_FS(trops_dict,T_from, T_to)['Cp'])
         print('#######')
-        np.testing.assert_array_almost_equal(fit_FS(trops_dict,T_from, T_to)['Cp'], [ 571,-4.96294005e-01,6.38732214e+06,2.31428439e-04,-8.45158274e+03,1.00000000e+00], decimal=2)
+        np.testing.assert_array_almost_equal(fit_FS(trops_dict,T_from, T_to)['Cp'], [5.714e+02, -4.963e-01, 6.387e+06, 2.314e-04, -8.452e+03, 1.000e+00], decimal=2)
 
 
 

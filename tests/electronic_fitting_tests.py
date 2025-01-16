@@ -15,8 +15,8 @@ class ElectronicContributionFittingTestCase(unittest.TestCase):
 
         # np.savetxt('E4test',E)
         # np.savetxt('N4test', N)
-        E = np.loadtxt('../E4test')
-        N = np.loadtxt('N4test')
+        E = np.loadtxt('./tests/E4test')
+        N = np.loadtxt('./tests/N4test')
 
         # print('XXXXXX', np.shape(E), np.shape(N))
 

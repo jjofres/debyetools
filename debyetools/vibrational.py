@@ -327,7 +327,8 @@ class Vibrational:
         r = self.r
 
         x = self.tD / T
-        ixs = np.where(x >= 653)
+        # ixs = np.where(x >= 653)
+        ixs = x[x >= 653]  # This gives the values, not indices
         if len(ixs[0]) > 0:
             if min(x[ixs]) >= 653:
                 for i in ixs:
@@ -348,7 +349,8 @@ class Vibrational:
         """
         r = self.r
         x = self.tD / T
-        ixs = np.where(x >= 653)
+        # ixs = np.where(x >= 653)
+        ixs = x[x >= 653]  # This gives the values, not indices
         if len(ixs[0]) > 0:
             if min(x[ixs]) >= 653:
                 for i in ixs:

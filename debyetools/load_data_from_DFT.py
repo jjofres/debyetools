@@ -1,7 +1,7 @@
 from debyetools.tpropsgui.atomtools import atomic_mass
 import pandas as pd
 from debyetools.aux_functions import load_doscar
-from get_elastic import get_EM
+from debyetools.get_elastic import get_EM
 
 
 class Vdata:

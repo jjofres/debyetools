@@ -113,7 +113,7 @@ def extract_from_DFT(file_path):
     # compound.multiplicities = multiplicities
     vdata.mass = average_mass(vdata.formula) / 1000
     current_folder = f'{path}'
-    vdata.Ef = E0 - sum([get_energy(vdata.potentials[fi], current_folder) for fi in vdata.formula], current_folder) / nats  # sum(multiplicities)
+    vdata.Ef = E0 - sum([get_energy(vdata.potentials[fi], current_folder) for fi in vdata.formula]) / nats  # sum(multiplicities)
     vdata.E0 = E0
     vdata.path = path
 

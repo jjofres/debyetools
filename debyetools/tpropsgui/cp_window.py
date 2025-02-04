@@ -245,6 +245,19 @@ class dialogCpWindow(QMainWindow):
 
         self.canvas.draw()
 
+    def check_type_in_energies(self, ti):
+        number_of_occurences = 0
+        last_occurence = ''
+        for key_ai in atom_energy.keys():
+            if ti in key_ai:
+                number_of_occurences += 1
+                last_occurence = key_ai
+                # print(key_ai)
+        if number_of_occurences == 1:
+            return last_occurence
+        else:
+            return ti
+
     def debye_run(self, molecule, ui_progress, formula):
         self.formula = formula
         txt4output = f'{formula}$'
@@ -302,7 +315,7 @@ class dialogCpWindow(QMainWindow):
             nats = len(molecule.types)
             if P == 0:
                 # print(molecule.__dict__.keys())
-                Ef = molecule.eos.E0(molecule.eos.V0) - sum([atom_energy[ti] for ti in molecule.types]) * (
+                Ef = molecule.eos.E0(molecule.eos.V0) - sum([atom_energy[self.check_type_in_energies(ti)] for ti in molecule.types]) * (
                             0.160218e-18 * 6.02214e23) / len(molecule.types)
                 self.Ef = Ef*nats
                 txt4output += f'{Ef * nats:.7e}'

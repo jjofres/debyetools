@@ -1,9 +1,9 @@
-from debyetools.ndeb import nDeb as dt_nDeb
-import debyetools.potentials as dt_potentials
-from debyetools import pairanalysis as dt_pa_calc
-
-import numpy as np
 import re
+
+import debyetools.potentials as dt_potentials
+import numpy as np
+from debyetools import pairanalysis as dt_pa_calc
+from debyetools.ndeb import nDeb as dt_nDeb
 
 atomic_symbols = [
     # 0
@@ -554,13 +554,27 @@ atom_energy = {
 'Zr_sv': -8.52067,
 }
 
+
+def check_type_in_energies(ti):
+    number_of_occurences = 0
+    last_occurence = ''
+    for key_ai in atom_energy.keys():
+        if ti in key_ai:
+            number_of_occurences+=1
+            last_occurence = key_ai
+            # print(key_ai)
+    if number_of_occurences == 1:
+        return last_occurence
+    else:
+        return ti
+
 class atomSingle:
     def __init__(self, type, coords):
         self.type = type
         self.position = coords
-        self.mass = atomic_mass[type]
-        self.radii = atomic_radii[type]
-        self.energy = atom_energy[type]
+        self.mass = atomic_mass[type.split('_')[0]]
+        self.radii = atomic_radii[type.split('_')[0]]
+        self.energy = atom_energy[check_type_in_energies(type)]
 
 class atomsPositions:
     def __init__(self, formula, cell, basis):
@@ -576,7 +590,9 @@ class atomsPositions:
 
     def __next__(self):
         if self._current_index < self._nats:
-            atom = atomSingle(self.types[self._current_index], self.positions[self._current_index])
+            print('xxxx', self.types[self._current_index], self.positions[self._current_index])
+            type_i = self.types[self._current_index]
+            atom = atomSingle(type_i, self.positions[self._current_index])
             self._current_index+=1
             return atom
 
@@ -615,127 +631,3 @@ class Molecule:
     def run_pa(self, cutoff):
         self.cutoff = cutoff
         self.distances, self.num_bonds_per_formula, self.combs_types = dt_pa_calc.pair_analysis(self.formula, self.cutoff, self.basis, self.cell)
-
-
-
-import matplotlib.pyplot as plt
-import numpy as np
-from debyetools.tpropsgui.atomtools import atomic_radii, atomic_color
-
-
-def get_box_from_cell_matrix(cell_matrix):
-    # The 8 vertices of the box are combinations of the cell matrix rows
-    a, b, c = cell_matrix
-    origin = (a + b + c) / 2
-    vertices = np.array([
-        -origin,
-        a - origin,
-        b - origin,
-        c - origin,
-        a + b - origin,
-        b + c - origin,
-        a + c - origin,
-        a + b + c - origin
-    ])
-
-    # Define edges connecting vertices
-    edges = [
-        (0, 1), (0, 2), (0, 3),
-        (1, 4), (1, 6),
-        (2, 4), (2, 5),
-        (3, 5), (3, 6),
-        (4, 7), (5, 7), (6, 7)
-    ]
-
-    return vertices, edges, origin
-
-
-# Function to rotate points around the axes
-def rotate(vertices, angles):
-    rx, ry, rz = np.radians(angles)
-
-    # Rotation matrix for x-axis
-    Rx = np.array([
-        [1, 0, 0],
-        [0, np.cos(rx), -np.sin(rx)],
-        [0, np.sin(rx), np.cos(rx)]
-    ])
-
-    # Rotation matrix for y-axis
-    Ry = np.array([
-        [np.cos(ry), 0, np.sin(ry)],
-        [0, 1, 0],
-        [-np.sin(ry), 0, np.cos(ry)]
-    ])
-
-    # Rotation matrix for z-axis
-    Rz = np.array([
-        [np.cos(rz), -np.sin(rz), 0],
-        [np.sin(rz), np.cos(rz), 0],
-        [0, 0, 1]
-    ])
-
-    # Combined rotation
-    R = Rz @ Ry @ Rx
-    return vertices @ R.T
-
-
-# Function to project a 3D point to 2D
-def project_point(point, camera_pos, projection):
-    # Apply the camera transformation
-    transformed_point = point - np.array(camera_pos)
-    x, y, z = transformed_point
-
-    if projection == 'perspective':
-        factor = 1 / (z if z != 0 else 1e-6)  # Avoid division by zero
-    else:  # Orthographic projection
-        factor = 1
-
-    return (x * factor, y * factor, z)
-
-
-# Function to calculate marker size based on depth
-def calculate_marker_size(z, camera_z, base_size=5, scale=20):
-    depth = max(camera_z - z, 0.1)  # Avoid division by zero or negative depth
-    return base_size * scale / depth
-
-
-# Function to plot the cube and points in 2D
-def visualize_atoms(cell, basis, atoms_types, camera_pos=(0, 0, 15), projection='perspective', angles=(90, 200, 0)):
-    vertices, edges, origin = get_box_from_cell_matrix(cell)
-    rotated_vertices = rotate(vertices, angles)
-
-    fig, ax = plt.subplots()
-
-    # Rotate the points if provided
-
-    if basis is not None:
-        points = np.dot(basis, cell)
-        points = points - origin
-        points = rotate(np.array(points), angles)
-
-    # Project vertices to 2D
-    projected = []
-    for vertex in rotated_vertices:
-        projected.append(project_point(vertex, camera_pos, projection))
-
-    # Draw edges
-    for edge in edges:
-        p1, p2 = edge
-        x1, y1, _ = projected[p1]
-        x2, y2, _ = projected[p2]
-        ax.plot([x1, x2], [y1, y2], 'o:', color='gray', markersize=2)
-
-    # Plot the additional points if provided
-
-    if points is not None:
-        for point, type_i in zip(points, atoms_types):
-            px, py, pz = project_point(point, np.array(camera_pos), projection)
-            size = calculate_marker_size(pz, camera_pos[2])
-            print(atomic_radii[type_i])
-            ax.plot(px, py, 'o', color=atomic_color[type_i], markersize=5 * size * atomic_radii[type_i])
-
-    # Set axis labels and aspect ratio
-    ax.set_aspect('equal')
-    ax.axis('off')
-    plt.show()

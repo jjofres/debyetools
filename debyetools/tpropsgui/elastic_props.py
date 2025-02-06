@@ -327,14 +327,14 @@ def run_script_plots(axs, EM):
     axP[2].plot(theta, r_yzP[1], color='r')
     axP[2].plot(theta, r_yzP[2], color='b')
 
-    axY[0].text(np.pi, axY[0].get_rmax() * 1.7, r'$E(\theta, \phi)~[GPa]$', rotation=90)
-    axL[0].text(np.pi, axL[0].get_rmax() * 1.7, r'$\beta(\theta, \phi)$', rotation=90)
-    axS[0].text(np.pi, axS[0].get_rmax() * 1.7, r'$G(\theta, \phi, \chi)~[GPa]$', rotation=90)
-    axP[0].text(np.pi, axP[0].get_rmax()*1.7, r'$\nu(\theta, \phi, \chi)$', rotation=90)
+    axY[0].text(np.pi*1.1, axY[0].get_rmax() * 2.2, r'$E(\theta, \phi)~[GPa]$', rotation=90)
+    axL[0].text(np.pi*1.1, axL[0].get_rmax() * 2.2, r'$\beta(\theta, \phi)$', rotation=90)
+    axS[0].text(np.pi*1.1, axS[0].get_rmax() * 2.2, r'$G(\theta, \phi, \chi)~[GPa]$', rotation=90)
+    axP[0].text(np.pi*1.1, axP[0].get_rmax() * 2.2, r'$\nu(\theta, \phi, \chi)$', rotation=90)
 
-    axY[0].set_title('x-y plane')
-    axY[1].set_title('x-z plane')
-    axY[2].set_title('y-z plane')
+    # axY[0].set_title('x-y plane')
+    # axY[1].set_title('x-z plane')
+    # axY[2].set_title('y-z plane')
 
     for ax in [axY, axL, axS, axP]:
         for i in range(3):

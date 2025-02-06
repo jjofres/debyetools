@@ -593,9 +593,10 @@ class Molecule:
 
     def initialize_ndeb(self, mode):
         self.ndeb = dt_nDeb(self.nu, self.mass, self.p_anh, self.eos,
-                         self.p_el, self.p_def, self.p_xs, mode=mode)
+                         self.p_el, self.p_def, self.p_xs, mode=mode, r=self.r, xsparams = self.xsparams)
 
     def set_eos(self, eos_str, args):
+        self.eos_str = eos_str
         self.eos = getattr(dt_potentials, eos_str)(*args)
         self.eos.fitEOS([1e-5], [0], initial_parameters=np.array(self.initial_params), fit=False)
 
@@ -614,6 +615,7 @@ class Molecule:
     def run_pa(self, cutoff):
         self.cutoff = cutoff
         self.distances, self.num_bonds_per_formula, self.combs_types = dt_pa_calc.pair_analysis(self.formula, self.cutoff, self.basis, self.cell)
+
 
 
 import matplotlib.pyplot as plt

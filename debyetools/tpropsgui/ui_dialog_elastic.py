@@ -57,7 +57,7 @@ class Ui_Dialog(object):
     # setupUi
 
     def retranslateUi(self, Dialog):
-        Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Dialog", None))
+        Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"debyetools - [Mechanical properties]", None))
         self.pushButton.setText(QCoreApplication.translate("Dialog", u"Plots", None))
     # retranslateUi
 

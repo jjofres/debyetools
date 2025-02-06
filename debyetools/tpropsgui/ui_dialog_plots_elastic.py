@@ -85,7 +85,7 @@ class Ui_Dialog(object):
     # setupUi
 
     def retranslateUi(self, Dialog):
-        Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"Dialog", None))
+        Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"debyetools - [elastic properties plots]", None))
         self.label_5.setText(QCoreApplication.translate("Dialog", u"Variations of the elastic moduli:", None))
         self.label.setText(QCoreApplication.translate("Dialog", u"Young's modulus", None))
         self.label_2.setText(QCoreApplication.translate("Dialog", u"Linear compresibiliy", None))

@@ -159,18 +159,18 @@ class nDeb:
         d3E0dVdT2 = 0
 
         Fvib = self.vib.F(T, V)
-        Svib = -self.vib.dFdT_V(T, V)
+        Svib = -self.vib.dFdT_V(T, V)/self.r
         Evib = Fvib + T*Fvib
 
         dFvibdV_T = self.vib.dFdV_T(T,V)
-        dFvibdT_V = self.vib.dFdT_V(T,V)
-        d2FvibdT2_V = self.vib.d2FdT2_V(T,V)
+        dFvibdT_V = self.vib.dFdT_V(T,V)/self.r
+        d2FvibdT2_V = self.vib.d2FdT2_V(T,V)/self.r**2
         d2FvibdV2_T = self.vib.d2FdV2_T(T,V)
         d3FvibdV3_T = self.vib.d3FdV3_T(T,V)
         d4FvibdV4_T = self.vib.d4FdV4_T(T,V)
-        d2FvibdVdT = self.vib.d2FdVdT(T,V)
-        d3FvibdV2dT = self.vib.d3FdV2dT(T,V)
-        d3FvibdVdT2 = self.vib.d3FdVdT2(T,V)
+        d2FvibdVdT = self.vib.d2FdVdT(T,V)/self.r
+        d3FvibdV2dT = self.vib.d3FdV2dT(T,V)/self.r
+        d3FvibdVdT2 = self.vib.d3FdVdT2(T,V)/self.r**2
 
         # Eel = self.el.E(T, V)
         # Sel = self.el.S(T, V)

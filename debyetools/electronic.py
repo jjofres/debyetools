@@ -197,7 +197,7 @@ class Electronic:
         """
         return -2*np.pi**2*NAv*self.r*kB**2*self.dNfVdV_T(V)*(1/6)/(0.160218e-18)
 
-def fit_electronic(Vs: np.ndarray, p_el: np.ndarray, E: np.ndarray, N: np.ndarray, Ef: np.ndarray, ixss: int = 8, ixse: int = -1) -> np.ndarray:
+def fit_electronic(Vs: np.ndarray, p_el: np.ndarray, E: np.ndarray, N: np.ndarray, Ef: np.ndarray, ixss: int = 6, ixse: int = -1) -> np.ndarray:
     """
     Fitting procedure for the N(Ef)(V) function.
 

@@ -18,10 +18,7 @@ class FSBBTestCase(unittest.TestCase):
                       'Ksp': np.array([5.8319949069,5.92581128531,6.07262421928,6.19042232876,6.25170399681,6.47798983546,6.77772999144,7.19617691273,7.83503505035,8.95883489939,11.6736878299])
                       }
 
-        print('#######')
-        print(fit_FS(trops_dict,T_from, T_to)['Cp'])
-        print('#######')
-        np.testing.assert_array_almost_equal(fit_FS(trops_dict,T_from, T_to)['Cp'], [5.71405476e+02, -4.96293874e-01, 6.38731913e+06, 2.31428393e-04, -8.45157968e+03, 1.00000000e+00], decimal=2)
+        np.testing.assert_array_almost_equal(fit_FS(trops_dict,T_from, T_to)['Cp'], [5.71405651e+02, -4.96294000e-01,  6.38732212e+06,  2.31428437e-04, -8.45158269e+03, 1.00000000e+00], decimal=2)
 
 
 

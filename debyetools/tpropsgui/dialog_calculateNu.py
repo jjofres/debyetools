@@ -104,7 +104,7 @@ class dialogCalcNu(QDialog):
 
     def on_pushMore_calcElastic(self):
 
-        sys.stdout.reconfigure(encoding='utf-8')
+        # sys.stdout.reconfigure(encoding='utf-8')
 
         C = self.get_C()
         res, resdata=elastic.run_script(C)

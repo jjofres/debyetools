@@ -2,7 +2,10 @@ import os
 import numpy as np
 import re
 from scipy.optimize import curve_fit
-from debyetools.constants import EV_A3_TO_GPA
+from debyetools.constants import EV_A3_TO_GPA, KBAR_TO_GPA
+
+# eV/A^3 -> kBar (same unit as aux_functions.load_EM and poisson.quiet_pa)
+EV_A3_TO_KBAR = EV_A3_TO_GPA / KBAR_TO_GPA
 
 def parse_outcar(outcar_path):
     """
@@ -54,7 +57,8 @@ def get_EM(base_dir):
     E = E0 + V0/2 * eps * delta**2, with E0 and V0 from the unstrained cell.
 
     :param str base_dir: folder containing eps1 ... eps9.
-    :return: 6x6 stiffness matrix in GPa (Voigt order XX YY ZZ YZ ZX XY).
+    :return: 6x6 stiffness matrix in kBar (Voigt order XX YY ZZ YZ ZX XY),
+             same unit as aux_functions.load_EM.
     :rtype: np.ndarray
     """
 
@@ -114,42 +118,42 @@ def get_EM(base_dir):
     # Store the calculated elastic constants
     EM =np.zeros((6,6))
     elastic_constants = {
-        'C11': C11*EV_A3_TO_GPA,
-        'C12': C12*EV_A3_TO_GPA,
-        'C13': C13*EV_A3_TO_GPA,
+        'C11': C11*EV_A3_TO_KBAR,
+        'C12': C12*EV_A3_TO_KBAR,
+        'C13': C13*EV_A3_TO_KBAR,
         'C14': 0,
         'C15': 0,
         'C16': 0,
-        'C21': C12*EV_A3_TO_GPA,
-        'C22': C22*EV_A3_TO_GPA,
-        'C23': C23*EV_A3_TO_GPA,
+        'C21': C12*EV_A3_TO_KBAR,
+        'C22': C22*EV_A3_TO_KBAR,
+        'C23': C23*EV_A3_TO_KBAR,
         'C24': 0,
         'C25': 0,
         'C26': 0,
-        'C31': C13*EV_A3_TO_GPA,
-        'C32': C23*EV_A3_TO_GPA,
-        'C33': C33*EV_A3_TO_GPA,
+        'C31': C13*EV_A3_TO_KBAR,
+        'C32': C23*EV_A3_TO_KBAR,
+        'C33': C33*EV_A3_TO_KBAR,
         'C34': 0,
         'C35': 0,
         'C36': 0,
         'C41': 0,
         'C42': 0,
         'C43': 0,
-        'C44': C44*EV_A3_TO_GPA,
+        'C44': C44*EV_A3_TO_KBAR,
         'C45': 0,
         'C46': 0,
         'C51': 0,
         'C52': 0,
         'C53': 0,
         'C54': 0,
-        'C55': C55*EV_A3_TO_GPA,
+        'C55': C55*EV_A3_TO_KBAR,
         'C56': 0,
         'C61': 0,
         'C62': 0,
         'C63': 0,
         'C64': 0,
         'C65': 0,
-        'C66': C66*EV_A3_TO_GPA,
+        'C66': C66*EV_A3_TO_KBAR,
 
     }
 

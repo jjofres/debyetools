@@ -171,7 +171,7 @@ def load_V_E(energy_dir_summary: str, energy_dir_contcar: str, units: str = 'eV/
 
     V = []
     for di in ds:
-        V.append(np.product(np.array(diag_cell) * (1 + di)) / nat)
+        V.append(np.prod(np.array(diag_cell) * (1 + di)) / nat)
 
     uconvV, uconvE = None, None
     if units == 'J/mol':

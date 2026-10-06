@@ -327,12 +327,7 @@ class Vibrational:
         r = self.r
 
         x = self.tD / T
-        ixs = np.where(x >= 653)
-        # ixs = x[x >= 653]  # This gives the values, not indices
-        if len(ixs[0]) > 0:
-            if min(x[ixs]) >= 653:
-                for i in ixs:
-                    x[i] = 653
+        x = np.minimum(x, 653)  # same clamp as before; works for scalars, 0-d and 1-d arrays (numpy 2)
         ex = np.exp(x)
         D3 = D_3(x)
         dD3dx = dD_3dx(x, D3)
@@ -349,12 +344,7 @@ class Vibrational:
         """
         r = self.r
         x = self.tD / T
-        ixs = np.where(x >= 653)
-        # ixs = x[x >= 653]  # This gives the values, not indices
-        if len(ixs[0]) > 0:
-            if min(x[ixs]) >= 653:
-                for i in ixs:
-                    x[i] = 653
+        x = np.minimum(x, 653)  # same clamp as before; works for scalars, 0-d and 1-d arrays (numpy 2)
         ex = np.exp(x)
         D3 = D_3(x)
         return 3  * NAv * ((ex - 1) * T * (

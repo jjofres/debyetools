@@ -22,6 +22,8 @@ def D_3(x: float|np.ndarray) -> float|np.ndarray:
     :rtype: float|np.ndarray
     """
     if type(x)==np.ndarray:
+        if x.ndim == 0:
+            return D_3(x[()])
         return np.array([D_3(xi) for xi in x])
     if np.isnan(x):
         return 0
@@ -45,6 +47,8 @@ def dD_3dx(x: float|np.ndarray, D3: float|np.ndarray) -> float|np.ndarray:
     :rtype: float|np.ndarray
     """
     if type(x)==np.ndarray:
+        if x.ndim == 0:
+            return dD_3dx(x[()], np.asarray(D3)[()])
         return np.array([dD_3dx(xi,D3i) for xi,D3i in zip(x,D3)])
 
     if x >= 709.782712893384:
@@ -65,6 +69,8 @@ def d2D_3dx2(x: float|np.ndarray, D3: float|np.ndarray, dD3dx: float|np.ndarray)
     :rtype: float|np.ndarray
     """
     if type(x)==np.ndarray:
+        if x.ndim == 0:
+            return d2D_3dx2(x[()], np.asarray(D3)[()], np.asarray(dD3dx)[()])
         return np.array([d2D_3dx2(xi,D3i,dD3dxi) for xi,D3i,dD3dxi in zip(x,D3, dD3dx)])
     if x >=354.89135644669:
         exp_exp2=7.458340731215135e-155
@@ -88,6 +94,8 @@ def d3D_3dx3(x: float|np.ndarray, _D3: float|np.ndarray, _dD3dx: float|np.ndarra
     :rtype: float|np.ndarray
     """
     if type(x)==np.ndarray:
+        if x.ndim == 0:
+            return d3D_3dx3(x[()], np.asarray(_D3)[()], np.asarray(_dD3dx)[()], np.asarray(_d2D3dx2)[()])
         return np.array([d3D_3dx3(xi,D3i,dD3dxi,d2D3dx2i) for xi,D3i,dD3dxi,d2D3dx2i in zip(x,_D3, _dD3dx, _d2D3dx2)])
     if x>=709.782712893384:
         exp_x = 1.7976931348622732e+308

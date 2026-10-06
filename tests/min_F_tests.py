@@ -88,7 +88,8 @@ class FminTestCase(unittest.TestCase):
         T, V = ndeb_Morse.min_G(T,self.p_EOS[1],P=0)
         # print(T, V)
 
-        self.assertAlmostEqual(32.905444673426054 , ndeb_Morse.eval_props(T[-1], V[-1],P=0)['Cp'],places=2)
+        # B1: updated for N_A = 6.02214076e23 in the EAM volume conversion (was 32.905444673426054 with 6.02e23)
+        self.assertAlmostEqual(32.912184579856515 , ndeb_Morse.eval_props(T[-1], V[-1],P=0)['Cp'],places=2)
 
 
 if __name__=='__main__':

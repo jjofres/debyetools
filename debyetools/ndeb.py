@@ -13,9 +13,7 @@ from debyetools.XS import Xs
 
 from typing import Tuple
 
-hbar = 0.1054571800e-33
-NAv = 0.6022140857e24
-kB = 0.138064852e-22
+from debyetools.constants import hbar, NAv, kB
 
 
 class nDeb:

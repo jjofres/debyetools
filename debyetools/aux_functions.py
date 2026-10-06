@@ -1,6 +1,7 @@
 import itertools as it
 import re
 import numpy as np
+from debyetools.constants import A3_ATOM_TO_M3_MOL, EV_ATOM_TO_J_MOL
 from typing import Tuple
 
 
@@ -175,8 +176,8 @@ def load_V_E(energy_dir_summary: str, energy_dir_contcar: str, units: str = 'eV/
 
     uconvV, uconvE = None, None
     if units == 'J/mol':
-        uconvE = (0.160218e-18 * 6.02214e23)
-        uconvV = (1e-30 * 6.02e23)
+        uconvE = EV_ATOM_TO_J_MOL
+        uconvV = A3_ATOM_TO_M3_MOL
     elif units == 'eV/atom':
         uconvE, uconvV = 1, 1
     return np.array(V).T * uconvV, np.array(E).T * uconvE

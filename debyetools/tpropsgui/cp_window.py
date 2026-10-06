@@ -9,6 +9,7 @@ from matplotlib.widgets import Cursor
 from debyetools.tpropsgui.atomtools import atom_energy
 from debyetools.tpropsgui.ui_cp_window import Ui_MainWindow as Ui_Cp
 from PySide6.QtGui import QPixmap, QPalette
+from debyetools.constants import EV_ATOM_TO_J_MOL
 
 
 # from debyetools.fs_compound_db import Cp2fit as dt_Cp2fit
@@ -316,7 +317,7 @@ class dialogCpWindow(QMainWindow):
             if P == 0:
                 # print(molecule.__dict__.keys())
                 Ef = molecule.eos.E0(molecule.eos.V0) - sum([atom_energy[self.check_type_in_energies(ti)] for ti in molecule.types]) * (
-                            0.160218e-18 * 6.02214e23) / len(molecule.types)
+                            EV_ATOM_TO_J_MOL) / len(molecule.types)
                 self.Ef = Ef*nats
                 txt4output += f'{Ef * nats:.7e}'
         self.S298 = self.dict_S298['%.1f' % (0 / 1e9)] * nats

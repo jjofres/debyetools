@@ -2,6 +2,7 @@ import os
 import numpy as np
 import re
 from scipy.optimize import curve_fit
+from debyetools.constants import EV_A3_TO_GPA
 
 # Function to parse energy and volume from OUTCAR
 def parse_outcar(outcar_path):
@@ -82,42 +83,42 @@ def get_EM(base_dir):
     # Store the calculated elastic constants
     EM =np.zeros((6,6))
     elastic_constants = {
-        'C11': C11*160.21766208,
-        'C12': C12*160.21766208,
-        'C13': C13*160.21766208,
+        'C11': C11*EV_A3_TO_GPA,
+        'C12': C12*EV_A3_TO_GPA,
+        'C13': C13*EV_A3_TO_GPA,
         'C14': 0,
         'C15': 0,
         'C16': 0,
-        'C21': C12*160.21766208,
-        'C22': C22*160.21766208,
-        'C23': C23*160.21766208,
+        'C21': C12*EV_A3_TO_GPA,
+        'C22': C22*EV_A3_TO_GPA,
+        'C23': C23*EV_A3_TO_GPA,
         'C24': 0,
         'C25': 0,
         'C26': 0,
-        'C31': C13*160.21766208,
-        'C32': C23*160.21766208,
-        'C33': C33*160.21766208,
+        'C31': C13*EV_A3_TO_GPA,
+        'C32': C23*EV_A3_TO_GPA,
+        'C33': C33*EV_A3_TO_GPA,
         'C34': 0,
         'C35': 0,
         'C36': 0,
         'C41': 0,
         'C42': 0,
         'C43': 0,
-        'C44': C44*160.21766208,
+        'C44': C44*EV_A3_TO_GPA,
         'C45': 0,
         'C46': 0,
         'C51': 0,
         'C52': 0,
         'C53': 0,
         'C54': 0,
-        'C55': C55*160.21766208,
+        'C55': C55*EV_A3_TO_GPA,
         'C56': 0,
         'C61': 0,
         'C62': 0,
         'C63': 0,
         'C64': 0,
         'C65': 0,
-        'C66': C66*160.21766208,
+        'C66': C66*EV_A3_TO_GPA,
 
     }
 

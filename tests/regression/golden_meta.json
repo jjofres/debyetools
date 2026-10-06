@@ -4,7 +4,7 @@
   "numpy": "1.26.4",
   "scipy": "1.13.1",
   "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35",
-  "git_head": "f6fb4523255e698f989152198d01441e8ea9e524"
+  "git_head": "dcc6ae8946707afd1e869c443c7fe32372036ebf"
  },
  "errors": {
   "io/elastic/Al13Fe4_C2m": "UnboundLocalError",

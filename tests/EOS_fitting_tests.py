@@ -45,7 +45,8 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
         eos_Morse.fitEOS(self.V_DFT, self.E_DFT, initial_parameters=initial_parameters)
         print('XXXXXX', eos_Morse.pEOS)
-        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([0.34883 , 0.996078, 3.248167]))
+        # B1: values updated for N_A = 6.02214076e23 in the A^3/atom -> m^3/mol conversion (was 6.02e23): r0 scales by (6.02/6.02214)^(1/3)
+        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([0.34883031, 0.99619634, 3.24778232]))
 
     def test_EOS_BM3_Al_fcc_eval(self):
         """ Test fitting of BM3 potential using Al fcc DFT data."""

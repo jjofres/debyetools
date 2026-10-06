@@ -4,6 +4,7 @@ from scipy.optimize import least_squares, minimize
 import numpy as np
 import re
 import warnings
+from debyetools.constants import A3_ATOM_TO_M3_MOL, EV_ATOM_TO_J_MOL
 import itertools as it
 import debyetools.pairanalysis as pairanalysis
 
@@ -724,8 +725,8 @@ class MP:  # Morse
         self.Vstar = Vstar
 
         if units == 'J/mol':
-            self.mult_V = (1e-30 * 6.02e23)
-            self.mult_E = (0.160218e-18 * 6.02214e23)
+            self.mult_V = A3_ATOM_TO_M3_MOL
+            self.mult_E = EV_ATOM_TO_J_MOL
 
         elif units == 'eV/atom':
             self.mult_V = 1
@@ -2172,8 +2173,8 @@ class EAM:  #
         self.Vstar = Vstar
         #
         if units == 'J/mol':
-            self.mult_V = (1e-30 * 6.02e23)
-            self.mult_E = (0.160218e-18 * 6.02214e23)
+            self.mult_V = A3_ATOM_TO_M3_MOL
+            self.mult_E = EV_ATOM_TO_J_MOL
         #
         elif units == 'eV/atom':
             self.mult_V = 1

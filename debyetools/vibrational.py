@@ -2,9 +2,7 @@ import numpy as np
 from debyetools.debfunct import D_3, dD_3dx, d2D_3dx2, d3D_3dx3
 
 np.seterr(divide='ignore',invalid='ignore')
-hbar = 0.1054571800e-33
-NAv = 0.6022140857e24
-kB = 0.138064852e-22
+from debyetools.constants import hbar, NAv, kB
 # r = 1
 
 

@@ -162,7 +162,7 @@ class nDeb:
 
         Fvib = self.vib.F(T, V)
         Svib = -self.vib.dFdT_V(T, V)/self.r
-        Evib = Fvib + T*Fvib
+        Evib = Fvib + T*Svib  # was Fvib + T*Fvib (review finding 6.1)
 
         dFvibdV_T = self.vib.dFdV_T(T,V)
         dFvibdT_V = self.vib.dFdT_V(T,V)/self.r

@@ -173,16 +173,32 @@ class Vibrational:
         d4DMdV4 = (d2E0dV2_T**b_DM*(-b_DM+a_DM)*(-b_DM+a_DM+3)*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*V**(b_DM-4-a_DM)+6*b_DM*((d2E0dV2_T**(b_DM-1)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-2)*(b_DM-1))*(-b_DM+a_DM)*(-b_DM+1+a_DM)*V**(b_DM-2-a_DM)-(1/3)*(2*(d2E0dV2_T**(b_DM-1)*(d5E0dV5_T)+(d3E0dV3_T)*(3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-3)*(b_DM-2))*(b_DM-1)))*(-b_DM+a_DM)*V**(b_DM-1-a_DM)-2*(d3E0dV3_T)*d2E0dV2_T**(b_DM-1)*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*(- b_DM +a_DM)*V**(b_DM-a_DM-3)*(1/3)+(1/6)*(d2E0dV2_T**(b_DM-1)*(d6E0dV6_T)+(4*(d3E0dV3_T)*d2E0dV2_T**(b_DM-2)*(d5E0dV5_T)+3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)**2+(6*d2E0dV2_T**(b_DM-3)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-4)*(b_DM-3))*(b_DM-2)*(d3E0dV3_T)**2)*(b_DM-1))*V**(b_DM-a_DM)))*V0_DM**a_DM*B0_DM**(-b_DM)
 
         tD_DM = xD_DM * vD_DM
-        self.tD = xD*vD*self.Anh if 'jj' in self.mode else tD_DM*self.Anh*DM
-        self.dtDdV_T = dxDdV*vD*self.Anh+xD*dvDdV*self.Anh+xD*vD*self.dAnhdV_T if 'jj' in self.mode else tD_DM*self.Anh*dDMdV
-        self.dtDdT_V = xD*vD*self.dAnhdT_V if 'jj' in self.mode else 0
-        self.d2tDdV2_T =d2xDdV2*vD*self.Anh+2*dxDdV*dvDdV*self.Anh+2*dxDdV*vD*self.dAnhdV_T+xD*d2vDdV2*self.Anh+2*xD*dvDdV*self.dAnhdV_T+xD*vD*self.d2AnhdV2_T if 'jj' in self.mode else tD_DM*self.Anh*d2DMdV2
-        self.d2tDdT2_V = xD*vD*self.d2AnhdT2_V if 'jj' in self.mode else 0
-        self.d2tDdVdT = dxDdV*vD*self.dAnhdT_V+xD*dvDdV*self.dAnhdT_V+xD*vD*self.d2AnhdVdT if 'jj' in self.mode else 0
-        self.d3tDdV3_T = d3xDdV3*vD*self.Anh+3*d2xDdV2*dvDdV*self.Anh+3*d2xDdV2*vD*self.dAnhdV_T+3*dxDdV*d2vDdV2*self.Anh+6*dxDdV*dvDdV*self.dAnhdV_T+3*dxDdV*vD*self.d2AnhdV2_T+xD*d3vDdV3*self.Anh+3*xD*d2vDdV2*self.dAnhdV_T+3*xD*dvDdV*self.d2AnhdV2_T+xD*vD*self.d3AnhdV3_T  if 'jj' in self.mode else tD_DM*self.Anh*d3DMdV3
-        self.d3tDdV2dT =d2xDdV2*vD*self.dAnhdT_V+2*dxDdV*dvDdV*self.dAnhdT_V+2*dxDdV*vD*self.d2AnhdVdT+xD*d2vDdV2*self.dAnhdT_V+2*xD*dvDdV*self.d2AnhdVdT+xD*vD*self.d3AnhdV2dT  if 'jj' in self.mode else 0
-        self.d3tDdVdT2 = dxDdV*vD*self.d2AnhdT2_V+xD*dvDdV*self.d2AnhdT2_V+xD*vD*self.d3AnhdVdT2  if 'jj' in self.mode else 0
-        self.d4tDdV4_T = 6*d2xDdV2*d2vDdV2*self.Anh+12*d2xDdV2*dvDdV*self.dAnhdV_T+6*d2xDdV2*vD*self.d2AnhdV2_T+4*dxDdV*d3vDdV3*self.Anh+12*dxDdV*d2vDdV2*self.dAnhdV_T+12*dxDdV*dvDdV*self.d2AnhdV2_T+4*dxDdV*vD*self.d3AnhdV3_T+xD*d4vDdV4*self.Anh+4*xD*d3vDdV3*self.dAnhdV_T+6*xD*d2vDdV2*self.d2AnhdV2_T+4*xD*dvDdV*self.d3AnhdV3_T+xD*vD*self.d4AnhdV4_T+d4xDdV4*vD*self.Anh+4*d3xDdV3*dvDdV*self.Anh+4*d3xDdV3*vD*self.dAnhdV_T  if 'jj' in self.mode else tD_DM*self.Anh*d4DMdV4
+        if 'jj' in self.mode:
+            self.tD = xD*vD*self.Anh
+            self.dtDdV_T = dxDdV*vD*self.Anh+xD*dvDdV*self.Anh+xD*vD*self.dAnhdV_T
+            self.dtDdT_V = xD*vD*self.dAnhdT_V
+            self.d2tDdV2_T = d2xDdV2*vD*self.Anh+2*dxDdV*dvDdV*self.Anh+2*dxDdV*vD*self.dAnhdV_T+xD*d2vDdV2*self.Anh+2*xD*dvDdV*self.dAnhdV_T+xD*vD*self.d2AnhdV2_T
+            self.d2tDdT2_V = xD*vD*self.d2AnhdT2_V
+            self.d2tDdVdT = dxDdV*vD*self.dAnhdT_V+xD*dvDdV*self.dAnhdT_V+xD*vD*self.d2AnhdVdT
+            self.d3tDdV3_T = d3xDdV3*vD*self.Anh+3*d2xDdV2*dvDdV*self.Anh+3*d2xDdV2*vD*self.dAnhdV_T+3*dxDdV*d2vDdV2*self.Anh+6*dxDdV*dvDdV*self.dAnhdV_T+3*dxDdV*vD*self.d2AnhdV2_T+xD*d3vDdV3*self.Anh+3*xD*d2vDdV2*self.dAnhdV_T+3*xD*dvDdV*self.d2AnhdV2_T+xD*vD*self.d3AnhdV3_T
+            self.d3tDdV2dT = d2xDdV2*vD*self.dAnhdT_V+2*dxDdV*dvDdV*self.dAnhdT_V+2*dxDdV*vD*self.d2AnhdVdT+xD*d2vDdV2*self.dAnhdT_V+2*xD*dvDdV*self.d2AnhdVdT+xD*vD*self.d3AnhdV2dT
+            self.d3tDdVdT2 = dxDdV*vD*self.d2AnhdT2_V+xD*dvDdV*self.d2AnhdT2_V+xD*vD*self.d3AnhdVdT2
+            self.d4tDdV4_T = 6*d2xDdV2*d2vDdV2*self.Anh+12*d2xDdV2*dvDdV*self.dAnhdV_T+6*d2xDdV2*vD*self.d2AnhdV2_T+4*dxDdV*d3vDdV3*self.Anh+12*dxDdV*d2vDdV2*self.dAnhdV_T+12*dxDdV*dvDdV*self.d2AnhdV2_T+4*dxDdV*vD*self.d3AnhdV3_T+xD*d4vDdV4*self.Anh+4*xD*d3vDdV3*self.dAnhdV_T+6*xD*d2vDdV2*self.d2AnhdV2_T+4*xD*dvDdV*self.d3AnhdV3_T+xD*vD*self.d4AnhdV4_T+d4xDdV4*vD*self.Anh+4*d3xDdV3*dvDdV*self.Anh+4*d3xDdV3*vD*self.dAnhdV_T
+        else:
+            # theta_D = tD_DM * Anh(T, V) * DM(V), tD_DM constant: Leibniz rule for Anh*DM
+            A, A_V, A_VV, A_VVV, A_VVVV = self.Anh, self.dAnhdV_T, self.d2AnhdV2_T, self.d3AnhdV3_T, self.d4AnhdV4_T
+            A_T, A_TT, A_VT, A_VVT, A_VTT = self.dAnhdT_V, self.d2AnhdT2_V, self.d2AnhdVdT, self.d3AnhdV2dT, self.d3AnhdVdT2
+            c = tD_DM
+            self.tD = c*A*DM
+            self.dtDdV_T = c*(A_V*DM + A*dDMdV)
+            self.dtDdT_V = c*A_T*DM
+            self.d2tDdV2_T = c*(A_VV*DM + 2*A_V*dDMdV + A*d2DMdV2)
+            self.d2tDdT2_V = c*A_TT*DM
+            self.d2tDdVdT = c*(A_VT*DM + A_T*dDMdV)
+            self.d3tDdV3_T = c*(A_VVV*DM + 3*A_VV*dDMdV + 3*A_V*d2DMdV2 + A*d3DMdV3)
+            self.d3tDdV2dT = c*(A_VVT*DM + 2*A_VT*dDMdV + A_T*d2DMdV2)
+            self.d3tDdVdT2 = c*(A_VTT*DM + A_TT*dDMdV)
+            self.d4tDdV4_T = c*(A_VVVV*DM + 4*A_VVV*dDMdV + 6*A_VV*d2DMdV2 + 4*A_V*d3DMdV3 + A*d4DMdV4)
 
     def F(self, T: float, V: float) -> float:
         """

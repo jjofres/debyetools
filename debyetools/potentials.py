@@ -1136,169 +1136,18 @@ class MU:  # Murnaghan
         return (Ecalc - Edata)**2
 
 
-class BM3:  # Birch-Murnaghan
+class BM3(BM):  # deprecated alias of BM
     """
-    Third order Birch-Murnaghan EOS and derivatives.
+    Deprecated alias of :class:`BM` (third-order Birch-Murnaghan EOS).
+
+    The former separate BM3 implementation had the same E0 as BM but all its volume derivatives
+    had the wrong sign (debyetools review finding 3.1). BM3 now is BM and emits a DeprecationWarning.
     """
 
-    def __init__(self, *args, units='J/mol', parameters=''):
-        if list(parameters):
-            self.pEOS = parameters[:4]
-
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
-        """
-        Parameters fitting.
-
-        :param Vdata: Input volume data.
-        :type Vdata: np.ndarray
-        :param Edata: Target energy data.
-        :type Edata: np.ndarray
-        :param initial_parameters: Initial guess.
-        :type initial_parameters: np.ndarray
-        :param fit: True to run the fitting. False to just use the input parameters.
-        :type fit: bool.
-
-        :return: Optimal parameters.
-        :rtype: np.ndarray
-        """
-        if fit:
-            pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
-            self.pEOS = popt
-        if not fit:
-            self.pEOS = initial_parameters[:4]
-
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-        self.V0 = mV['x'][0]
-
-        return self.pEOS
-
-    def E04min(self, V: float, pEOS: np.ndarray) -> float:
-        """
-        Energy for minimization.
-
-        :param V: Volume.
-        :type V: float
-        :param pEOS: parameters.
-        :type pEOS: np.ndarray
-        :return: E0.
-        :rtype: float
-        """
-        E0, V0, B0, Bp0 = pEOS
-        if B0<0:
-            return 1
-        P0, P1, P2, P3 = EVBBp_to_BMparams(pEOS)
-        return P0 + P1 / V ** (2 / 3) + P2 / V ** (4 / 3) + P3 * V ** (-6 / 3)
-
-    def E0(self, V: float|np.ndarray) -> float|np.ndarray:
-        """
-        Internal energy.
-
-        :param V: Volume.
-        :type V: float|np.ndarray
-        :return: E0(V)
-        :rtype: float|np.ndarray
-        """
-        return self.E04min(V, self.pEOS)
-
-    def dE0dV_T(self, V: float|np.ndarray) -> float|np.ndarray:
-        """
-        Internal energy volume derivative.
-
-        :param V: Volume.
-        :type V: float|np.ndarray
-        :return: dE0dV_T(V)
-        :rtype: float|np.ndarray
-        """
-        E0, V0, B0, Bp0 = self.pEOS
-        return -9 * V0 ** 2 * B0 * (
-                    V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - (1 / 2) * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) - (
-                        1 / 2) * V * (Bp0 - 16 / 3)) / (4 * (V0 / V) ** (1 / 3) * V ** 3)
-
-    def d2E0dV2_T(self, V: float|np.ndarray) -> float|np.ndarray:
-        """
-        Internal energy second volume derivative.
-
-        :param V: Volume.
-        :type V: float|np.ndarray
-        :return: d2E0dV2_T(V)
-        :rtype: float|np.ndarray
-        """
-        E0, V0, B0, Bp0 = self.pEOS
-        return 21 * V0 ** 2 * (V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - 9 * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) * (
-                    1 / 14) - 5 * V * (Bp0 - 16 / 3) * (1 / 14)) * B0 / (4 * (V0 / V) ** (1 / 3) * V ** 4)
-
-    def d3E0dV3_T(self, V: float|np.ndarray) -> float|np.ndarray:
-        """
-        Internal energy third volume derivative.
-
-        :param V: Volume.
-        :type V: float|np.ndarray
-        :return: d3E0dV3_T(V)
-        :rtype: float|np.ndarray
-        """
-        E0, V0, B0, Bp0 = self.pEOS
-        return -35 * V0 ** 2 * B0 * (
-                    V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - 27 * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) * (
-                        1 / 35) - 2 * V * (Bp0 - 16 / 3) * (1 / 7)) / (2 * (V0 / V) ** (1 / 3) * V ** 5)
-
-    def d4E0dV4_T(self, V: float|np.ndarray) -> float|np.ndarray:
-        """
-        Internal energy fourth volume derivative.
-
-        :param V: Volume.
-        :type V: float|np.ndarray
-        :return: d4E0dV4_T(V)
-        :rtype: float|np.ndarray
-        """
-        E0, V0, B0, Bp0 = self.pEOS
-        return 455 * V0 ** 2 * B0 * (
-                    V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - 81 * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) * (
-                        1 / 91) - 22 * V * (Bp0 - 16 / 3) * (1 / 91)) / (6 * (V0 / V) ** (1 / 3) * V ** 6)
-
-    def d5E0dV5_T(self, V: float|np.ndarray) -> float|np.ndarray:
-        """
-        Internal energy fifth volume derivative.
-
-        :param V: Volume.
-        :type V: float|np.ndarray
-        :return: d5E0dV5_T(V)
-        :rtype: float|np.ndarray
-        """
-        E0, V0, B0, Bp0 = self.pEOS
-        return -3640 * V0 ** 2 * (
-                    V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - 729 * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) * (
-                        1 / 728) - 11 * V * (Bp0 - 16 / 3) * (1 / 52)) * B0 / (9 * (V0 / V) ** (1 / 3) * V ** 7)
-
-    def d6E0dV6_T(self, V: float|np.ndarray) -> float|np.ndarray:
-        """
-        Internal energy sixth volume derivative.
-
-        :param V: Volume.
-        :type V: float|np.ndarray
-        :return: d6E0dV6_T(V)
-        :rtype: float|np.ndarray
-        """
-        E0, V0, B0, Bp0 = self.pEOS
-        return 69160 * V0 ** 2 * B0 * (
-                    V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - 2187 * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) * (
-                        1 / 1976) - 187 * V * (Bp0 - 16 / 3) * (1 / 988)) / (27 * (V0 / V) ** (1 / 3) * V ** 8)
-
-    def error2min(self, P: np.ndarray, Vdata: np.ndarray, Edata: np.ndarray) -> np.ndarray:
-        """
-        Error for minimization.
-
-        :param P: E0 parameters.
-        :type P: np.ndarray
-        :param Vdata: Volume data.
-        :type Vdata: np.ndarray
-        :param Edata: Energy data.
-        :type Edata: np.ndarray
-        :return: Error.
-        :rtype: np.ndarray
-        """
-        Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+    def __init__(self, *args, **kwargs):
+        warnings.warn("BM3 is deprecated: use BM (same third-order Birch-Murnaghan EOS).",
+                      DeprecationWarning, stacklevel=2)
+        super().__init__(*args, **kwargs)
 
 
 class PT:  # Poirier-Tarantola

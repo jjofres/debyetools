@@ -19,7 +19,7 @@ The EOS implemented are:
 
 - Rose-Vinet (RV)
 - Tight-binding second-moment-approximation (TB-SMA)
-- Third order Birch-Murnaghan (BM3)
+- Third order Birch-Murnaghan (BM; BM3 is a deprecated alias)
 - Mie-Gruneisen (MG)
 - Murnaghan (Mu1)
 - Poirier-Tarantola (PT)

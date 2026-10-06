@@ -2,6 +2,8 @@ import unittest
 import numpy as np
 from debyetools.potentials import MP, BM, EAM
 from debyetools.aux_functions import load_V_E, load_cell
+import os
+HERE = os.path.dirname(os.path.abspath(__file__))  # test data paths are relative to this file
 class EOSparametrizationTestCase(unittest.TestCase):
     def setUp(self):
         self.V_DFT = np.array([7.2328381349E-06,7.4766214899E-06,7.7258220323E-06,7.9804992917E-06,8.2407127976E-06,8.5065220794E-06,8.7779866668E-06,9.0551660893E-06,9.3381198763E-06,9.6269075575E-06,9.9215886624E-06,1.0222222720E-05,1.0528869261E-05,1.0841587814E-05,1.1160437909E-05,1.1485479075E-05,1.1816770842E-05,1.2154372740E-05,1.2498344297E-05,1.2848745044E-05,1.3205634510E-05])
@@ -67,7 +69,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
     def test_EOS_BM3_Al_fcc_fit_read_inpts(self):
         """ Test fitting of BM3 potential using Al fcc DFT data."""
 
-        folder_name = './tests/inpt_files/Al_fcc'#./tests/inpt_files/Al_fcc'
+        folder_name = os.path.join(HERE, 'inpt_files', 'Al_fcc')
         V_DFT, E_DFT = load_V_E(folder_name+'/SUMMARY.fcc', folder_name+'/CONTCAR.5', units='J/mol')
 
         eos_BM3 = BM()
@@ -79,7 +81,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
     def test_EOS_Morse_Al_fcc_fitting_reading_from_file(self):
         """ Test fitting of Morse potential using Al fcc DFT data."""
-        folder_name = './tests/inpt_files/Al_fcc'
+        folder_name = os.path.join(HERE, 'inpt_files', 'Al_fcc')
         V_DFT, E_DFT = load_V_E(folder_name+'/SUMMARY.fcc', folder_name + '/CONTCAR.5', units='J/mol')
 
         formula, primitive_cell, sbasis_vectors = load_cell(folder_name+'/CONTCAR.5')

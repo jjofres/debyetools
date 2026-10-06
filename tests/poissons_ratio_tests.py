@@ -2,6 +2,8 @@ import unittest
 import numpy as np
 from debyetools.poisson import poisson_ratio
 from debyetools.aux_functions import load_EM
+import os
+HERE = os.path.dirname(os.path.abspath(__file__))  # test data paths are relative to this file
 class PoissonsRatioTestCase(unittest.TestCase):
     def setUp(self):
         #self.NL = PairAnalysisCalculator()
@@ -49,7 +51,7 @@ class PoissonsRatioTestCase(unittest.TestCase):
     def test_nu_Al2O3_R3c_read(self):
         """ Test the calculation of poisson ratio for Al2O3 R3c."""
 
-        EM = load_EM('./tests/inpt_files/Al2O3_R3c/OUTCAR.eps')
+        EM = load_EM(os.path.join(HERE, 'inpt_files', 'Al2O3_R3c', 'OUTCAR.eps'))
 
         err = np.abs (poisson_ratio(EM) - 0.236)/0.236
         self.assertTrue(err<0.01)

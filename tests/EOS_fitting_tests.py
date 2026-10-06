@@ -45,8 +45,8 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
         eos_Morse.fitEOS(self.V_DFT, self.E_DFT, initial_parameters=initial_parameters)
         print('XXXXXX', eos_Morse.pEOS)
-        # B1: values updated for N_A = 6.02214076e23 in the A^3/atom -> m^3/mol conversion (was 6.02e23): r0 scales by (6.02/6.02214)^(1/3)
-        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([0.34883031, 0.99619634, 3.24778232]))
+        # B4: least-squares fit (residuals no longer squared twice, finding 3.5); rms 253.3 J/mol (was 261.1 with the old objective)
+        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([0.34922882, 0.99785577, 3.24609702]))
 
     def test_EOS_BM3_Al_fcc_eval(self):
         """ Test fitting of BM3 potential using Al fcc DFT data."""
@@ -92,7 +92,8 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
         eos_Morse.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters)
 
-        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([0.350297, 1.005236, 3.241272]))
+        # B4: least-squares fit (finding 3.5); rms 257.6 J/mol (was 268.0 with the old objective)
+        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([0.35106063, 1.00824164, 3.23853085]))
 
 if __name__=='__main__':
     unittest.main()

@@ -5,6 +5,9 @@ import numpy as np
 import re
 import warnings
 from debyetools.constants import A3_ATOM_TO_M3_MOL, EV_ATOM_TO_J_MOL
+
+# bounds for the 4-parameter analytic EOS fits (E0, V0, B0, B0'): V0 > 0 and B0 > 0 (review finding 3.8)
+EOS4_BOUNDS = ([-np.inf, 0.0, 0.0, -np.inf], [np.inf, np.inf, np.inf, np.inf])
 import itertools as it
 import debyetools.pairanalysis as pairanalysis
 
@@ -56,7 +59,7 @@ class BM:
         """
         if fit:
             pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
+            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=EOS4_BOUNDS, x_scale='jac')['x']
             self.pEOS = popt
         if not fit:
             self.pEOS = initial_parameters[:4]
@@ -180,7 +183,7 @@ class BM:
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
 class RV:  # Rose-Vinet
@@ -211,7 +214,7 @@ class RV:  # Rose-Vinet
         """
         if fit:
             pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
+            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=EOS4_BOUNDS, x_scale='jac')['x']
             self.pEOS = popt
         if not fit:
             self.pEOS = initial_parameters[:4]
@@ -359,7 +362,7 @@ class RV:  # Rose-Vinet
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
 class MG:  # Mie-Gruneisen
@@ -389,7 +392,7 @@ class MG:  # Mie-Gruneisen
         """
         if fit:
             pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
+            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=EOS4_BOUNDS, x_scale='jac')['x']
             self.pEOS = popt
         if not fit:
             self.pEOS = initial_parameters[:4]
@@ -526,7 +529,7 @@ class MG:  # Mie-Gruneisen
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
 class TB:  # TB-SMA
@@ -550,7 +553,7 @@ class TB:  # TB-SMA
         """
         if fit:
             pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
+            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=EOS4_BOUNDS, x_scale='jac')['x']
             self.pEOS = popt
         if not fit:
             self.pEOS = initial_parameters[:4]
@@ -686,7 +689,7 @@ class TB:  # TB-SMA
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
 class MP:  # Morse
@@ -755,7 +758,7 @@ class MP:  # Morse
         """
         if fit:
             pEOS = initial_parameters
-            lstsq_sol = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=(0, np.inf))
+            lstsq_sol = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=(0, np.inf), x_scale='jac')
             popt = lstsq_sol['x']
             self.pEOS = popt
             self.eos_residuals = lstsq_sol['fun']
@@ -979,7 +982,7 @@ class MP:  # Morse
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
 class MU:  # Murnaghan
@@ -1010,7 +1013,7 @@ class MU:  # Murnaghan
         """
         if fit:
             pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata),bounds=([-np.inf, 0, 0, 0], [0, np.inf,np.inf,np.inf]))['x']
+            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=([-np.inf, 0, 0, 0], [0, np.inf, np.inf, np.inf]), x_scale='jac')['x']
             self.pEOS = popt
         if not fit:
             self.pEOS = initial_parameters[:4]
@@ -1133,7 +1136,7 @@ class MU:  # Murnaghan
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
 class BM3(BM):  # deprecated alias of BM
@@ -1177,7 +1180,7 @@ class PT:  # Poirier-Tarantola
         """
         if fit:
             pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
+            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=EOS4_BOUNDS, x_scale='jac')['x']
             self.pEOS = popt
         if not fit:
             self.pEOS = initial_parameters[:4]
@@ -1311,7 +1314,7 @@ class PT:  # Poirier-Tarantola
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
 class BM4:  # 4th-order Birch-Murnaghan (placeholder, not validated)
@@ -2058,7 +2061,7 @@ class EAM:  #
         """
         if fit:
             pEOS = initial_parameters#[1 for _ in initial_parameters]#
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']#, bounds=(0, 1e2))['x']
+            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), x_scale='jac')['x']
             self.pEOS = popt
         if not fit:
             self.pEOS = initial_parameters
@@ -2633,7 +2636,7 @@ class EAM:  #
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
 def EVBBp_to_TBparams(pEOS):

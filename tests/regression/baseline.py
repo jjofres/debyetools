@@ -1,14 +1,18 @@
 """
-Phase 0 regression baseline for debyetools.
+Regression baseline for debyetools (review Phase 0, extended in fix step A3).
 
-    python review/baseline/baseline.py generate   # writes golden.npz + golden_meta.json
-    python review/baseline/baseline.py check      # re-runs and compares against golden.npz
+    python tests/regression/baseline.py generate   # writes golden.npz + golden_meta.json
+    python tests/regression/baseline.py check      # re-runs and compares against golden.npz
+    pytest tests/regression                        # same check as a test
 
-Run from the repository root. Three layers are stored:
+Can be run from any directory. Layers (first path component of each key):
   fit/*   : results of fitting (EOS, electronic, Poisson). Optimizer/version dependent -> loose tolerance.
   eval/*  : deterministic evaluations with FIXED parameters (EOS derivatives, eval_props on a T,V grid).
             These should be bit-for-bit stable; any change here is a real change in the formulas.
   pipe/*  : full pipeline (min_G + eval_props) with fixed parameters. Depends on fmin -> medium tolerance.
+  io/*    : file readers, elastic constants, pair analysis (deterministic).
+Errors are recorded by exception type only, so the golden file does not depend on numpy's message wording.
+BM4 and MU2 are placeholders (decisions D2/D3) and are not part of the baseline.
 """
 import sys, os, json, platform, warnings, traceback
 import numpy as np
@@ -28,7 +32,10 @@ from debyetools.poisson import poisson_ratio
 HERE = os.path.dirname(os.path.abspath(__file__))
 GOLD = os.path.join(HERE, "golden.npz")
 META = os.path.join(HERE, "golden_meta.json")
-TOL = {"fit": dict(rtol=1e-6, atol=1e-12), "eval": dict(rtol=1e-11, atol=1e-14), "pipe": dict(rtol=1e-6, atol=1e-12)}
+TOL = {"fit": dict(rtol=1e-6, atol=1e-12), "eval": dict(rtol=1e-11, atol=1e-14), "pipe": dict(rtol=1e-6, atol=1e-12),
+       "io": dict(rtol=1e-11, atol=1e-14)}
+# per-key overrides: get_EM uses curve_fit, scipy 1.13 vs 1.15 differ by ~1.3e-6
+TOL_PREFIX = {"fit/get_EM/": dict(rtol=1e-5, atol=1e-12)}
 
 AL = "tests/inpt_files/Al_fcc"
 AL_TAGS = ["%02da" % i for i in range(1, 22)]
@@ -48,7 +55,7 @@ CELL_AL = np.array([[A_AL, 0, 0], [0, A_AL, 0], [0, 0, A_AL]])
 BASIS_FCC = np.array([[0, 0, 0], [0, .5, .5], [.5, 0, .5], [.5, .5, 0]])
 
 EOS_4P = ["BM", "RV", "MG", "TB", "MU", "BM3", "PT"]
-EOS_5P = ["BM4", "MU2"]
+EOS_5P = []  # BM4, MU2: placeholders, excluded from the baseline (decisions D2/D3)
 MODES = ["jjsl", "DM", "Sl", "mfv", "VZ", "jjdm", "jjfv"]
 
 out, errors = {}, {}
@@ -63,7 +70,7 @@ def guard(name, fn):
     try:
         fn()
     except Exception as e:  # record, keep going
-        errors[name] = "%s: %s" % (type(e).__name__, e)
+        errors[name] = type(e).__name__
         traceback.print_exc(limit=2)
 
 
@@ -187,8 +194,148 @@ def layer_pipe():
         xs=(10., 0.01, 1e-6, 1e-9, 0.1, 1e3))
 
 
+# ------------------------------------------------------------------------------------------
+# Extension (fix plan step A3): code paths that the original baseline did not exercise.
+# ------------------------------------------------------------------------------------------
+def layer_ext():
+    from debyetools.debfunct import D_3, dD_3dx, d2D_3dx2, d3D_3dx3
+    from debyetools.pairanalysis import pair_analysis
+    from debyetools.fs_compound_db import fit_FS
+    from debyetools.optim import ga_fitting
+    import random, io, contextlib, tempfile
+
+    # (1) Debye function and derivatives on a wide x grid (bands x~16 and x>=500 included)  [2.1, 2.2, 2.3]
+    def fdeb():
+        xs = np.array([1e-3, 1e-2, 0.1, 0.5, 1., 2., 5., 10., 15., 15.79, 15.8, 16., 20., 24., 30., 50., 100., 400., 499., 500., 600., 653., 700., 709.7, 709.8, 1000.])
+        d0 = D_3(xs); d1 = dD_3dx(xs, d0); d2 = d2D_3dx2(xs, d0, d1); d3 = d3D_3dx3(xs, d0, d1, d2)
+        put("eval/debfunct/x", xs); put("eval/debfunct/D3", d0); put("eval/debfunct/dD3", d1)
+        put("eval/debfunct/d2D3", d2); put("eval/debfunct/d3D3", d3)
+    guard("eval/debfunct", fdeb)
+
+    # (2) eval_props at low T and in the x~16 band (array T), and scalar-T vibrational derivatives  [2.1, 2.2, 4.5]
+    def flowT():
+        eos = make_eos("BM", P_EOS4)
+        nd = nDeb(NU_AL, M_AL, (0, 1), eos, P_EL_AL, P_DEF_AL, (0, 0, 0), mode="jjsl")
+        T = np.array([0.1, 0.3, 0.6, 1., 2., 20., 24., 28., 32.])
+        tp = nd.eval_props(T.copy(), np.full_like(T, eos.V0), P=0)
+        for k in ["tD", "Cv", "Cp", "S", "a", "Fvib", "Svib", "Cvvib", "dKtdT_P", "dadP_T", "dCpdP_T"]:
+            put("eval/lowT/%s" % k, tp[k])
+        v = nd.vib
+        for T1 in [0.3, 28.]:
+            v.set_int_anh(T1, eos.V0); v.set_theta(T1, eos.V0)
+            put("eval/lowT/scalar_T%g/F_dFdT_d2FdT2" % T1, [v.F(T1, eos.V0), v.dFdT_V(T1, eos.V0), v.d2FdT2_V(T1, eos.V0)])
+    guard("eval/lowT", flowT)
+
+    # (3) non-jj modes with intrinsic anharmonicity, deterministic V0_DM  [4.2, 4.4]
+    Tg = np.array([10., 100., 298.15, 600., 1000.])
+    for mode in ["Sl", "DM", "VZ", "mfv", "jjsl"]:
+        def fna(mode=mode):
+            eos = make_eos("BM", P_EOS4)
+            nd = nDeb(NU_AL, M_AL, (-2e-5, 1.5), eos, P_EL_AL, P_DEF_AL, (0, 0, 0), mode=mode)
+            nd.vib.V0_DM = eos.V0 if "jj" not in mode else nd.vib.V0_DM
+            for j, fv in enumerate([0.99, 1.02, 1.05]):
+                tp = nd.eval_props(Tg.copy(), np.full_like(Tg, fv * eos.V0), P=0)
+                for k in ["tD", "g", "Kt", "Ktp", "Cv", "a", "Cp", "Ks", "S", "G", "dtDdV_T"]:
+                    put("eval/intanh/%s/V%d/%s" % (mode, j, k), tp[k])
+        guard("eval/intanh/" + mode, fna)
+
+    # (4) eval_Cp vs eval_props with all contributions  [6.6]
+    def fcp():
+        eos = make_eos("BM", P_EOS4)
+        nd = nDeb(NU_AL, M_AL, (-1e-5, 1.5), eos, P_EL_AL, P_DEF_AL, (1e-4, -1e-7, 1e-10), mode="jjsl",
+                  xsparams=(10., 0.01, 1e-6, 1e-9, 0.1, 1e3))
+        T = np.array([300., 800.]); V = np.array([1.01, 1.035]) * eos.V0
+        put("eval/eval_Cp/allcontrib/Cp", nd.eval_Cp(T, V, P=0)["Cp"])
+    guard("eval/eval_Cp", fcp)
+
+    # (5) pair analysis and Morse energy with cutoffs shorter than a lattice vector  [7.5]
+    ah, ch = 2.95, 4.68
+    HCP_CELL = np.array([[ah, 0, 0], [-ah / 2, ah * np.sqrt(3) / 2, 0], [0, 0, ch]])
+    HCP_BASIS = np.array([[1 / 3, 2 / 3, .25], [2 / 3, 1 / 3, .75]])
+    for tag, (types, basis, cell, cut) in {"fcc_conv_cut3.0": ("AAAA", BASIS_FCC, CELL_AL, 3.0), "fcc_conv_cut5.0": ("AAAA", BASIS_FCC, CELL_AL, 5.0),
+                                         "hcp_cut4.0": ("AA", HCP_BASIS, HCP_CELL, 4.0), "hcp_cut5.0": ("AA", HCP_BASIS, HCP_CELL, 5.0)}.items():
+        def fpa(types=types, basis=basis, cell=cell, cut=cut, tag=tag):
+            d, n, ct = pair_analysis(types, cut, basis, cell)
+            put("io/pairs/%s/distances" % tag, d); put("io/pairs/%s/n_per_atom" % tag, n[:, 0])
+        guard("io/pairs/" + tag, fpa)
+    def fmp3():
+        e = potentials.MP("AlAlAlAl", CELL_AL, BASIS_FCC, 3.0, 3, units="J/mol", parameters=np.array(P_MP))
+        Vg = np.linspace(0.9, 1.1, 5) * P_EOS4[1]
+        put("eval/EOS_MP_cut3.0/E0", [e.E0(v) for v in Vg])
+    guard("eval/EOS_MP_cut3.0", fmp3)
+
+    # (6) elastic constants / Poisson ratio for every test OUTCAR.eps, both functions  [7.1, 7.2, 7.3, 1.9]
+    import glob
+    for f in sorted(glob.glob("tests/inpt_files/*/OUTCAR.eps")):
+        mat = f.split("/")[2]
+        def fel(f=f, mat=mat):
+            EM = load_EM(f)
+            put("io/elastic/%s/EM" % mat, EM)
+            put("io/elastic/%s/nu" % mat, poisson_ratio(EM))
+            put("io/elastic/%s/quiet_pa" % mat, poisson_ratio(EM, quiet=True))
+        guard("io/elastic/" + mat, fel)
+
+    # (7) get_EM on the Nb energy-strain example  [7.4]
+    def fgem():
+        from debyetools.get_elastic import get_EM
+        put("fit/get_EM/Nb/EM", get_EM(os.path.join(ROOT, "debyetools", "examples", "Nb", "elastic")))
+    guard("fit/get_EM/Nb", fgem)
+
+    # (8) POSCAR variants for load_cell / load_V_E  [1.4, 7.6]
+    a = 4.04
+    frac = ["0 0 0", "0 0.5 0.5", "0.5 0 0.5", "0.5 0.5 0"]
+    tmpl = "Al\n{scale}\n {a} 0 0\n 0 {a} 0\n 0 0 {a}\nAl\n4\n{sel}{mode}\n{coords}\n"
+    variants = {"direct_scale1": dict(scale=1.0, a=a, sel="", mode="Direct", coords="\n".join(frac)),
+                "direct_scale_a": dict(scale=a, a=1.0, sel="", mode="Direct", coords="\n".join(frac)),
+                "cartesian": dict(scale=1.0, a=a, sel="", mode="Cartesian", coords="\n".join(" ".join(str(float(x) * a) for x in s.split()) for s in frac)),
+                "selective": dict(scale=1.0, a=a, sel="Selective dynamics\n", mode="Direct", coords="\n".join(s + " T T T" for s in frac))}
+    tmpd = tempfile.mkdtemp()
+    summ = os.path.join(tmpd, "SUMMARY"); open(summ, "w").write("0.00 x x -14.9\n0.01 x x -14.8\n")
+    for tag, kw in variants.items():
+        p = os.path.join(tmpd, "POSCAR_" + tag); open(p, "w").write(tmpl.format(**kw))
+        def fpc(p=p, tag=tag):
+            f, cell, basis = load_cell(p)
+            put("io/poscar/%s/cell" % tag, cell); put("io/poscar/%s/basis" % tag, basis)
+        def fve(p=p, tag=tag):
+            put("io/poscar/%s/V_eV_per_atom" % tag, load_V_E(summ, p, units="eV/atom")[0])
+        guard("io/poscar/%s/load_cell" % tag, fpc); guard("io/poscar/%s/load_V_E" % tag, fve)
+
+    # (9) FactSage fit on two pipelines  [8.5, 8.6]
+    T = gen_Ts(0.1, 1000.1, 21)
+    for tag, kw in {"BM_jjsl": {}, "BM_jjsl_allcontrib": dict(p_intanh=(-1e-5, 1.5), p_anh=(1e-4, -1e-7, 1e-10), xs=(10., 0.01, 1e-6, 1e-9, 0.1, 1e3))}.items():
+        def ffs(tag=tag, kw=kw):
+            eos = make_eos("BM", P_EOS4)
+            nd = nDeb(NU_AL, M_AL, kw.get("p_intanh", (0, 1)), eos, P_EL_AL, P_DEF_AL, kw.get("p_anh", (0, 0, 0)), mode="jjsl",
+                      xsparams=kw.get("xs", (0,) * 6))
+            Tm, Vm = nd.min_G(T.copy(), eos.V0, P=0)
+            r = fit_FS(nd.eval_props(Tm, Vm, P=0), 298.15, 1000.1)
+            for k in ["Cp", "a", "1/Ks", "Ksp"]:
+                put("pipe/fit_FS/%s/%s" % (tag, k.replace("/", "inv")), r[k])
+        guard("pipe/fit_FS/" + tag, ffs)
+
+    # (10) seeded genetic algorithm  [8.1, 8.2, 8.3]
+    X = np.linspace(0, 1, 20)
+    probs = {"linear": (lambda x, p: p[0] + p[1] * x, 2 + 3 * X, [1.5, 2.5]),
+             "quadratic_zero_init": (lambda x, p: p[0] + p[1] * x + p[2] * x ** 2, 2 + 3 * X + 0.5 * X ** 2, [2., 3., 0.])}
+    for tag, (fun, Y, p0) in probs.items():
+        def fga(tag=tag, fun=fun, Y=Y, p0=p0):
+            random.seed(1)
+            with contextlib.redirect_stdout(io.StringIO()):
+                p = ga_fitting(fun, X, Y, list(p0), npop=20, ngen=40, verbose=False)
+            put("fit/ga/%s/params" % tag, p)
+        guard("fit/ga/" + tag, fga)
+
+
 def run_all():
-    layer_fit(); layer_eval(); layer_pipe()
+    out.clear(); errors.clear()
+    layer_fit(); layer_eval(); layer_pipe(); layer_ext()
+
+
+def run_check():
+    """Run everything and compare with the golden file; returns the number of problems (used by pytest)."""
+    np.seterr(all="ignore")
+    run_all()
+    return compare()
 
 
 def env():
@@ -215,7 +362,8 @@ def compare():
         if a.shape != b.shape:
             rows.append(("SHAPE", k, "%s vs %s" % (a.shape, b.shape))); nbad += 1; continue
         same_nan = np.array_equal(np.isnan(a), np.isnan(b))
-        ok = same_nan and np.allclose(a, b, equal_nan=True, **TOL[layer])
+        tol = next((v for p_, v in TOL_PREFIX.items() if k.startswith(p_)), TOL[layer])
+        ok = same_nan and np.allclose(a, b, equal_nan=True, **tol)
         if not ok:
             with np.errstate(all="ignore"):
                 rel = np.nanmax(np.abs(a - b) / np.maximum(np.abs(b), 1e-300))

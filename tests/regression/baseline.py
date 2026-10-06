@@ -9,7 +9,9 @@ Can be run from any directory. Layers (first path component of each key):
   fit/*   : results of fitting (EOS, electronic, Poisson). Optimizer/version dependent -> loose tolerance.
   eval/*  : deterministic evaluations with FIXED parameters (EOS derivatives, eval_props on a T,V grid).
             These should be bit-for-bit stable; any change here is a real change in the formulas.
-  pipe/*  : full pipeline (min_G + eval_props) with fixed parameters. Depends on fmin -> medium tolerance.
+  pipe/*  : full pipeline (min_G + eval_props) with fixed parameters. Since B12 min_G solves P(V) = P exactly
+            (brentq), so V and the properties are deterministic; the residual pressure 'P' (~1e-4 Pa) is compared
+            with an absolute tolerance (TOL_SUFFIX).
   io/*    : file readers, elastic constants, pair analysis (deterministic).
 Errors are recorded by exception type only, so the golden file does not depend on numpy's message wording.
 BM4 and MU2 are placeholders (decisions D2/D3) and are not part of the baseline.
@@ -39,6 +41,8 @@ TOL_PREFIX = {"fit/get_EM/": dict(rtol=1e-5, atol=1e-12),
               # FactSage fit is ill-conditioned (finding 8.5): scipy 1.13 vs 1.15 differ by up to ~2.4e-6;
               # tighten after C8. (EOS fits are back at the default fit tolerance since B4.)
               "pipe/fit_FS/": dict(rtol=2e-5, atol=1e-12)}
+# per-suffix overrides: pipe/*/P is the pressure residual of min_G (target 0 Pa, |P| < 1e-3 Pa since B12)
+TOL_SUFFIX = {("pipe", "/P"): dict(rtol=0, atol=1.0)}
 
 AL = "tests/inpt_files/Al_fcc"
 AL_TAGS = ["%02da" % i for i in range(1, 22)]
@@ -369,6 +373,7 @@ def compare():
             rows.append(("SHAPE", k, "%s vs %s" % (a.shape, b.shape))); nbad += 1; continue
         same_nan = np.array_equal(np.isnan(a), np.isnan(b))
         tol = next((v for p_, v in TOL_PREFIX.items() if k.startswith(p_)), TOL[layer])
+        tol = next((v for (l_, s_), v in TOL_SUFFIX.items() if layer == l_ and k.endswith(s_)), tol)
         ok = same_nan and np.allclose(a, b, equal_nan=True, **tol)
         if not ok:
             with np.errstate(all="ignore"):

@@ -74,17 +74,17 @@ class Vibrational:
             self.a_DM = -5 / 6
             self.lam = -1
         elif mode == 'jjsl':
-            self.V0_DM = 1
+            self.V0_DM = EOS_obj.V0  # not used by the jj modes (was 1 m^3/mol)
             self.b_DM = 0
             self.a_DM = 0
             self.lam = -1
         elif mode == 'jjdm':
-            self.V0_DM = 1
+            self.V0_DM = EOS_obj.V0  # not used by the jj modes (was 1 m^3/mol)
             self.b_DM = 0
             self.a_DM = 0
             self.lam = 0
         elif mode == 'jjfv':
-            self.V0_DM = 1
+            self.V0_DM = EOS_obj.V0  # not used by the jj modes (was 1 m^3/mol)
             self.b_DM = 0
             self.a_DM = 0
             self.lam = 1

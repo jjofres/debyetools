@@ -90,45 +90,116 @@ class nDeb:
         F = E0 + Fvib + Fel + Fdef + Fa + Fxs
         return F+P*V#(dFdV_T + P)**2
 
+    def _dFdV_d2FdV2(self, T: float, V: float) -> Tuple[float, float, float]:
+        """
+        Total (dF/dV)_T and (d2F/dV2)_T at (T, V), summed over the same contributions as eval_props,
+        and the Debye temperature.
+
+        :param float T: Temperature.
+        :param float V: Volume.
+        :return: dF/dV, d2F/dV2, theta_D
+        :rtype: Tuple[float, float, float]
+        """
+        self.vib.set_int_anh(T, V)
+        self.vib.set_theta(T, V)
+        dFdV = (self.EOS.dE0dV_T(V) + self.vib.dFdV_T(T, V) + self.el.dFdV_T(T, V) + self.deff.dFdV_T(T, V)
+                + self.anh.dFdV_T(T, V) + self.xs.dFdV_T(T, V))
+        d2FdV2 = (self.EOS.d2E0dV2_T(V) + self.vib.d2FdV2_T(T, V) + self.el.d2FdV2_T(T, V) + self.deff.d2FdV2_T(T, V)
+                  + self.anh.d2FdV2_T(T, V) + self.xs.d2FdV2_T(T, V))
+        return float(np.real(dFdV)), float(np.real(d2FdV2)), float(np.real(self.vib.tD))
+
+    def _equilibrium_V(self, T: float, V_guess: float, P: float, max_steps: int = 200) -> Tuple[float, str]:
+        """
+        Stable root of g(V) = (dF/dV)_T + P = 0 on the branch connected to V_guess.
+
+        On a mechanically stable branch d2F/dV2 > 0, so g increases with V. Starting at V_guess the
+        volume is stepped (step doubled after each accepted step, halved when a point is not
+        stable) in the direction that reduces |g| until g changes sign; the root is then found with
+        brentq. The minimum of G = F + PV on that branch is the same point.
+
+        :param float T: Temperature.
+        :param float V_guess: Starting volume (previous temperature or initial guess).
+        :param float P: Pressure.
+        :param int max_steps: Maximum number of bracketing steps.
+        :return: volume and status ('ok', 'invalid start', 'unstable', 'no bracket', 'not stable at root').
+        :rtype: Tuple[float, str]
+        """
+        def ev(V):
+            with np.errstate(all='ignore'):
+                g, h, tD = self._dFdV_d2FdV2(T, V)
+            ok = np.isfinite(g) and np.isfinite(h) and np.isfinite(tD) and tD > 0 and h > 0
+            return g + P, ok
+
+        Va = float(V_guess)
+        ga, ok = ev(Va)
+        if not ok:
+            return np.nan, 'invalid start'
+        if ga == 0:
+            return Va, 'ok'
+        direction = -1. if ga > 0 else 1.
+        step = 1e-3
+        for _ in range(max_steps):
+            Vb = Va * (1. + direction * step)
+            gb, ok = ev(Vb)
+            if not ok:
+                step *= 0.5
+                if step < 1e-12:
+                    return np.nan, 'unstable'
+                continue
+            if np.sign(gb) != np.sign(ga):
+                lo, hi = (Va, Vb) if Va < Vb else (Vb, Va)
+                V = optimize.brentq(lambda v: ev(v)[0], lo, hi, xtol=1e-15 * lo, rtol=4 * np.finfo(float).eps)
+                return (V, 'ok') if ev(V)[1] else (np.nan, 'not stable at root')
+            Va, ga = Vb, gb
+            step = min(2 * step, 0.2)
+        return np.nan, 'no bracket'
+
     def min_G(self, T: np.ndarray, initial_V: float, P: float) -> Tuple[np.ndarray,np.ndarray]:
         """
-        Procedure for the calculation of the volume as function of temperature.
+        Equilibrium volume as a function of temperature at pressure P.
+
+        For each temperature the volume is the stable root of P = -(dF/dV)_T (equivalently the
+        minimum of G = F + PV) on the branch continued from the previous temperature (from
+        initial_V for the first one). The derivatives are the analytic ones used by eval_props, so
+        eval_props(T, V)['P'] equals P to solver precision.
+
+        If no mechanically stable solution exists at some temperature (Kt <= 0, theta_D not finite
+        or <= 0, e.g. beyond the EOS spinodal), the calculation stops there: T and V are returned up
+        to the last stable temperature and a UserWarning is issued. Per-temperature details are
+        stored in self.min_G_info (keys 'T', 'V', 'P_residual', 'status').
 
         :param list_of_floats T: Temperature.
-        :param float initial_V: initial guess.
+        :param float initial_V: initial guess (if it is not mechanically stable, EOS.V0 is used).
         :param float P: Pressure.
         :return: Temperature and Volume
         :rtype: Tuple[np.ndarray,np.ndarray]
 
         """
+        T = np.asarray(T, dtype=float)
+        n = len(T)
+        Vs = np.full(n, np.nan)
+        Pres = np.full(n, np.nan)
+        status = ['not computed'] * n
 
-        V0i = initial_V
-        V = []
-        for Ti in T[0:1]:
-            f2min = lambda Vi: self.f2min(Ti, Vi, P)
-            V0i = optimize.fmin(f2min, x0=V0i, disp=False)[0]
-            # V0i = fmin(f2min, x0=V0i, disp=False)[0]
-            V.append(V0i)
-        if self.mode == '':
-            pass
-        else:
-            self.vib.V0_DM = V[0]
-        V = []
-        for Ti in T:
-            f2min = lambda Vi: self.f2min(Ti, Vi, P)
-            # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
-            V0i = optimize.fmin(f2min, x0=V0i, disp=False)[0]
-            V.append(V0i)
+        Vprev = float(initial_V)
+        nok = 0
+        for k, Ti in enumerate(T):
+            Vk, st = self._equilibrium_V(Ti, Vprev, P)
+            if k == 0 and st == 'invalid start' and Vprev != self.EOS.V0:
+                # initial guess outside the stable region: restart from the EOS equilibrium volume
+                Vk, st = self._equilibrium_V(Ti, self.EOS.V0, P)
+            status[k] = st
+            if st != 'ok':
+                warnings.warn('nDeb.min_G: no stable equilibrium volume at T = %g K, P = %g Pa (%s); '
+                              'returning the %d temperature(s) below it.' % (Ti, P, st, nok), UserWarning, stacklevel=2)
+                break
+            Vs[k] = Vk
+            Pres[k] = -self._dFdV_d2FdV2(Ti, Vk)[0] - P
+            Vprev = Vk
+            nok += 1
 
-
-        newV = np.array(V)  # V[0]*np.exp(self.integrl())
-        del V
-
-        ixs = np.where(newV <= 1.5 * newV[0])
-        # Tmax = T[-1]
-        T, V = T[ixs], newV[ixs]
-
-        return T, V
+        self.min_G_info = {'T': T.copy(), 'V': Vs.copy(), 'P_residual': Pres, 'status': status}
+        return T[:nok], Vs[:nok]
 
     def eval_props(self, T: np.ndarray, V: np.ndarray, P = None) -> dict:
         """

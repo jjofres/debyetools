@@ -277,6 +277,9 @@ def layer_ext():
             put("io/elastic/%s/nu" % mat, poisson_ratio(EM))
             put("io/elastic/%s/quiet_pa" % mat, poisson_ratio(EM, quiet=True))
         guard("io/elastic/" + mat, fel)
+        def felc(f=f, mat=mat):  # clamped-ion option (B7)
+            put("io/elastic_clamped/%s/EM" % mat, load_EM(f, block="clamped"))
+        guard("io/elastic_clamped/" + mat, felc)
 
     # (7) get_EM on the Nb energy-strain example  [7.4]
     def fgem():

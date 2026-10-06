@@ -1,6 +1,7 @@
 import itertools as it
 import re
 import numpy as np
+import warnings
 from debyetools.constants import A3_ATOM_TO_M3_MOL, EV_ATOM_TO_J_MOL
 from typing import Tuple
 
@@ -183,29 +184,55 @@ def load_V_E(energy_dir_summary: str, energy_dir_contcar: str, units: str = 'eV/
     return np.array(V).T * uconvV, np.array(E).T * uconvE
 
 
-def load_EM(filename_outcar_eps: str) -> np.ndarray:
+_EM_TITLES = {'symmetrized': 'SYMMETRIZED ELASTIC MODULI (kBar)',
+              'ionic': 'ELASTIC MODULI CONTR FROM IONIC RELAXATION (kBar)',
+              'total': 'TOTAL ELASTIC MODULI (kBar)'}
+
+
+def _read_EM_block(lines: list, title: str):
+    """Return the 6x6 block printed under `title` in a VASP OUTCAR, or None if the block is absent."""
+    for i, line in enumerate(lines):
+        if line.strip() == title:
+            return np.array([[float(x) for x in row.split()[1:7]] for row in lines[i + 3:i + 9]])
+    return None
+
+
+def load_EM(filename_outcar_eps: str, block: str = 'relaxed') -> np.ndarray:
     """
-    Extract the stiffness tensor from the VASP output (OUTCAR for IBRION=6).
+    Extract the stiffness tensor from the VASP output (OUTCAR for IBRION=6, ISIF>=3).
+
+    The matrix is returned in kBar, in VASP order (XX, YY, ZZ, XY, YZ, ZX).
+
     :param filename_outcar_eps: file path.
     :type filename_outcar_eps: str
-    :return: Stiffness tensor.
+    :param block: 'relaxed' (default) for the relaxed-ion stiffness, i.e. the VASP block
+        "TOTAL ELASTIC MODULI"; if that block is absent it is computed as "SYMMETRIZED ELASTIC MODULI"
+        + "ELASTIC MODULI CONTR FROM IONIC RELAXATION". 'clamped' for the clamped-ion stiffness
+        ("SYMMETRIZED ELASTIC MODULI"), which was the behaviour before v2.9 (review decision D1).
+    :type block: str
+    :return: Stiffness tensor (kBar).
     :rtype: np.ndarray
     """
-    EM = []
-
+    if block not in ('relaxed', 'clamped'):
+        raise ValueError("load_EM: block must be 'relaxed' or 'clamped', got %r" % (block,))
     with open(filename_outcar_eps) as f:
         lines = f.readlines()
-        for i, line in enumerate(lines):
-            if line.startswith('  SYMMETRIZED ELASTIC MODULI (kBar)'):
-                j = i + 3
-                data = lines[j:j + 6]
-                break
-
-    for line in data:
-        EM += [[float(x) for x in line.split()[1:]]]
-    EM = np.array(EM)
-
-    return EM
+    sym, ion, tot = (_read_EM_block(lines, _EM_TITLES[k]) for k in ('symmetrized', 'ionic', 'total'))
+    if block == 'clamped':
+        if sym is None:
+            raise ValueError("load_EM: no '%s' block in %s" % (_EM_TITLES['symmetrized'], filename_outcar_eps))
+        return sym
+    if tot is not None:
+        return tot
+    if sym is not None and ion is not None:
+        return sym + ion
+    if sym is not None:
+        warnings.warn("load_EM: %s has no relaxed-ion moduli (no '%s' or '%s' block); returning the clamped-ion "
+                      "'%s' block." % (filename_outcar_eps, _EM_TITLES['total'], _EM_TITLES['ionic'], _EM_TITLES['symmetrized']),
+                      UserWarning, stacklevel=2)
+        return sym
+    raise ValueError("load_EM: no elastic moduli block found in %s (looked for '%s', '%s', '%s')"
+                     % (filename_outcar_eps, _EM_TITLES['total'], _EM_TITLES['symmetrized'], _EM_TITLES['ionic']))
 
 
 def load_cell(filename_contcar: str) -> tuple[str, np.ndarray, np.ndarray]:

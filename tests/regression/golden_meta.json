@@ -4,19 +4,19 @@
   "numpy": "1.26.4",
   "scipy": "1.13.1",
   "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35",
-  "git_head": "26dbb5319f979ca5760217efb3bb9d7ec58899fc"
+  "git_head": "ffe4f5d0f235aea6609b54c747423a0e777ac2ee"
  },
  "errors": {
-  "io/elastic/Al13Fe4_C2m": "UnboundLocalError",
-  "io/elastic/C_diamond": "UnboundLocalError",
-  "io/elastic/CaO_Fm3m": "UnboundLocalError",
-  "io/elastic/Fe3C_Pnma": "UnboundLocalError",
-  "io/elastic/InP_F43m": "UnboundLocalError",
-  "io/elastic/MgCl2_R3m": "UnboundLocalError",
-  "io/elastic/NaCl_Fm3m": "UnboundLocalError",
-  "io/elastic/NbC_Fm3m": "UnboundLocalError",
+  "io/elastic_clamped/Al13Fe4_C2m": "ValueError",
+  "io/elastic_clamped/C_diamond": "ValueError",
+  "io/elastic_clamped/CaO_Fm3m": "ValueError",
+  "io/elastic_clamped/Fe3C_Pnma": "ValueError",
+  "io/elastic_clamped/InP_F43m": "ValueError",
+  "io/elastic_clamped/MgCl2_R3m": "ValueError",
+  "io/elastic_clamped/NaCl_Fm3m": "ValueError",
+  "io/elastic_clamped/NbC_Fm3m": "ValueError",
   "io/poscar/selective/load_cell": "ValueError"
  },
- "n_keys": 2713,
+ "n_keys": 2795,
  "non_finite_keys": []
 }

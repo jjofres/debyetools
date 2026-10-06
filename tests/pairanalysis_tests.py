@@ -30,14 +30,16 @@ class GenerateCellCoordinatesTestCase(unittest.TestCase):
         self.assertTrue(bool_1 and bool_2 and bool_3 and True)
 
     def test_pa_0(self):
-        """ Test the pair analysis calculation for a fcc crystal up to 7NN"""
+        """ Test the pair analysis calculation for a fcc crystal up to 8NN (8th shell at d = cutoff = 2)"""
         results =pa_calc.pair_analysis('AABA', 2, self.basis_vectors, self.primitive_cell(1))
         bool_1 = None == np.testing.assert_array_almost_equal(results[0], np.array(
-            [0.70710678, 1., 1.22474487, 1.41421356, 1.58113883, 1.73205081, 1.87082869]))
+            [0.70710678, 1., 1.22474487, 1.41421356, 1.58113883, 1.73205081, 1.87082869, 2.]))
+        # shells 7 and 8 kept separate (they were merged when the 8th shell lies on the cut-off)
+        bool_4 = None == np.testing.assert_array_almost_equal(results[1][-2:, :], np.array([[24., 24., 0.], [4.5, 0., 1.5]]))
         bool_2 = None == np.testing.assert_array_almost_equal(results[1][1:3,:], np.array([[4.5,0.,1.5],[12.,12.,0.]]))
         bool_3 = None == np.testing.assert_array_equal(results[2], np.array(['A-A', 'A-B', 'B-B']))
 
-        self.assertTrue(bool_1 and bool_2 and bool_3 and True)
+        self.assertTrue(bool_1 and bool_2 and bool_3 and bool_4)
 
     def test_pa_1(self):
         formula = 'AABA'

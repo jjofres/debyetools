@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 # from scipy.optimize import fmin
 from scipy import optimize
 
@@ -32,6 +33,7 @@ class nDeb:
     :param np.ndarray p_defects: Mono-vacancies defects contribution parameters: Evac00,Svac00,Tm,a,P2,V0.
     :param np.ndarray p_anh: Excess contribution parameters.
     :param str mode: Type of approximation of the Debye temperature (see vibrational contribution).
+    :param str units: Deprecated and ignored. All quantities are SI per mol-atom (J/mol, m^3/mol, kg/mol, Pa).
     """
 
     def __init__(self, nu: float, m: float, p_intanh: np.ndarray, EOS: object, p_electronic: np.ndarray, p_defects: np.ndarray, p_anh: np.ndarray, *args: object, units: str = 'J/mol',
@@ -44,6 +46,9 @@ class nDeb:
 
         xs0, xs1, xs2, xs3, xs4, xs5 = xsparams
 
+        if units != 'J/mol':
+            warnings.warn("nDeb: the 'units' argument is ignored (deprecated); inputs must be SI per mol-atom.",
+                          DeprecationWarning, stacklevel=2)
         self.nu, self.r, self.m = nu, r, m
         self.mode = mode
 
@@ -75,8 +80,6 @@ class nDeb:
         :return: Free energy.
         :rtype: float
         """
-        # self.vib.set_int_anh_4minF(T, V)
-        # self.vib.set_theta_4minF(T,V)
         self.vib.set_int_anh(T, V)
         self.vib.set_theta(T, V)
 
@@ -134,7 +137,8 @@ class nDeb:
         Evaluates the thermodynamic properties of a given compound/element at (T,V).
 
         :param np.ndarray T: The temperature in Kelvin.
-        :param np.ndarray V: The volume in "units".
+        :param np.ndarray V: The volume in m^3/mol-at.
+        :param P: Deprecated and ignored; P is computed as -dF/dV at (T, V) and returned under key 'P'.
         :return: A dictionary with the following keys: 'T': temperature, 'V': volume, 'tD': Debye temperature, 'g': Gruneisen parameter, 'Kt': isothermal bulk modulus, 'Ktp': pressure derivative of the isothermal bulk modulus, 'Ktpp': second order pressure derivative of the isothermal bulk modulus, 'Cv': constant-volume heat capacity, 'a': thermal expansion, 'Cp': constant-pressure heat capacity, 'Ks': adiabatic bulk modulus , 'Ksp': pressure derivative of the adiabatic bulk modulus, 'G': Gibbs free energy, 'E': total internal energy, 'S': entropy, 'E0': 'cold' internal energy defined by the EOS, 'Fvib': vibrational free energy, 'Evib': vibrational internal energy, 'Svib': vibrational entropy, 'Cvvib': vibrational heat capacity, 'Pcold': 'cold' pressure, 'dPdT_V': (dP/dT)_V, 'G^2': Ktp**2-2*Kt*Ktpp, 'dSdP_T': (dS/dP)_T, 'dKtdT_P': (dKt/dT)_P, 'dadP_T': (da/dP)_T, 'dCpdP_T': (dCp/dP)_T, 'ddSdT_PdP_T': (d2S/dTdP).
         :rtype: dict
         """
@@ -305,7 +309,8 @@ class nDeb:
         Evaluates the Heat capacity of a given compound/element at (T,V).
 
         :param np.ndarray T: The temperature in Kelvin.
-        :param np.ndarray V: The volume in "units".
+        :param np.ndarray V: The volume in m^3/mol-at.
+        :param P: Deprecated and ignored; P is computed as -dF/dV at (T, V) and returned under key 'P'.
         :return: A dictionary with the following keys: 'T': temperature, 'V': volume, 'tD': Debye temperature, 'g': Gruneisen parameter, 'Kt': isothermal bulk modulus, 'Ktp': pressure derivative of the isothermal bulk modulus, 'Ktpp': second order pressure derivative of the isothermal bulk modulus, 'Cv': constant-volume heat capacity, 'a': thermal expansion, 'Cp': constant-pressure heat capacity, 'Ks': adiabatic bulk modulus , 'Ksp': pressure derivative of the adiabatic bulk modulus, 'G': Gibbs free energy, 'E': total internal energy, 'S': entropy, 'E0': 'cold' internal energy defined by the EOS, 'Fvib': vibrational free energy, 'Evib': vibrational internal energy, 'Svib': vibrational entropy, 'Cvvib': vibrational heat capacity, 'Pcold': 'cold' pressure, 'dPdT_V': (dP/dT)_V, 'G^2': Ktp**2-2*Kt*Ktpp, 'dSdP_T': (dS/dP)_T, 'dKtdT_P': (dKt/dT)_P, 'dadP_T': (da/dP)_T, 'dCpdP_T': (dCp/dP)_T, 'ddSdT_PdP_T': (d2S/dTdP).
         :rtype: dict
         """

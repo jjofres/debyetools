@@ -1,4 +1,3 @@
-from deap import base, creator, tools, algorithms
 import numpy as np
 import random
 from debyetools.ndeb import nDeb
@@ -56,7 +55,6 @@ def random_sample_with_min_distance_2d(array, sample_size, min_distance, mean_di
         return random_sample_with_min_distance_2d(array, sample_size, min_distance, mean_distance, rec_depth + 1)
 
 def props(T, params, mass,  eos_pot, Tmelting, v=False):
-    global time_eos, time_Fmin, time_tprops
     E0, V0, K0, K0p, nu, a0, m0, s0, s1, s2, edef, sdef, vdef, pel0, pel1, pel2, pel3, xs0, xs1, xs2, xs3, xs4, xs5 = params
 
     # print('params:', params)
@@ -98,20 +96,6 @@ def props(T, params, mass,  eos_pot, Tmelting, v=False):
 #     return np.sqrt(np.mean(((Ydata - Ymodel)/Xdata)**2)),
 
 
-def bounded_mutate(individual, low, up, indpb):
-    size = len(individual)
-    for i in range(size):
-        if random.random() < indpb:
-            individual[i] += random.gauss(0, 1)
-            if individual[i] < low:
-                individual[i] = low
-            elif individual[i] > up:
-                individual[i] = up
-    return individual,
-
-
-import random
-import numpy as np
 
 
 # Step 1: Define fitness function

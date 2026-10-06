@@ -23,8 +23,6 @@ The EOS implemented are:
 - Mie-Gruneisen (MG)
 - Murnaghan (Mu1)
 - Poirier-Tarantola (PT)
-- Fourth order Birch-Murnaghan (BM4)
-- Second order Murnaghan (Mu2)
 
 Two description of the internal energy through inter-atomic potentials has been included as well:
 
@@ -62,8 +60,6 @@ The other potentials are:
 .. autoclass:: debyetools.potentials.MG
 .. autoclass:: debyetools.potentials.MU
 .. autoclass:: debyetools.potentials.PT
-.. autoclass:: debyetools.potentials.BM4
-.. autoclass:: debyetools.potentials.MU2
 .. autoclass:: debyetools.potentials.MP
 .. autoclass:: debyetools.potentials.EAM
 

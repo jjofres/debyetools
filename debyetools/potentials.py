@@ -2516,7 +2516,7 @@ class EAM:  #
         d3rho_arr = np.array([d3rho_arr_funct(pEOS_pt[:, 3], pEOS_pt[:, 4], pEOS_pt[:, 5])])
         d4rho_arr = np.array([d4rho_arr_funct(pEOS_pt[:, 3], pEOS_pt[:, 4], pEOS_pt[:, 5])])
         d5rho_arr = np.array([d5rho_arr_funct(pEOS_pt[:, 3], pEOS_pt[:, 4], pEOS_pt[:, 5])])
-        d5phi_arr = np.array([d5phi_arr_funct(pEOS_pt[:, 3], pEOS_pt[:, 4], pEOS_pt[:, 5])])
+        d5phi_arr = np.array([d5phi_arr_funct(pEOS_pt[:, 0], pEOS_pt[:, 1], pEOS_pt[:, 2])])  # pair parameters (were the density ones, finding 3.7)
 
         self.rho_is = [np.sum(self.ab(rho_arr, Ai)) for Ai in self.A]
         self.drho_is = [np.sum(self.ab(drho_arr, Ai)) for Ai in self.A]
@@ -2604,10 +2604,11 @@ class EAM:  #
         self.d5rho_is = [np.sum(self.ab(d5rho_arr, Ai)) for Ai in self.A]
         self.d6rho_is = [np.sum(self.ab(d6rho_arr, Ai)) for Ai in self.A]
         d6F_is = []
-        for i, rho_i, drho_i, d2rho_i, d3rho_i, d4rho_i, d5rho_i in zip(self.types_new, self.rho_is, self.drho_is,
+        for i, rho_i, drho_i, d2rho_i, d3rho_i, d4rho_i, d5rho_i, d6rho_i in zip(self.types_new, self.rho_is, self.drho_is,
                                                                         self.d2rho_is, self.d3rho_is, self.d4rho_is,
-                                                                        self.d5rho_is):
+                                                                        self.d5rho_is, self.d6rho_is):
             F0, F1, rho_e, n = self.pEOS_et[:, int(i)]
+            # last term: F'(rho) * d6rho/dV6 (was F'(rho) * d6r/dV6, finding 3.7)
             d6F_is.append(self.d6F_i(rho_i, F0, F1, rho_e, n) * drho_i ** 6 + 15 * self.d5F_i(rho_i, F0, F1, rho_e,
                                                                                               n) * drho_i ** 4 * d2rho_i + 45 * self.d4F_i(
                 rho_i, F0, F1, rho_e, n) * drho_i ** 2 * d2rho_i ** 2 + 20 * self.d4F_i(rho_i, F0, F1, rho_e,
@@ -2620,7 +2621,7 @@ class EAM:  #
                                                                               n) * drho_i * d5rho_i + self.dF_i(rho_i,
                                                                                                                 F0, F1,
                                                                                                                 rho_e,
-                                                                                                                n) * d6r)
+                                                                                                                n) * d6rho_i)
 
         d6FdV6 = np.sum(d6F_is)
         d6PhidV6 = np.sum(self.ab(d6phi_arr, self.npair)) * self.nats / 2

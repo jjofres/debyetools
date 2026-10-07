@@ -4,7 +4,7 @@
   "numpy": "1.26.4",
   "scipy": "1.13.1",
   "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35",
-  "git_head": "6705db3f434e08ab38d7603284ccc1dd6c33ce22"
+  "git_head": "e373842cc9b91f60cb6b3f78c2eae40c1288f0df"
  },
  "errors": {
   "io/elastic_clamped/Al13Fe4_C2m": "ValueError",

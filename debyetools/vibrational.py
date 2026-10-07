@@ -12,8 +12,9 @@ class Vibrational:
     thermodynamic properties.
 
     F_vib = 3 r N_A k_B [ 3/8 theta_D + T ln(1 - exp(-theta_D/T)) - T D_3(theta_D/T) / 3 ]  (J/mol),
-    with r the number of types of atoms per formula unit (default 1); r also enters theta_D through
-    (6 pi^2 r N_A / V)^(1/3) and B2 ~ 1/(m r). Every derivative of F_vib carries the same factor r.
+    with r the number of atoms in the chemical formula (default 1; r = 1 for per-mol-atom V and E0, see
+    nDeb); r also enters theta_D through (6 pi^2 r N_A / V)^(1/3) and B2 ~ 1/(m r). Every derivative of
+    F_vib carries the same factor r.
     theta_D(T, V) = theta_D(V) * Anh(T, V) (intrinsic anharmonicity, see anharmonicity.intAnharmonicity).
 
     Debye-temperature models (`mode`); gamma = -dln(theta_D)/dln(V) is the Debye-Grueneisen parameter:
@@ -35,7 +36,7 @@ class Vibrational:
     :param float m: Mean atomic mass in kg/mol-at.
     :param intAnharmonicity_instance intanh: Intrinsic anharmonicity object.
     :param str mode: Debye-temperature model (see above).
-    :param float rin: r, number of types of atoms per formula unit (default 1).
+    :param float rin: r, number of atoms in the chemical formula (default 1; keep 1 for per-mol-atom inputs).
     """
 
     def __init__(self, nu: float, EOS_obj: object, m: float, intanh: np.ndarray, mode: str, rin=1):

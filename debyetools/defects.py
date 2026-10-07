@@ -7,7 +7,8 @@ class Defects:
     """
     Contribution of thermally activated mono-vacancies to the free energy (J/mol-at):
     F_def = -r N_A k_B T exp((T S_vac - E_vac(V)) / (k_B T))  (SM eq. S.61),
-    E_vac(V) = Evac00 k_B Tm - V0 a (V - V0) P2 / (N_A V)  (J per vacancy),  S_vac = Svac00 k_B.
+    E_vac(V) = Evac00 k_B Tm - (V0 / r) a (V - V0) P2 / (N_A V)  (J per vacancy; V0 / (r N_A) = volume per atom),
+    S_vac = Svac00 k_B.
 
     :param float Evac00: Formation energy of vacancies in units of k_B Tm (dimensionless).
     :param float Svac00: Formation entropy of vacancies in units of k_B (dimensionless).
@@ -15,8 +16,8 @@ class Defects:
     :param float a: Dimensionless coefficient of the volume dependence of E_vac.
     :param float P2: Bulk modulus in Pa (nDeb passes B0 = V0 E0''(V0) of the EOS).
     :param float V0: Equilibrium volume in m^3/mol-at (nDeb passes EOS.V0).
-    :param float r: Number of types of atoms per formula unit (default 1); E, S, F and all derivatives
-        carry the factor r.
+    :param float r: Number of atoms in the chemical formula (default 1; keep 1 for per-mol-atom inputs);
+        E, S, F and all derivatives carry the factor r.
     """
     def __init__(self, Evac00: float, Svac00: float, Tm: float, a: float, P2: float, V0: float, r: float = 1):
         self.r = r
@@ -80,7 +81,7 @@ class Defects:
         :return: Ef(V)
         :rtype: float
         """
-        return self.Evac0 - self.V0*self.a*(V - self.V0)*self.P2/(NAv*V)
+        return self.Evac0 - self.V0*self.a/self.r*(V - self.V0)*self.P2/(NAv*V)
     def dEvacdV_T(self, V: float) -> float:
         """
         Volume-derivative of the enthalpy of formation of vacancies.
@@ -89,7 +90,7 @@ class Defects:
         :return: Volume-derivative of the enthalpy of formation of vacancies.
         :rtype: float
         """
-        return -self.V0*self.a*self.P2/(NAv*V)+self.V0*self.a*(V-self.V0)*self.P2/(NAv*V**2)
+        return -self.V0*self.a/self.r*self.P2/(NAv*V)+self.V0*self.a/self.r*(V-self.V0)*self.P2/(NAv*V**2)
     def d2EvacdV2_T(self, V: float) -> float:
         """
         Volume-derivative of the enthalpy of formation of vacancies.
@@ -98,7 +99,7 @@ class Defects:
         :return: Volume-derivative of the enthalpy of formation of vacancies.
         :rtype: float
         """
-        return 2*self.V0*self.a*self.P2/(NAv*V**2)-2*self.V0*self.a*(V-self.V0)*self.P2/(NAv*V**3)
+        return 2*self.V0*self.a/self.r*self.P2/(NAv*V**2)-2*self.V0*self.a/self.r*(V-self.V0)*self.P2/(NAv*V**3)
     def d3EvacdV3_T(self, V: float) -> float:
         """
         Volume-derivative of the enthalpy of formation of vacancies.
@@ -107,7 +108,7 @@ class Defects:
         :return: Volume-derivative of the enthalpy of formation of vacancies.
         :rtype: float
         """
-        return -6*self.V0*self.a*self.P2/(NAv*V**3)+6*self.V0*self.a*(V-self.V0)*self.P2/(NAv*V**4)
+        return -6*self.V0*self.a/self.r*self.P2/(NAv*V**3)+6*self.V0*self.a/self.r*(V-self.V0)*self.P2/(NAv*V**4)
     def d4EvacdV4_T(self, V: float) -> float:
         """
         Volume-derivative of the enthalpy of formation of vacancies.
@@ -116,7 +117,7 @@ class Defects:
         :return: Volume-derivative of the enthalpy of formation of vacancies.
         :rtype: float
         """
-        return 24*self.V0*self.a*self.P2/(NAv*V**4)-24*self.V0*self.a*(V-self.V0)*self.P2/(NAv*V**5)
+        return 24*self.V0*self.a/self.r*self.P2/(NAv*V**4)-24*self.V0*self.a/self.r*(V-self.V0)*self.P2/(NAv*V**5)
 
     def _E_1(self, T: float, V: float) -> float:
         """

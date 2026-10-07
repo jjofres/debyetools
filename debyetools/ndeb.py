@@ -45,8 +45,11 @@ class nDeb:
     :param tuple xsparams: Excess term (xs0, ..., xs5): F_xs = xs0 + xs1 T + xs2 T^2 + xs3 T^3 + xs4 T ln T
         + xs5 T^-2 in J/mol-at (see XS.Xs). Each coefficient is a number (V-independent) or a sequence
         of polynomial coefficients in V (lowest order first, V in m^3/mol-at) for a V-dependent A_i(V).
-    :param float r: Number of types of atoms per formula unit (default 1). Enters theta_D and multiplies
-        F_vib and F_def (SM eqs. S.9, S.27, S.61) and all their derivatives.
+    :param float r: Number of atoms in the chemical formula (Lu et al., Acta Mater. 55 (2007) 1215). Keep the
+        default r = 1: with the per-mol-atom inputs above, r = 1 is exact (r cancels from theta_D, F_vib and F_def)
+        and every output is per mol-atom. r != 1 is only consistent when V, E0 and the electronic DOS are given
+        per mole of formula units; then the extensive outputs are per mole of formula units (r times the per-atom
+        values; F_el is not scaled by r). A UserWarning is issued when r != 1.
     :param str units: Deprecated and ignored. All quantities are SI per mol-atom (J/mol, m^3/mol, kg/mol, Pa).
     """
 
@@ -63,6 +66,11 @@ class nDeb:
         if units != 'J/mol':
             warnings.warn("nDeb: the 'units' argument is ignored (deprecated); inputs must be SI per mol-atom.",
                           DeprecationWarning, stacklevel=2)
+        if r != 1:
+            warnings.warn("nDeb: r = %s != 1. All debyetools inputs and outputs are per mol-atom, for which r must "
+                          "be 1. r != 1 requires V, E0 and the electronic DOS per mole of formula units and gives "
+                          "extensive results per mole of formula units (the electronic term is not scaled by r)." % r,
+                          UserWarning, stacklevel=2)
         self.nu, self.r, self.m = nu, r, m
         self.mode = mode
 

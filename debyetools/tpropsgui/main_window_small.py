@@ -100,11 +100,13 @@ class dialogMainWindow(QMainWindow):
         self.check_el, self.check_def, self.check_anh, self.check_xs = self.ui.checkBox, self.ui.checkBox_2, self.ui.checkBox_3, self.ui.checkBox_4
         self.check_xspol = self.ui.checkBox_5
 
-        self.state_el = False
-        self.state_def = False
-        self.state_anh = False
-        self.state_xs = False
-        self.state_xspol = False
+        # start from the check boxes as set in the .ui (the electronic box is checked there; the states used to
+        # start as False, so a checked box was ignored until toggled)
+        self.state_el = self.check_el.isChecked()
+        self.state_def = self.check_def.isChecked()
+        self.state_anh = self.check_anh.isChecked()
+        self.state_xs = self.check_xs.isChecked()
+        self.state_xspol = self.check_xspol.isChecked()
 
         self.check_el.stateChanged.connect(self.on_check_el)
         self.check_def.stateChanged.connect(self.on_check_def)
@@ -181,6 +183,14 @@ class dialogMainWindow(QMainWindow):
         data = np.array(data_lst)
 
         return data
+
+    @staticmethod
+    def get_coefficients(line_edit, n):
+        """Up to n comma- or space-separated numbers from a line edit, padded with zeros to n values."""
+        values = [float(si) for si in line_edit.text().replace(',', ' ').split()]
+        if len(values) > n:
+            raise ValueError('expected at most %d coefficients, got %d: %s' % (n, len(values), line_edit.text()))
+        return values + [0.0] * (n - len(values))
 
     def on_check_el(self):
         self.state_el = self.check_el.isChecked()
@@ -260,13 +270,13 @@ class dialogMainWindow(QMainWindow):
                                                                                                                   1,
                                                                                                                   1000,
                                                                                                                   0.1]
-            self.molecule.p_xs = [float(si) for si in
-                                  self.ui.lineEdit_xs.text().replace(',', ' ').split()] if self.state_xs else [0, 0, 0]
+            # explicit anharmonicity (s0, s1, s2) and excess polynomial (xs0 ... xs5): 0 unless their box is checked;
+            # missing trailing coefficients are 0 (G4)
+            self.molecule.p_xs = self.get_coefficients(self.ui.lineEdit_xs, 3) if self.state_xs else [0, 0, 0]
 
             self.molecule.initial_params = [float(si) for si in self.ui.lineEdit_2.text().replace(',', ' ').split()]
 
-            self.molecule.xsparams = [float(si) for si in
-            self.ui.lineEdit_xspol.text().replace(',', ' ').split()] if self.state_xs else [0, 0, 0, 0, 0, 0]
+            self.molecule.xsparams = self.get_coefficients(self.ui.lineEdit_xspol, 6) if self.state_xspol else [0, 0, 0, 0, 0, 0]
 
             if self.eos_str in ['MP', 'EAM']:
 

@@ -498,7 +498,7 @@ class Ui_MainWindow(object):
         self.lineEdit_anh.setText(QCoreApplication.translate("MainWindow", u"0, 1", None))
         self.lineEdit_xs.setText(QCoreApplication.translate("MainWindow", u"0, 0, 0", None))
         self.checkBox_5.setText(QCoreApplication.translate("MainWindow", u"excess polynomial", None))
-        self.lineEdit_xspol.setText(QCoreApplication.translate("MainWindow", u"0,0,0,0", None))
+        self.lineEdit_xspol.setText(QCoreApplication.translate("MainWindow", u"0, 0, 0, 0, 0, 0", None))
         self.label_T.setText(QCoreApplication.translate("MainWindow", u"T:", None))
         self.lineEdit_T.setText(QCoreApplication.translate("MainWindow", u"0.1 1000 50", None))
         self.label_T_2.setText(QCoreApplication.translate("MainWindow", u"K", None))

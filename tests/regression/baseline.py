@@ -233,6 +233,17 @@ def layer_ext():
             put("eval/lowT/scalar_T%g/F_dFdT_d2FdT2" % T1, [v.F(T1, eos.V0), v.dFdT_V(T1, eos.V0), v.d2FdT2_V(T1, eos.V0)])
     guard("eval/lowT", flowT)
 
+    # D-5: vib.F for x = theta_D/T < 0.04 with scalar input (used to return 1e10), and f2min
+    def fhighT():
+        eos = make_eos("BM", P_EOS4)
+        nd = nDeb(NU_AL, M_AL, (0, 1), eos, P_EL_AL, P_DEF_AL, (0, 0, 0), mode="jjsl")
+        out_ = []
+        for T1 in [12000., 20000.]:
+            nd.vib.set_int_anh(T1, eos.V0); nd.vib.set_theta(T1, eos.V0)
+            out_ += [nd.vib.F(T1, eos.V0), nd.f2min(T1, eos.V0, 0)]
+        put("eval/highT/scalar_F_f2min", out_)
+    guard("eval/highT", fhighT)
+
     # (3) non-jj modes with intrinsic anharmonicity, deterministic V0_DM  [4.2, 4.4]
     Tg = np.array([10., 100., 298.15, 600., 1000.])
     for mode in ["Sl", "DM", "VZ", "mfv", "jjsl"]:

@@ -221,11 +221,11 @@ class Vibrational:
 
         x = self.tD/T
         D3 = D_3(x)
-        # print(tD/T, tD, T)
-        if type(V) is not np.ndarray:
-            if x < 0.04:
-                return 1e10
-        return 3*NAv*kB*(self.tD*3/8+T*np.log(1-np.exp(-x))-D3*T/3)
+        # same value for scalar and array input (the scalar path used to return 1e10 for x < 0.04, finding 4.7);
+        # ln(1 - e^-x) = ln(-expm1(-x)), accurate for small and large x
+        with np.errstate(under='ignore'):
+            lnq = np.log(-np.expm1(-x))
+        return 3*NAv*kB*(self.tD*3/8+T*lnq-D3*T/3)
 
     def dFdV_T(self, T: float, V: float) -> float:
         """
@@ -260,7 +260,7 @@ class Vibrational:
         q = em / (1 - em)
         D3 = D_3(x)
         dD3dx = dD_3dx(x, D3)
-        return 9*NAv*kB*(self.dtDdT_V)*(1/8) + 3*kB*r*NAv*np.log1p(-em) + 3*r*NAv*kB*(self.dtDdT_V)*q - 3*r*NAv*kB*self.tD/T*q - r*NAv*kB*dD3dx*(self.dtDdT_V) + r*NAv*kB*dD3dx*self.tD/T - r*NAv*kB*D3
+        return 9*NAv*kB*(self.dtDdT_V)*(1/8) + 3*kB*r*NAv*np.log(-np.expm1(-x)) + 3*r*NAv*kB*(self.dtDdT_V)*q - 3*r*NAv*kB*self.tD/T*q - r*NAv*kB*dD3dx*(self.dtDdT_V) + r*NAv*kB*dD3dx*self.tD/T - r*NAv*kB*D3
 
     def d2FdT2_V(self, T: float, V: float) -> float:
         """

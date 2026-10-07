@@ -300,6 +300,14 @@ def layer_ext():
         put("fit/extract_from_DFT/Nb/E0_Ef_mass", [v.E0, v.Ef, v.mass])
     guard("fit/extract_from_DFT/Nb", fxd)
 
+    # D-2: temperature / pressure grids (cases where the float arange gave extra points past T_final)
+    def fgrid():
+        from debyetools.aux_functions import gen_Ps
+        for Ti, Tf, n in [(0.1, 1000.1, 4), (0.1, 1000.1, 21), (1., 2000., 7), (0.1, 1., 10)]:
+            put("io/gen_Ts/%g_%g_%d" % (Ti, Tf, n), gen_Ts(Ti, Tf, n))
+        put("io/gen_Ps/1e9_0_3", gen_Ps(1e9, 0., 3))
+    guard("io/grids", fgrid)
+
     # (8) POSCAR variants for load_cell / load_V_E  [1.4, 7.6]
     a = 4.04
     frac = ["0 0 0", "0 0.5 0.5", "0.5 0 0.5", "0.5 0.5 0"]

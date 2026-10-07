@@ -64,13 +64,14 @@ def gen_Ts(Ti: float, Tf: float, nTs: int) -> np.ndarray:
 
     :param float Ti: Initial temperature. (Try not to use the value 0. Use 0.1 instead.)
     :param float Tf: Final temperature.
-    :param int nTs: Number of values. This does not include room temperature, which is included anyways.
-
-    :retun np.ndarray: Values of temperatures between Ti and Tf, inclusive, plus room temperature.
+    :param int nTs: Number of values between Ti and Tf, both included. Room temperature (298.15 K) is
+                    added if it is not already one of them, so the result has nTs or nTs + 1 values.
+    :return: Sorted temperatures.
+    :rtype: np.ndarray
     """
-    minF_step = (Tf - Ti) / (nTs - 1.)
-    Ts = np.arange(Ti, Tf + minF_step, minF_step)
-    Ts = np.r_[Ts, [298.15]]
+    Ts = np.linspace(Ti, Tf, int(nTs))
+    if not np.any(np.isclose(Ts, 298.15, rtol=0, atol=1e-9)):
+        Ts = np.r_[Ts, [298.15]]
     Ts.sort()
     return Ts
 
@@ -81,16 +82,13 @@ def gen_Ps(Pi, Pf, nPs):
 
     :param float Pi: Initial pressure.
     :param float Pf: Final pressure.
-    :param int nPs: Number of values. This does not include room pressure, which is included anyways.
+    :param int nPs: Number of values between Pi and Pf, both included.
 
-    :retun: Values of pressures between Pi and Pf.
+    :return: Values of pressures from Pi to Pf.
     :rtype: np.ndarray
     """
     if nPs <= 1: return np.array([Pi])
-    minF_step = (Pf - Pi) / (nPs - 1.)
-    Ps = np.arange(Pi, Pf + 1, minF_step)
-
-    return Ps
+    return np.linspace(Pi, Pf, int(nPs))
 
 
 def load_doscar(filename_sufix: str, list_filetags: list = None) -> tuple[list, list, list]:

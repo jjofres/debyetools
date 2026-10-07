@@ -31,13 +31,13 @@ Loading the energy curve and fitting the Birch-Murnaghan EOS:
 >>> from debyetools.aux_functions import load_V_E
 >>> import debyetools.potentials as potentials
 >>> import numpy as np
->>> V_DFT, E_DFT = load_V_E(dir_path+'/examples/Al3Li_L12/SUMMARY.fcc', dir_path+'/examples/Al3Li_L12/CONTCAR.5', units='J/mol')
+>>> V_DFT, E_DFT = load_V_E(dir_path+'/examples/Al3Li_L12/SUMMARY', dir_path+'/examples/Al3Li_L12/CONTCAR', units='J/mol')
 >>> initial_parameters =  np.array([-4e+05, 1e-05, 7e+10, 4])
 >>> eos_BM = potentials.BM()
 >>> eos_BM.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters, fit=True)
 >>> p_EOS = eos_BM.pEOS
 >>> p_EOS
-array([-3.26544606e+05,  9.82088168e-06,  6.31181335e+10,  4.32032416e+00])
+array([-3.26550284e+05,  9.82445537e-06,  6.31500966e+10,  4.31057127e+00])
 
 To fit the electronic contribution to eDOS data we can load them as `VASP` format `DOSCAR` files using the function ``load_doscar``.
 Then the density of states at the Fermi level of each ``V_DFT`` volume is fitted to a cubic polynomial in V with the ``fit_electronic`` function from the ``electronic`` module (linear least squares; the second argument, an initial guess, is not used and kept for compatibility).
@@ -54,7 +54,7 @@ The Poisson's ratio and elastic constants can be calculated using the ``poisson_
 
 >>> from debyetools.aux_functions import load_EM
 >>> from debyetools.poisson import poisson_ratio
->>> EM = load_EM(dir_path+'/examples/Al_fcc/OUTCAR.eps')
+>>> EM = load_EM(dir_path+'/examples/Al_fcc/OUTCAR_elastic')
 >>> nu = poisson_ratio(EM)
 >>> nu
 0.33702122500881493
@@ -80,9 +80,9 @@ The minimization og the Gibbs free energy is done by calling the method ``nDeb.m
 (array([1.0000e-01, 1.1120e+02, 2.2230e+02, 2.9815e+02, 3.3340e+02,
         4.4450e+02, 5.5560e+02, 6.6670e+02, 7.7780e+02, 8.8890e+02,
         1.0000e+03]),
- array([9.93477130e-06, 9.95708573e-06, 1.00309860e-05, 1.00924551e-05,
-        1.01230085e-05, 1.02253260e-05, 1.03361669e-05, 1.04567892e-05,
-        1.05882649e-05, 1.07335434e-05, 1.08954899e-05]))
+ array([9.93796997e-06, 9.96027323e-06, 1.00340563e-05, 1.00955887e-05,
+        1.01260208e-05, 1.02282320e-05, 1.03395857e-05, 1.04607677e-05,
+        1.05934551e-05, 1.07403807e-05, 1.09058895e-05]))
 
 To plot the volume as function of temperature:
 
@@ -100,9 +100,9 @@ The thermodynamic properties are calculated by just evaluating the thermodynamic
 >>> tprops_dict = ndeb_BM.eval_props(T,V,P=0)
 >>> Cp = tprops_dict['Cp']
 >>> Cp
-array([4.03108486e-05, 1.53280407e+01, 2.26806532e+01, 2.44706878e+01,
-       2.50389680e+01, 2.63913291e+01, 2.75000371e+01, 2.86033148e+01,
-       2.98237204e+01, 3.12758030e+01, 3.31133279e+01])
+array([5.83142586e-05, 1.53583679e+01, 2.27515956e+01, 2.45704479e+01,
+       2.51524670e+01, 2.65520976e+01, 2.77171279e+01, 2.88895920e+01,
+       3.02014723e+01, 3.17811686e+01, 3.38191011e+01])
 >>> plt.figure()
 >>> plt.plot(T,Cp, label='Heat capacity')
 >>> plt.legend()
@@ -118,10 +118,11 @@ The FactSage Cp polynomial is fitted to the previous calculation:
 >>> T_to = 1000
 >>> FS_db_params = fit_FS(tprops_dict, T_from, T_to)
 >>> FS_db_params
-{'Cp': array([ 2.82760954e+01, -6.12271903e-03, -2.66975291e+05,  1.11891931e-05]),
- 'a': array([-8.00942545e-05,  1.65169216e-07,  6.62935957e-02, -9.59227812e+00]),
- '1/Ks': array([ 1.58260299e-11,  3.89418226e-15, -1.26886122e-18,  2.36654487e-21]),
- 'Ksp': array([4.50472269e+00, 1.16376200e-03])}
+{'Cp': array([ 7.04609059e+01, -3.98969599e-02,  3.40584313e+05,  2.47530129e-05,
+             -6.90970413e+02,  0.00000000e+00]),
+ 'a': array([-1.01362055e-04,  1.81874807e-07,  7.53442834e-02, -1.08550657e+01]),
+ '1/Ks': array([ 1.57995808e-11,  3.99856432e-15, -1.50753412e-18,  2.61665508e-21]),
+ 'Ksp': array([4.49415226e+00, 1.19428316e-03])}
 
 Plot the parameterized heat capacity:
 

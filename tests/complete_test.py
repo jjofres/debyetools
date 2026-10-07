@@ -2,167 +2,71 @@ import unittest
 import numpy as np
 from debyetools.ndeb import nDeb
 from debyetools.aux_functions import gen_Ts
-from debyetools.fs_compound_db import fit_FS
+from debyetools.fs_compound_db import fit_FS, Cp2fit
 import debyetools.potentials as potentials
-from debyetools.electronic import fit_electronic    
+from debyetools.electronic import fit_electronic
 from debyetools.poisson import poisson_ratio
 from debyetools.aux_functions import load_doscar, load_V_E, load_EM, load_cell
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))  # test data paths are relative to this file
 
 Pressure = 0
+AL = os.path.join(HERE, 'inpt_files', 'Al_fcc')
+AL_TAGS = ['%02da' % i for i in range(1, 22)]
+# Regression values regenerated 2026-10-07 after the review fixes (D4 electronic, D7/D11 fit_FS with
+# cp_T3=False). The test checks the whole chain: EOS fit, DOSCAR -> electronic fit, Poisson ratio,
+# min_G, eval_props and the FactSage Cp fit (as the fitted curve, not the ill-conditioned coefficients).
+T_CURVE = np.array([298.15, 500., 750., 1000.])
+
+
+def run_chain(eos, V_start, m):
+    V_DFT, E_DFT = load_V_E(AL + '/SUMMARY.fcc', AL + '/CONTCAR.5', units='J/mol')
+    E, N, Ef = load_doscar(AL + '/DOSCAR.EvV.', list_filetags=AL_TAGS)
+    p_electronic = fit_electronic(V_DFT, None, E, N, Ef)
+    nu = poisson_ratio(load_EM(AL + '/OUTCAR.eps'))
+    p_defects = 8.46, 1.69, 933, 0.1
+    ndeb = nDeb(nu, m, (0, 1), eos, p_electronic, p_defects, (0, 0, 0), mode='jjsl')
+    T = gen_Ts(0.1, 1000, 10)
+    T, V = ndeb.min_G(T, V_start(eos), P=Pressure)
+    tprops = ndeb.eval_props(T, V, P=Pressure)
+    FS = fit_FS(tprops, 298.15, 1000)
+    return T, tprops, FS
 
 
 class CpTestCase(unittest.TestCase):
-    def setUp(self):
-        # self.NL = PairAnalysisCalculator()
-        pass
 
-    @unittest.expectedFailure  # stale expected values (test was never collected before A2); chain includes fit_electronic (decision D4) and fit_FS (finding 8.5) - regenerate after the end review
-    def test_Complete_Al_fcc_BM4(self):
-        """ Test complete algorithm to calculate TP for Al fcc using the 4th order Birch-Murnaghan EOS."""
+    def check(self, T, tprops, FS, Cp_expected, curve_expected):
+        self.assertEqual(len(T), 11)                                   # no temperature dropped by min_G
+        np.testing.assert_allclose(tprops['Cp'], Cp_expected, rtol=1e-6)
+        self.assertEqual(FS['Cp'][5], 0)                               # T^-3 term off by default (D11)
+        np.testing.assert_allclose(Cp2fit(T_CURVE, *FS['Cp']), curve_expected, rtol=1e-6)
+        ok = T >= 298.15                                               # fit follows the model in its window
+        self.assertLess(np.max(np.abs(Cp2fit(T[ok], *FS['Cp']) / tprops['Cp'][ok] - 1)), 5e-3)
 
-        folder_name = os.path.join(HERE, 'inpt_files', 'Al_fcc')
-        # EOS parametrization
-        # =========================
-        V_DFT, E_DFT = load_V_E(folder_name+'/SUMMARY.fcc', folder_name + '/CONTCAR.5', units='J/mol')
-        EOS_name = 'BM'
-        initial_parameters = [-3.6e+05, 9.9e-06, 7.8e+10, 4.7e+00, 1.e-10]
-        eos_BM4 = getattr(potentials, EOS_name)()
-        eos_BM4.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters)
-        p_EOS = eos_BM4.pEOS
-        # =========================
+    def test_Complete_Al_fcc_BM(self):
+        """Complete chain for Al fcc with the 3rd-order Birch-Murnaghan EOS."""
+        V_DFT, E_DFT = load_V_E(AL + '/SUMMARY.fcc', AL + '/CONTCAR.5', units='J/mol')
+        eos = potentials.BM()
+        eos.fitEOS(V_DFT, E_DFT, initial_parameters=[-3.6e+05, 9.9e-06, 7.8e+10, 4.7e+00])
+        T, tprops, FS = run_chain(eos, lambda e: e.pEOS[1] * .9, 0.0269815)
+        self.check(T, tprops, FS,
+                   [1.065903754626e-04, 1.392659368475e+01, 2.213373640556e+01, 2.422394409468e+01,
+                    2.488731521290e+01, 2.645669681196e+01, 2.774739094740e+01, 2.911062544999e+01,
+                    3.085575711877e+01, 3.336597813656e+01, 3.716298085174e+01],
+                   [24.255818597089, 27.165605733654, 30.319207087179, 37.128521663006])
 
-        # Electronic Contributions
-        # =========================
-        p_el_inittial = [3.8027342892e-01, -1.8875015171e-02,
-                         5.3071034596e-04, -7.0100707467e-06]
-        list_filetags = ['01a', '02a', '03a', '04a', '05a', '06a', '07a', '08a',
-                         '09a', '10a', '11a', '12a', '13a', '14a', '15a', '16a', '17a',
-                         '18a', '19a', '20a', '21a']
-        E, N, Ef = load_doscar(folder_name + '/DOSCAR.EvV.',list_filetags=list_filetags)
-        p_electronic = fit_electronic(V_DFT, p_el_inittial, E, N, Ef)
-        # =========================
-
-        # Other Contributions parametrization
-        # =========================
-        Tmelting = 933
-        p_defects = 8.46, 1.69, Tmelting, 0.1
-        p_intanh = 0, 1
-        p_anh = 0, 0, 0
-        # =========================
-
-        # Poisson's ratio
-        # =========================
-        EM = load_EM(folder_name + '/OUTCAR.eps')
-        nu = poisson_ratio(EM)
-        # print('xxxxxx', nu)
-        # =========================
-
-        # F minimization
-        # =========================
-        m = 0.0269815
-        ndeb_BM4 = nDeb(nu, m, p_intanh, eos_BM4, p_electronic, p_defects, p_anh, mode='jjsl')
-
-        T_initial, T_final, number_Temps = 0.1, 1000, 10
-        T = gen_Ts(T_initial, T_final, number_Temps)
-
-        T, V = ndeb_BM4.min_G(T, p_EOS[1] * .9, P=Pressure)
-        # print('xxxxxxxxxxx', T,V)
-        # =========================
-
-        # Evaluations
-        # =========================
-        tprops_dict = ndeb_BM4.eval_props(T, V, P=Pressure)
-
-        T_from = 298.15
-        T_to = 1000
-        # =========================
-
-        # FS comp db parameters
-        # =========================
-        FS_db_params = fit_FS(tprops_dict, T_from, T_to)
-        # print('yyyy', FS_db_params['Cp'])
-        # =========================
-        np.testing.assert_almost_equal(np.sum(FS_db_params['Cp'])/10,
-                                       np.sum([131.6862748,-0.0995466,961737.6031524,0.0000527,-1612.9897874,1.0000000])/10, decimal=1)
-
-    @unittest.expectedFailure  # stale expected values (test was never collected before A2); chain includes fit_electronic (decision D4) and fit_FS (finding 8.5) - regenerate after the end review
     def test_Complete_Al_fcc_Morse(self):
-        """ Test complete algorithm to calculate TP for Al fcc using the 4th order Birch-Murnaghan EOS."""
-
-        folder_name = os.path.join(HERE, 'inpt_files', 'Al_fcc')
-        # EOS parametrization
-        # =========================
-        V_DFT, E_DFT = load_V_E(folder_name + '/SUMMARY.fcc', folder_name + '/CONTCAR.5', units='J/mol')
-
-        formula, primitive_cell, sbasis_vectors = load_cell(folder_name + '/CONTCAR.5')
-
-        EOS_name = 'MP'
-        cutoff = 5
-        number_of_neighbor_levels = 3
-        eos_Morse = getattr(potentials, EOS_name)(formula, primitive_cell, sbasis_vectors, cutoff,
-                                                  number_of_neighbor_levels, units='J/mol')
-        initial_parameters = np.array([0.35, 1, 3.5])
-
-        eos_Morse.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters)
-        # p_EOS = eos_Morse.pEOS
-        # =========================
-
-        # Electronic Contributions
-        # =========================
-        p_el_inittial = [3.8027342892e-01, -1.8875015171e-02,
-                         5.3071034596e-04, -7.0100707467e-06]
-
-        list_filetags = ['01a', '02a', '03a', '04a', '05a', '06a', '07a', '08a',
-                         '09a', '10a', '11a', '12a', '13a', '14a', '15a', '16a', '17a',
-                         '18a', '19a', '20a', '21a']
-        E, N, Ef = load_doscar(folder_name + '/DOSCAR.EvV.', list_filetags=list_filetags)
-        p_electronic = fit_electronic(V_DFT, p_el_inittial, E, N, Ef)
-        # =========================
-
-        # Other Contributions parametrization
-        # =========================
-        Tmelting = 933
-        p_defects = 8.46, 1.69, Tmelting, 0.1
-        p_intanh = 0, 1
-        p_anh = 0, 0, 0
-        # =========================
-
-        # Poisson's ratio
-        # =========================
-        EM = EM = load_EM(folder_name + '/OUTCAR.eps')
-        nu = poisson_ratio(EM)
-        # =========================
-
-        # F minimization
-        # =========================
-        m = 0.026981500000000002
-
-        ndeb_Morse = nDeb(nu, m, p_intanh, eos_Morse, p_electronic,
-                          p_defects, p_anh, mode='jjsl')
-
-        T_initial, T_final, number_Temps = 0.1, 1000, 10
-        T = gen_Ts(T_initial, T_final, number_Temps)
-
-        T, V = ndeb_Morse.min_G(T, ndeb_Morse.EOS.V0, P=Pressure)
-        # =========================
-
-        # Evaluations
-        # =========================
-        tprops_dict = ndeb_Morse.eval_props(T, V, P=Pressure)
-        # =========================
-
-        # FS comp db parameters
-        # =========================
-        T_from = 298.15
-        T_to = 1000
-        FS_db_params = fit_FS(tprops_dict, T_from, T_to)
-        # print('xxxx', FS_db_params['Cp'])
-
-        # =========================
-        np.testing.assert_almost_equal(np.sum(FS_db_params['Cp'])/10,
-                               np.sum([111.3034235,-0.0805970,733696.3800217,0.0000427,-1303.9436254,1.0000000])/10, decimal=1)
+        """Complete chain for Al fcc with the Morse pair potential."""
+        V_DFT, E_DFT = load_V_E(AL + '/SUMMARY.fcc', AL + '/CONTCAR.5', units='J/mol')
+        formula, primitive_cell, basis_vectors = load_cell(AL + '/CONTCAR.5')
+        eos = potentials.MP(formula, primitive_cell, basis_vectors, 5, 3, units='J/mol')
+        eos.fitEOS(V_DFT, E_DFT, initial_parameters=np.array([0.35, 1, 3.5]))
+        T, tprops, FS = run_chain(eos, lambda e: e.V0, 0.026981500000000002)
+        self.check(T, tprops, FS,
+                   [1.068427865118e-04, 1.369450841661e+01, 2.189853578465e+01, 2.394966684406e+01,
+                    2.458712831839e+01, 2.605040233977e+01, 2.719799756533e+01, 2.836744762890e+01,
+                    2.983411811070e+01, 3.191364709465e+01, 3.498724882498e+01],
+                   [23.973170416899, 26.677857251127, 29.392585815178, 34.962798319197])
 
 
 if __name__ == '__main__':

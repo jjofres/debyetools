@@ -244,7 +244,9 @@ class dialogMainWindow(QMainWindow):
         error_msg = ''
         try:
             formula_comp = self.ui.lineEdit_11.text()
-            self.molecule.r = len(set(re.findall(pattern, formula_comp)))
+            # all GUI inputs (E(V), V, mass, DOS) are per mol-atom, so r = 1 (review D5b); the number of element
+            # types used to be passed here, which scaled F_vib and F_def by r for every compound (G1)
+            self.molecule.r = 1
             self.molecule.nu = float(self.ui.lineEdit_3.text())
             self.molecule.mass = float(self.ui.lineEdit.text())
 

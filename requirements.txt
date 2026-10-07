@@ -1,7 +1,6 @@
 numpy
 scipy
 matplotlib
-mpmath
 PySide6
 sphinx==5.3.0
 sphinx_rtd_theme==1.1.1

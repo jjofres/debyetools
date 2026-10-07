@@ -1,4 +1,4 @@
-import load_data_from_DFT as ldft
+import debyetools.load_data_from_DFT as ldft
 import numpy as np
 import debyetools.potentials as potentials
 from matplotlib import pyplot as plt

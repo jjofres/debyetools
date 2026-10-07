@@ -4,6 +4,7 @@ from debyetools.poisson import poisson_ratio
 from debyetools.aux_functions import load_EM
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))  # test data paths are relative to this file
+# expected values: exact Voigt-Reuss-Hill nu (checked against an independent tensor-invariant evaluation)
 class PoissonsRatioTestCase(unittest.TestCase):
     def setUp(self):
         #self.NL = PairAnalysisCalculator()
@@ -19,8 +20,7 @@ class PoissonsRatioTestCase(unittest.TestCase):
                        [-0.0000,-0.0000,0.0000,-0.0000,347.2682,-0.0000],
                        [0.0000,0.0000,0.0000,-0.0000,-0.0000,347.2682]])
 
-        err = np.abs (poisson_ratio(EM) - 0.31681328927273716)/0.31681328927273716
-        self.assertTrue(err<0.01)
+        np.testing.assert_allclose(poisson_ratio(EM), 0.31681328927273705, rtol=1e-10)
 
     def test_nu_MgCl2_R3m(self):
         """ Test the calculation of poisson ratio for MgCl2 R3m."""
@@ -32,8 +32,7 @@ class PoissonsRatioTestCase(unittest.TestCase):
                        [-0.0000, -0.0000,  0.0000, -0.0000,3, -0.0000],
                        [0.0000,  0.0000,  0.0000, -0.0000, -0.0000,210]])
 
-        err = np.abs (poisson_ratio(EM) - 0.25)/0.25
-        self.assertTrue(err<0.01)
+        np.testing.assert_allclose(poisson_ratio(EM), 0.250262495815555, rtol=1e-10)
 
     def test_nu_Al2O3_R3c(self):
         """ Test the calculation of poisson ratio for Al2O3 R3c."""
@@ -45,16 +44,15 @@ class PoissonsRatioTestCase(unittest.TestCase):
                        [0,-0,  -0,    0,  1320,  200],
                        [0,   0,    0,   -0,    200,    1510]])
 
-        err = np.abs (poisson_ratio(EM) - 0.236)/0.236
-        self.assertTrue(err<0.01)
+        # exact VRH (S = C^-1, C6); the former closed form ignored the trigonal couplings (0.2362)
+        np.testing.assert_allclose(poisson_ratio(EM), 0.2380209705349047, rtol=1e-10)
 
     def test_nu_Al2O3_R3c_read(self):
         """ Test the calculation of poisson ratio for Al2O3 R3c."""
 
         EM = load_EM(os.path.join(HERE, 'inpt_files', 'Al2O3_R3c', 'OUTCAR.eps'))
 
-        err = np.abs (poisson_ratio(EM) - 0.236)/0.236
-        self.assertTrue(err<0.01)
+        np.testing.assert_allclose(poisson_ratio(EM), 0.2380209705349047, rtol=1e-10)
 
 if __name__=='__main__':
     unittest.main()

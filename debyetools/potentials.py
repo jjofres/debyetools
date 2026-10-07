@@ -30,6 +30,36 @@ def calculate_volume(aa, bb, cc):
     return volume
 
 
+def _V0_from_dE0dV(eos, Vdata) -> float:
+    """
+    Equilibrium volume of an EOS without a V0 parameter (MP, EAM): root of dE0/dV = 0.
+
+    The search starts at the data point with the lowest energy model value (mean of Vdata if only one
+    point) and widens geometrically until dE0/dV changes sign from - to +; it is not limited to the data
+    range. A UserWarning is issued if the minimum lies outside [min(Vdata), max(Vdata)] (more than one
+    data volume), a ValueError if no minimum is found within a factor 3 of the start.
+    """
+    from scipy.optimize import brentq
+    Vd = np.atleast_1d(np.asarray(Vdata, dtype=float))
+    Vc = float(Vd[np.argmin([eos.E0(v) for v in Vd])]) if len(Vd) > 1 else float(Vd[0])
+    lo = hi = Vc
+    for _ in range(25):
+        if eos.dE0dV_T(lo) < 0:
+            break
+        lo /= 1.05
+    for _ in range(25):
+        if eos.dE0dV_T(hi) > 0:
+            break
+        hi *= 1.05
+    if not (eos.dE0dV_T(lo) < 0 < eos.dE0dV_T(hi)):
+        raise ValueError('fitEOS: no minimum of E0(V) found between %.4g and %.4g.' % (lo, hi))
+    V0 = brentq(eos.dE0dV_T, lo, hi, xtol=1e-15 * Vc, rtol=4 * np.finfo(float).eps)
+    if len(Vd) > 1 and not (Vd.min() <= V0 <= Vd.max()):
+        warnings.warn('fitEOS: the minimum of E0(V), V0 = %.6g, lies outside the data range [%.6g, %.6g].'
+                      % (V0, Vd.min(), Vd.max()), UserWarning, stacklevel=3)
+    return V0
+
+
 class BM:
     """
     Third order Birch-Murnaghan EOS and derivatives.
@@ -40,6 +70,7 @@ class BM:
         self.V0 = None
         if list(parameters):
             self.pEOS = parameters[:4]
+            self.V0 = float(self.pEOS[1])
 
     def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
         """
@@ -64,8 +95,7 @@ class BM:
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        mV = minimize(self.E0, np.array([np.mean(Vdata)]), bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-        self.V0 = mV['x'][0]
+        self.V0 = float(self.pEOS[1])  # the fitted V0 parameter is the minimum of E0 (was a bounded minimize, finding 3.10)
 
         # return self.pEOS
 
@@ -195,6 +225,7 @@ class RV:  # Rose-Vinet
     def __init__(self, *args, units='J/mol', parameters=''):
         if list(parameters):
             self.pEOS = parameters[:4]
+            self.V0 = float(self.pEOS[1])
 
     def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
         """
@@ -219,8 +250,7 @@ class RV:  # Rose-Vinet
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-        self.V0 = mV['x'][0]
+        self.V0 = float(self.pEOS[1])  # the fitted V0 parameter is the minimum of E0 (was a bounded minimize, finding 3.10)
 
         return self.pEOS
 
@@ -377,6 +407,7 @@ class MG:  # Mie-Gruneisen
     def __init__(self, *args, units='J/mol', parameters=''):
         if list(parameters):
             self.pEOS = parameters[:4]
+            self.V0 = float(self.pEOS[1])
 
     def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
         """
@@ -401,8 +432,7 @@ class MG:  # Mie-Gruneisen
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-        self.V0 = mV['x'][0]
+        self.V0 = float(self.pEOS[1])  # the fitted V0 parameter is the minimum of E0 (was a bounded minimize, finding 3.10)
 
         return self.pEOS
 
@@ -544,6 +574,7 @@ class TB:  # TB-SMA
     def __init__(self, *args, units='J/mol', parameters=''):
         if list(parameters):
             self.pEOS = parameters[:4]
+            self.V0 = float(self.pEOS[1])
 
     def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
         """
@@ -562,8 +593,7 @@ class TB:  # TB-SMA
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-        self.V0 = mV['x'][0]
+        self.V0 = float(self.pEOS[1])  # the fitted V0 parameter is the minimum of E0 (was a bounded minimize, finding 3.10)
 
         return self.pEOS
 
@@ -769,8 +799,7 @@ class MP:  # Morse
         if not fit:
             self.pEOS = initial_parameters
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata) * .9, max(Vdata) * 1.1)], tol=1e-10)
-        self.V0 = mV['x'][0]
+        self.V0 = _V0_from_dE0dV(self, Vdata)  # root of dE0/dV (was a bounded minimize, finding 3.10)
 
         return self.pEOS
 
@@ -998,6 +1027,7 @@ class MU:  # Murnaghan
         self.V0 = None
         if list(parameters):
             self.pEOS = parameters[:4]
+            self.V0 = float(self.pEOS[1])
 
     def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
         """
@@ -1022,8 +1052,7 @@ class MU:  # Murnaghan
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-        self.V0 = mV['x'][0]
+        self.V0 = float(self.pEOS[1])  # the fitted V0 parameter is the minimum of E0 (was a bounded minimize, finding 3.10)
 
         return self.pEOS
 
@@ -1165,6 +1194,7 @@ class PT:  # Poirier-Tarantola
     def __init__(self, *args, units='J/mol', parameters=''):
         if list(parameters):
             self.pEOS = parameters[:4]
+            self.V0 = float(self.pEOS[1])
 
     def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
         """
@@ -1189,8 +1219,7 @@ class PT:  # Poirier-Tarantola
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-        self.V0 = mV['x'][0]
+        self.V0 = float(self.pEOS[1])  # the fitted V0 parameter is the minimum of E0 (was a bounded minimize, finding 3.10)
 
         return self.pEOS
 
@@ -2074,8 +2103,7 @@ class EAM:  #
 
         self.params_pair_type(pEOS_pt)
         self.params_elmt_type(pEOS_et)
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))])
-        self.V0 = mV['x'][0]
+        self.V0 = _V0_from_dE0dV(self, Vdata)  # root of dE0/dV (was a bounded minimize, finding 3.10)
         # pr0nt('xxxxx')
     #
         return self.pEOS

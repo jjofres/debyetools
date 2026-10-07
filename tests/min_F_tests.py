@@ -93,7 +93,10 @@ class FminTestCase(unittest.TestCase):
 
         # B1: updated for N_A = 6.02214076e23 in the EAM volume conversion (was 32.905444673426054 with 6.02e23)
         # B12: exact equilibrium volume (was 32.912184579856515 with fmin)
-        self.assertAlmostEqual(32.9125590567, ndeb_Morse.eval_props(T[-1], V[-1],P=0)['Cp'],places=4)
+        # D-4: EOS.V0 is now the true minimum of the EAM E0 (fitEOS with fit=False and one dummy volume used to
+        # return the dummy volume itself); only the vacancy term, which uses V0 and B0 = V0 E''(V0), changes
+        # (32.9125590567 before; identical with vacancies off).
+        self.assertAlmostEqual(32.8266473030, ndeb_Morse.eval_props(T[-1], V[-1],P=0)['Cp'],places=4)
 
 
 if __name__=='__main__':

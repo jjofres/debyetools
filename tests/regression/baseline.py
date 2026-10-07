@@ -38,9 +38,9 @@ TOL = {"fit": dict(rtol=1e-6, atol=1e-12), "eval": dict(rtol=1e-11, atol=1e-14),
        "io": dict(rtol=1e-11, atol=1e-14)}
 # per-key overrides: get_EM uses curve_fit, scipy 1.13 vs 1.15 differ by ~1.3e-6
 TOL_PREFIX = {"fit/get_EM/": dict(rtol=1e-5, atol=1e-12),
-              # FactSage fit is ill-conditioned (finding 8.5): scipy 1.13 vs 1.15 differ by up to ~2.4e-6;
-              # tighten after C8. (EOS fits are back at the default fit tolerance since B4.)
-              "pipe/fit_FS/": dict(rtol=2e-5, atol=1e-12)}
+              # C8: fit_FS is a linear least-squares solve; the 6-term Cp fit (cp_T3=True) is ill-conditioned
+              # (scaled condition number ~2e4), so its coefficients get a slightly wider tolerance.
+              "pipe/fit_FS_T3/": dict(rtol=1e-5, atol=1e-12)}
 # per-suffix overrides: pipe/*/P is the pressure residual of min_G (target 0 Pa, |P| < 1e-3 Pa since B12)
 TOL_SUFFIX = {("pipe", "/P"): dict(rtol=0, atol=1.0)}
 
@@ -336,6 +336,7 @@ def layer_ext():
             r = fit_FS(nd.eval_props(Tm, Vm, P=0), 298.15, 1000.1)
             for k in ["Cp", "a", "1/Ks", "Ksp"]:
                 put("pipe/fit_FS/%s/%s" % (tag, k.replace("/", "inv")), r[k])
+            put("pipe/fit_FS_T3/%s/Cp" % tag, fit_FS(nd.eval_props(Tm, Vm, P=0), 298.15, 1000.1, cp_T3=True)["Cp"])
         guard("pipe/fit_FS/" + tag, ffs)
 
     # (10) seeded genetic algorithm  [8.1, 8.2, 8.3]

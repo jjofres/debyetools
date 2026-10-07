@@ -18,8 +18,13 @@ class FSBBTestCase(unittest.TestCase):
                       'Ksp': np.array([5.8319949069,5.92581128531,6.07262421928,6.19042232876,6.25170399681,6.47798983546,6.77772999144,7.19617691273,7.83503505035,8.95883489939,11.6736878299])
                       }
 
-        # relative tolerance: the absolute decimal=2 check on a 6.4e6 coefficient depended on the scipy version (finding 0.4)
-        np.testing.assert_allclose(fit_FS(trops_dict,T_from, T_to)['Cp'], [5.71405651e+02, -4.96294000e-01,  6.38732212e+06,  2.31428437e-04, -8.45158269e+03, 1.00000000e+00], rtol=1e-6)
+        # C8: exact linear least squares. Default (cp_T3=False): 5-term Cp fit, P5 = 0 (the former curve_fit result
+        # was the same curve with P5 left at its initial value 1.0). cp_T3=True fits all six terms.
+        r = fit_FS(trops_dict, T_from, T_to)
+        np.testing.assert_allclose(r['Cp'][:5], [5.7140656561e+02, -4.9629471061e-01, 6.3873358992e+06, 2.3142870025e-04, -8.4515978927e+03], rtol=1e-8)
+        self.assertEqual(r['Cp'][5], 0.)
+        r6 = fit_FS(trops_dict, T_from, T_to, cp_T3=True)
+        np.testing.assert_allclose(r6['Cp'], [1.9153544731e+03, -1.2854410126e+00, 6.8893323785e+07, 4.7034078918e-04, -3.5289024432e+04, -7.3944322881e+09], rtol=1e-6)
 
 
 

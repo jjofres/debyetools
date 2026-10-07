@@ -321,7 +321,7 @@ class dialogCpWindow(QMainWindow):
                 self.Ef = Ef*nats
                 txt4output += f'{Ef * nats:.7e}'
         self.S298 = self.dict_S298['%.1f' % (0 / 1e9)] * nats
-        txt4output += f'${self.dict_S298['%.1f' % (0 / 1e9)] * nats:.7e}$'
+        txt4output += f'${self.S298:.7e}$'  # was a nested-quote f-string: SyntaxError before Python 3.12 (G3)
 
         self.ui.tableWidget.setItem(0, 0, QTableWidgetItem('%.5e' % (self.dict_H298['%.1f' % (0 / 1e9)])))
         self.ui.tableWidget.setItem(1, 0, QTableWidgetItem('%.5e' % (self.dict_S298['%.1f' % (0 / 1e9)])))

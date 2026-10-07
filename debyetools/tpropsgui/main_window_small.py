@@ -322,15 +322,10 @@ class dialogMainWindow(QMainWindow):
             QMessageBox.information(self, 'Error', error_msg, QMessageBox.Ok)
 
     def on_pushDoscar(self):
-        status = 0
-        try:
-            self.dialogDoscar.Vdata = self.dialogFitEOS.Vdata
-            status =1
-        except AttributeError:
-            QMessageBox.information(self, 'Warning', 'The volume data was not loaded!\n Please make sure you run the EOS fitting first.', QMessageBox.Ok)
-        if status == 1:
-            self.dialogDoscar.external_iparams = self.ui.lineEdit_el
-            self.dialogDoscar.show()
+        # the volumes come from the DOSCARs themselves; the E(V) volumes, if loaded, are a cross-check only (G5)
+        self.dialogDoscar.Vdata = getattr(self.dialogFitEOS, 'Vdata', None)
+        self.dialogDoscar.external_iparams = self.ui.lineEdit_el
+        self.dialogDoscar.show()
 
     def on_text_changed(self, line_edit):
         # Call the reusable highlight function

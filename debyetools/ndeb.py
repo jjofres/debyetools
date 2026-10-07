@@ -43,7 +43,8 @@ class nDeb:
     :param str mode: Debye-temperature model: 'jjsl', 'jjdm', 'jjfv', 'Sl', 'DM', 'VZ' or 'mfv'
         (see vibrational.Vibrational for definitions).
     :param tuple xsparams: Excess term (xs0, ..., xs5): F_xs = xs0 + xs1 T + xs2 T^2 + xs3 T^3 + xs4 T ln T
-        + xs5 T^-2 in J/mol-at (see XS.Xs).
+        + xs5 T^-2 in J/mol-at (see XS.Xs). Each coefficient is a number (V-independent) or a sequence
+        of polynomial coefficients in V (lowest order first, V in m^3/mol-at) for a V-dependent A_i(V).
     :param float r: Scaling factor of the vibrational term (keep 1; its meaning is under review).
     :param str units: Deprecated and ignored. All quantities are SI per mol-atom (J/mol, m^3/mol, kg/mol, Pa).
     """

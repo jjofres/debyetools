@@ -153,7 +153,15 @@ class Vibrational:
         dB2dV = ((4*lam**2+14*lam+10)*P0-9*V*(-2*m*r*B2*(lam+1)*(1/3)+V*d2P0dV2))/(9*V**2*m*r)
         d2B2dV2 = ((-8*lam**3-60*lam**2-132*lam-80)*P0-27*V*(4*m*r*B2*(lam+4)*(lam+1)*(1/9)+V*(-2*m*r*(lam+1)*dB2dV*(1/3)+V*d3P0dV3)))/(27*V**3*m*r)
         d3B2dV3 = ((16*lam**4+208*lam**3+924*lam**2+1612*lam+880)*P0-81*V*(-8*r*(lam+4)*(lam+1)*(lam+11/2)*m*B2*(1/27)+V*(4*r*(lam+1)*(lam+11/2)*m*dB2dV*(1/9)+(-2*m*r*d2B2dV2*(lam+1)*(1/3)+V*d4P0dV4)*V)))/(81*V**4*m*r)
-        d4B2dV4 = ((32*lam**5+256*lam**4-232*lam**3-6016*lam**2-14360*lam-8800)*P0-243*V*(-16*r*(lam-5)*(lam+4)*(lam+1)*(lam+11/2)*m*B2*(1/81)+V*(8*r*(lam-5)*(lam+1)*(lam+11/2)*m*dB2dV*(1/27)+(-4*m*r*(lam+1)*(lam-5)*d2B2dV2*(1/9)+V*(2*m*r*(lam+1)*d3B2dV3*(1/3)+V*d5P0dV5))*V)))/(243*V**5*m*r)
+        # d4B2/dV4 from the Leibniz rule for B2 = N/(m r V), N = -V dP/dV - c P, c = (2 lam + 2)/3,
+        # N^(k) = -V P^(k+1) - (k + c) P^(k)  (the former closed form had an extra 4(lam+1)P''''/(3 V m r), finding 4.1)
+        c_l = (2*lam+2)/3
+        N0 = -V*dP0dV - c_l*P0
+        N1 = -V*d2P0dV2 - (1+c_l)*dP0dV
+        N2 = -V*d3P0dV3 - (2+c_l)*d2P0dV2
+        N3 = -V*d4P0dV4 - (3+c_l)*d3P0dV3
+        N4 = -V*d5P0dV5 - (4+c_l)*d4P0dV4
+        d4B2dV4 = (N4/V - 4*N3/V**2 + 12*N2/V**3 - 24*N1/V**4 + 24*N0/V**5)/(m*r)
 
         vD = V*kv*np.sqrt(B2)
         dvDdV = (V**3*kv**2*(dB2dV)+2*vD**2)/(2*V*vD)

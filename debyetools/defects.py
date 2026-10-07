@@ -203,7 +203,16 @@ class Defects:
         :return: Derivative of F_def
         :rtype: float
         """
-        return -NAv*(self.d4SvacdV4_T(V)*T-self.d4EvacdV4_T(V))*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))-4*NAv*(self.d3SvacdV3_T(V)*T-self.d3EvacdV3_T(V))*(self.dSvacdV_T(V)*T-self.dEvacdV_T(V))*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))/(T*kB)-3*NAv*(self.d2SvacdV2_T(V)*T-self.d2EvacdV2_T(V))**2*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))/(T*kB)
+        # F = -NAv kB T exp(u), u = g/(kB T), g = T Svac - Evac; Faa di Bruno for exp(u):
+        # d4F/dV4 = -NAv exp(u) [g4 + (4 g1 g3 + 3 g2^2)/(kB T) + 6 g1^2 g2/(kB T)^2 + g1^4/(kB T)^3]
+        # (the last two terms were missing, finding 5.5)
+        kT = kB*T
+        g1 = self.dSvacdV_T(V)*T - self.dEvacdV_T(V)
+        g2 = self.d2SvacdV2_T(V)*T - self.d2EvacdV2_T(V)
+        g3 = self.d3SvacdV3_T(V)*T - self.d3EvacdV3_T(V)
+        g4 = self.d4SvacdV4_T(V)*T - self.d4EvacdV4_T(V)
+        eu = np.exp((self.Svac(V)*T-self.Evac(V))/kT)
+        return -NAv*eu*(g4 + (4*g1*g3 + 3*g2**2)/kT + 6*g1**2*g2/kT**2 + g1**4/kT**3)
 
     def d2FdVdT(self, T: float, V: float) -> float:
         """

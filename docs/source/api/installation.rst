@@ -10,10 +10,9 @@ All the code is in ``debyetools`` repository on GitHub_.
 Requirements
 ============
 
-* Python_ 3.6 or newer
+* Python_ 3.10 or newer
 * NumPy_ (base N-dimensional array package)
 * SciPy_ (fundamental algorithms for scientific computing in Python)
-* mpmath_ (real and complex floating-point arithmetic with arbitrary precision)
 
 Other recommended packages:
 
@@ -35,4 +34,3 @@ The simplest way to install ``debyetools`` is to use pip_ which will automatical
 .. _Matplotlib: https://matplotlib.org/
 .. _PySide6: https://pypi.org/project/PySide6/
 .. _GitHub: https://github.com/jjofres/debyetools
-.. _mpmath: https://mpmath.org/

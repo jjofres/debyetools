@@ -35,7 +35,7 @@ with contextlib.redirect_stdout(io.StringIO()):
 print("  true [2, 3, 0.5], initial [2, 3, 0] -> result", np.round(p, 4))
 
 print("\n== C. fit_FS: Cp model is linear in its 6 coefficients -> compare curve_fit (code) with exact linear least squares")
-g_ = np.load("review/baseline/golden.npz")
+g_ = np.load("tests/regression/golden.npz")
 for case in ["BM_jjsl", "BM_jjsl_allcontrib", "MG_jjsl"]:
     T = g_["pipe/%s/T" % case]; tp = {k: g_["pipe/%s/%s" % (case, k)] for k in ["T", "Cp", "a", "Ks"]}
     tp["Ksp"] = np.ones_like(T)

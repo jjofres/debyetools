@@ -3,9 +3,10 @@ np.seterr(divide='ignore')
 
 class Anharmonicity:
     """
-    Instance for the excess contribution to the free energy.
+    Explicit anharmonic contribution to the free energy (J/mol-at): F_anh = -A(V) T^2 / 2,
+    A(V) = s0 + s1 V + s2 V^2.
 
-    :param float s0,s1,s2: Parameters of the A(V) term.
+    :param float s0,s1,s2: Parameters of A(V): s0 in J/mol-at/K^2, s1 per (m^3/mol-at), s2 per (m^3/mol-at)^2.
     """
 
     def __init__(self, s0: float, s1: float, s2: float) -> None:
@@ -16,10 +17,11 @@ class Anharmonicity:
 
     def A(self, V: float) -> float:
         """
-        A(V) = s0+s0*V+s1*V**2, where A is the polynomial model for the excess contribution to the free energy, A(V)*T.
+        A(V) = s0 + s1*V + s2*V**2, the volume-dependent coefficient of the explicit anharmonic free energy
+        F_anh = -A(V) T^2 / 2.
 
-        :param float V: Volume
-        :return: s0+s0*V+s1*V**2
+        :param float V: Volume in m^3/mol-at.
+        :return: s0 + s1*V + s2*V**2
         :rtype: float
         """
         return self.s0 + self.s1 * V + self.s2 * V ** 2
@@ -114,7 +116,7 @@ class Anharmonicity:
 
         :param float T: Temperature.
         :param float V: Volume.
-        :return: -A(V)
+        :return: -A(V)*T
         :rtype: float
         """
         return -T*self.A(V)
@@ -198,13 +200,20 @@ class Anharmonicity:
 
 
 class intAnharmonicity:
+    """
+    Intrinsic anharmonicity: temperature dependence of the Debye temperature,
+    theta_D(T, V) = theta_D(V) * Anh(T, V), Anh = exp(a(V) T / 2), a(V) = a0 (V/V0)^m0.
+
+    The derivative methods use values cached by the previous calls (Anh must be called first, then the
+    derivatives in the order used by vibrational.Vibrational.set_int_anh).
+    """
     def __init__(self, a0: float = 0, m0: float = 1, V0: float = 1):
         """
         Instantiate the corrections required to consider temperature dependence on the Debye temperature.
 
-        :param float a0: Parameter of the intrinsic anharmonicity correction function.
-        :param float m0: Pseudo-Gruneisen parameter of the intrinsic anharmonicity correction function.
-        :param float V0: Equilibrium volume.
+        :param float a0: Intrinsic anharmonicity parameter in 1/K.
+        :param float m0: Volume exponent of a(V) (dimensionless).
+        :param float V0: Reference volume in m^3/mol-at (nDeb passes EOS.V0).
         """
         self.pintanh = a0, m0, V0
         self.d3AnhdV2dT_val = None
@@ -263,7 +272,7 @@ class intAnharmonicity:
         at fixed V.
 
         :param float V: Volume
-        :return: an_val*(d2Anh_val/dT2)_V/2
+        :return: an_val*(dAnh/dT)_V/2
         :rtype: float
         """
         self.d2AnhdT2_V_val = (1 / 2) * self.an_val * self.dAnhdT_V_val
@@ -275,7 +284,7 @@ class intAnharmonicity:
         at fixed V.
 
         :param float V: Volume
-        :return: an_val*(d2Anh_val/dT2)_V/2
+        :return: an_val*(d2Anh/dT2)_V/2
         :rtype: float
         """
         self.d3AnhdT3_V_val = (1 / 2) * self.an_val * self.d2AnhdT2_V_val

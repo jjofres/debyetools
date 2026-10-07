@@ -2,21 +2,45 @@ import os
 import numpy as np
 import re
 from scipy.optimize import curve_fit
+from debyetools.constants import EV_A3_TO_GPA, KBAR_TO_GPA
 
-# Function to parse energy and volume from OUTCAR
+# eV/A^3 -> kBar (same unit as aux_functions.load_EM and poisson.quiet_pa)
+EV_A3_TO_KBAR = EV_A3_TO_GPA / KBAR_TO_GPA
+
 def parse_outcar(outcar_path):
+    """
+    Read the final free energy and cell volume from a VASP OUTCAR.
+
+    Both values are taken from the last occurrence in the file, so they refer
+    to the same (final) cell. The first "volume of cell" line in an OUTCAR
+    belongs to the symmetry analysis and can be the primitive-cell volume,
+    which differs from the volume of the simulation cell.
+
+    :param str outcar_path: path to the OUTCAR file.
+    :return: energy (eV per cell) and volume (A^3 per cell).
+    :rtype: tuple[float, float]
+    """
     with open(outcar_path, 'r') as file:
         lines = file.readlines()
 
     energy = None
     volume = None
 
-    # Find the last occurrence of energy and volume in the OUTCAR
-    for line in lines[::-1]:
-        if "FREE ENERGIE OF THE ION-ELECTRON SYSTEM" in line:
-            energy = float(re.findall(r"[-+]?\d*\.\d+|\d+", lines[lines.index(line)+2])[0])
-        if "volume of cell :" in line:
+    # Scan backwards and keep the first match found, i.e. the last one in the file
+    for i in range(len(lines) - 1, -1, -1):
+        line = lines[i]
+        if energy is None and "FREE ENERGIE OF THE ION-ELECTRON SYSTEM" in line:
+            for toten in lines[i + 1:i + 4]:
+                if "TOTEN" in toten:
+                    energy = float(toten.split('=')[1].split()[0])
+                    break
+        if volume is None and "volume of cell :" in line:
             volume = float(line.split()[-1])
+        if energy is not None and volume is not None:
+            break
+
+    if energy is None or volume is None:
+        raise ValueError(f'parse_outcar: energy or volume not found in {outcar_path}.')
 
     return energy, volume
 
@@ -25,6 +49,18 @@ def quadratic_fun(delta, eps, E0, V0):
     return E0 + V0/2 * eps * delta**2
 
 def get_EM(base_dir):
+    """
+    Elastic constants from energy-strain calculations.
+
+    Expects base_dir/eps1 ... eps9, each with subfolders 98 ... 102 (strain
+    -2% ... +2%) containing an OUTCAR. Energies are fitted to
+    E = E0 + V0/2 * eps * delta**2, with E0 and V0 from the unstrained cell.
+
+    :param str base_dir: folder containing eps1 ... eps9.
+    :return: 6x6 stiffness matrix in kBar (Voigt order XX YY ZZ YZ ZX XY),
+             same unit as aux_functions.load_EM.
+    :rtype: np.ndarray
+    """
 
     # Base directory containing d1 to d6 folders
     # base_dir = './elastic/'
@@ -82,42 +118,42 @@ def get_EM(base_dir):
     # Store the calculated elastic constants
     EM =np.zeros((6,6))
     elastic_constants = {
-        'C11': C11*160.21766208,
-        'C12': C12*160.21766208,
-        'C13': C13*160.21766208,
+        'C11': C11*EV_A3_TO_KBAR,
+        'C12': C12*EV_A3_TO_KBAR,
+        'C13': C13*EV_A3_TO_KBAR,
         'C14': 0,
         'C15': 0,
         'C16': 0,
-        'C21': C12*160.21766208,
-        'C22': C22*160.21766208,
-        'C23': C23*160.21766208,
+        'C21': C12*EV_A3_TO_KBAR,
+        'C22': C22*EV_A3_TO_KBAR,
+        'C23': C23*EV_A3_TO_KBAR,
         'C24': 0,
         'C25': 0,
         'C26': 0,
-        'C31': C13*160.21766208,
-        'C32': C23*160.21766208,
-        'C33': C33*160.21766208,
+        'C31': C13*EV_A3_TO_KBAR,
+        'C32': C23*EV_A3_TO_KBAR,
+        'C33': C33*EV_A3_TO_KBAR,
         'C34': 0,
         'C35': 0,
         'C36': 0,
         'C41': 0,
         'C42': 0,
         'C43': 0,
-        'C44': C44*160.21766208,
+        'C44': C44*EV_A3_TO_KBAR,
         'C45': 0,
         'C46': 0,
         'C51': 0,
         'C52': 0,
         'C53': 0,
         'C54': 0,
-        'C55': C55*160.21766208,
+        'C55': C55*EV_A3_TO_KBAR,
         'C56': 0,
         'C61': 0,
         'C62': 0,
         'C63': 0,
         'C64': 0,
         'C65': 0,
-        'C66': C66*160.21766208,
+        'C66': C66*EV_A3_TO_KBAR,
 
     }
 

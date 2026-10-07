@@ -12,6 +12,7 @@ from PySide6.QtCore import QTimer
 
 from debyetools.tpropsgui.plot_EV import windowPlot
 from PySide6.QtGui import QPixmap, QPalette
+from debyetools.constants import A3_ATOM_TO_M3_MOL, EV_ATOM_TO_J_MOL
 
 
 def highlight_line_edit(line_edit, color="purple", duration=100):
@@ -69,7 +70,7 @@ class dialogFitEOS(QDialog):
 
     def get_EvV(self):
         if self.ui.radioButton_2.isChecked():
-            conv = [(1e-30 * 6.02e23), (0.160218e-18 * 6.02214e23)]
+            conv = [A3_ATOM_TO_M3_MOL, EV_ATOM_TO_J_MOL]  # debyetools.constants
         elif self.ui.radioButton_4.isChecked():
             conv = [1, 1]
 

@@ -2,9 +2,7 @@ import numpy as np
 from debyetools.debfunct import D_3, dD_3dx, d2D_3dx2, d3D_3dx3
 
 np.seterr(divide='ignore',invalid='ignore')
-hbar = 0.1054571800e-33
-NAv = 0.6022140857e24
-kB = 0.138064852e-22
+from debyetools.constants import hbar, NAv, kB
 # r = 1
 
 
@@ -13,12 +11,32 @@ class Vibrational:
     Instantiate the vibrational contribution to the free energy and its derivatives for the calculation of the
     thermodynamic properties.
 
+    F_vib = 3 r N_A k_B [ 3/8 theta_D + T ln(1 - exp(-theta_D/T)) - T D_3(theta_D/T) / 3 ]  (J/mol),
+    with r the number of atoms in the chemical formula (default 1; r = 1 for per-mol-atom V and E0, see
+    nDeb); r also enters theta_D through (6 pi^2 r N_A / V)^(1/3) and B2 ~ 1/(m r). Every derivative of
+    F_vib carries the same factor r.
+    theta_D(T, V) = theta_D(V) * Anh(T, V) (intrinsic anharmonicity, see anharmonicity.intAnharmonicity).
+
+    Debye-temperature models (`mode`); gamma = -dln(theta_D)/dln(V) is the Debye-Grueneisen parameter:
+
+    - 'jjsl', 'jjdm', 'jjfv': theta_D(V) from the sound velocity of the pressure-corrected curvature
+      B2(V) = (-V dP/dV - (2 lambda + 2)/3 P) / (V m r) of the cold curve at every volume, with
+      lambda = -1 (Slater), 0 (Dugdale-MacDonald), +1 (free volume / Vashchenko-Zubarev).
+      At V0 (P = 0): gamma = B0'/2 - 1/6, -1/2, -5/6.
+    - 'Sl', 'DM', 'VZ', 'mfv': scaling form
+      theta_D(V) = theta_D,0 (V E0''(V) / (V0 E0''(V0)))^(1/2) (V/V0)^(-a), with the reference volume
+      V0 = EOS.V0 (V0_DM) and a = -1/6 (Slater), -1/2 (Dugdale-MacDonald), -5/6 (Vashchenko-Zubarev) and
+      a = -0.95 ('mfv', mean-free-volume value; a separate model, not equal to VZ).
+      At V0 each of 'Sl', 'DM', 'VZ' gives the same theta_D and gamma = B0'/2 + a as 'jjsl', 'jjdm', 'jjfv'.
+
     :param nu: Poisson's ratio.
     :type nu: float
     :param EOS_obj: Equation of state object.
     :type EOS_obj: potential_instance
-    :param float m: Mass in Kg/mol-at.
+    :param float m: Mean atomic mass in kg/mol-at.
     :param intAnharmonicity_instance intanh: Intrinsic anharmonicity object.
+    :param str mode: Debye-temperature model (see above).
+    :param float rin: r, number of atoms in the chemical formula (default 1; keep 1 for per-mol-atom inputs).
     """
 
     def __init__(self, nu: float, EOS_obj: object, m: float, intanh: np.ndarray, mode: str, rin=1):
@@ -76,17 +94,17 @@ class Vibrational:
             self.a_DM = -5 / 6
             self.lam = -1
         elif mode == 'jjsl':
-            self.V0_DM = 1
+            self.V0_DM = EOS_obj.V0  # not used by the jj modes (was 1 m^3/mol)
             self.b_DM = 0
             self.a_DM = 0
             self.lam = -1
         elif mode == 'jjdm':
-            self.V0_DM = 1
+            self.V0_DM = EOS_obj.V0  # not used by the jj modes (was 1 m^3/mol)
             self.b_DM = 0
             self.a_DM = 0
             self.lam = 0
         elif mode == 'jjfv':
-            self.V0_DM = 1
+            self.V0_DM = EOS_obj.V0  # not used by the jj modes (was 1 m^3/mol)
             self.b_DM = 0
             self.a_DM = 0
             self.lam = 1
@@ -111,25 +129,6 @@ class Vibrational:
         self.d3AnhdVdT2 = self.intanh.d3AnhdVdT2(T)
         self.d3AnhdV3_T = self.intanh.d3AnhdV3_T(T, V)
         self.d4AnhdV4_T = self.intanh.d4AnhdV4_T(T, V)
-    def set_int_anh_4minF(self, T: float, V: float) -> None:
-        """
-        Calculates intrinsic anharmonicity correction to the Debye temperature and its derivatives.
-
-        :param float T: Temperature.
-        :param float V: Volume.
-        """
-        self.Anh = self.intanh.Anh(T, V)
-        self.dAnhdT_V = 'X'#self.intanh.dAnhdT_V()
-        self.dAnhdV_T = 'X'#self.intanh.dAnhdV_T(T, V)
-        self.d2AnhdVdT = 'X'#self.intanh.d2AnhdVdT(T)
-        self.d2AnhdV2_T = 'X'#self.intanh.d2AnhdV2_T(T, V)
-        self.d2AnhdT2_V = 'X'#self.intanh.d2AnhdT2_V()
-        self.d3AnhdV2dT = 'X'#self.intanh.d3AnhdV2dT(T, V)
-        self.d3AnhdVdT2 = 'X'#self.intanh.d3AnhdVdT2(T)
-        self.d3AnhdV3_T = 'X'#self.intanh.d3AnhdV3_T(T, V)
-        self.d4AnhdV4_T = 'X'#self.intanh.d4AnhdV4_T(T, V)
-
-
     def set_theta(self, T: float, V: float) -> None:
         """
         Calculates the Debye Temperature and its derivatives.
@@ -174,7 +173,15 @@ class Vibrational:
         dB2dV = ((4*lam**2+14*lam+10)*P0-9*V*(-2*m*r*B2*(lam+1)*(1/3)+V*d2P0dV2))/(9*V**2*m*r)
         d2B2dV2 = ((-8*lam**3-60*lam**2-132*lam-80)*P0-27*V*(4*m*r*B2*(lam+4)*(lam+1)*(1/9)+V*(-2*m*r*(lam+1)*dB2dV*(1/3)+V*d3P0dV3)))/(27*V**3*m*r)
         d3B2dV3 = ((16*lam**4+208*lam**3+924*lam**2+1612*lam+880)*P0-81*V*(-8*r*(lam+4)*(lam+1)*(lam+11/2)*m*B2*(1/27)+V*(4*r*(lam+1)*(lam+11/2)*m*dB2dV*(1/9)+(-2*m*r*d2B2dV2*(lam+1)*(1/3)+V*d4P0dV4)*V)))/(81*V**4*m*r)
-        d4B2dV4 = ((32*lam**5+256*lam**4-232*lam**3-6016*lam**2-14360*lam-8800)*P0-243*V*(-16*r*(lam-5)*(lam+4)*(lam+1)*(lam+11/2)*m*B2*(1/81)+V*(8*r*(lam-5)*(lam+1)*(lam+11/2)*m*dB2dV*(1/27)+(-4*m*r*(lam+1)*(lam-5)*d2B2dV2*(1/9)+V*(2*m*r*(lam+1)*d3B2dV3*(1/3)+V*d5P0dV5))*V)))/(243*V**5*m*r)
+        # d4B2/dV4 from the Leibniz rule for B2 = N/(m r V), N = -V dP/dV - c P, c = (2 lam + 2)/3,
+        # N^(k) = -V P^(k+1) - (k + c) P^(k)  (the former closed form had an extra 4(lam+1)P''''/(3 V m r), finding 4.1)
+        c_l = (2*lam+2)/3
+        N0 = -V*dP0dV - c_l*P0
+        N1 = -V*d2P0dV2 - (1+c_l)*dP0dV
+        N2 = -V*d3P0dV3 - (2+c_l)*d2P0dV2
+        N3 = -V*d4P0dV4 - (3+c_l)*d3P0dV3
+        N4 = -V*d5P0dV5 - (4+c_l)*d4P0dV4
+        d4B2dV4 = (N4/V - 4*N3/V**2 + 12*N2/V**3 - 24*N1/V**4 + 24*N0/V**5)/(m*r)
 
         vD = V*kv*np.sqrt(B2)
         dvDdV = (V**3*kv**2*(dB2dV)+2*vD**2)/(2*V*vD)
@@ -194,94 +201,34 @@ class Vibrational:
         d4DMdV4 = (d2E0dV2_T**b_DM*(-b_DM+a_DM)*(-b_DM+a_DM+3)*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*V**(b_DM-4-a_DM)+6*b_DM*((d2E0dV2_T**(b_DM-1)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-2)*(b_DM-1))*(-b_DM+a_DM)*(-b_DM+1+a_DM)*V**(b_DM-2-a_DM)-(1/3)*(2*(d2E0dV2_T**(b_DM-1)*(d5E0dV5_T)+(d3E0dV3_T)*(3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-3)*(b_DM-2))*(b_DM-1)))*(-b_DM+a_DM)*V**(b_DM-1-a_DM)-2*(d3E0dV3_T)*d2E0dV2_T**(b_DM-1)*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*(- b_DM +a_DM)*V**(b_DM-a_DM-3)*(1/3)+(1/6)*(d2E0dV2_T**(b_DM-1)*(d6E0dV6_T)+(4*(d3E0dV3_T)*d2E0dV2_T**(b_DM-2)*(d5E0dV5_T)+3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)**2+(6*d2E0dV2_T**(b_DM-3)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-4)*(b_DM-3))*(b_DM-2)*(d3E0dV3_T)**2)*(b_DM-1))*V**(b_DM-a_DM)))*V0_DM**a_DM*B0_DM**(-b_DM)
 
         tD_DM = xD_DM * vD_DM
-        self.tD = xD*vD*self.Anh if 'jj' in self.mode else tD_DM*self.Anh*DM
-        self.dtDdV_T = dxDdV*vD*self.Anh+xD*dvDdV*self.Anh+xD*vD*self.dAnhdV_T if 'jj' in self.mode else tD_DM*self.Anh*dDMdV
-        self.dtDdT_V = xD*vD*self.dAnhdT_V if 'jj' in self.mode else 0
-        self.d2tDdV2_T =d2xDdV2*vD*self.Anh+2*dxDdV*dvDdV*self.Anh+2*dxDdV*vD*self.dAnhdV_T+xD*d2vDdV2*self.Anh+2*xD*dvDdV*self.dAnhdV_T+xD*vD*self.d2AnhdV2_T if 'jj' in self.mode else tD_DM*self.Anh*d2DMdV2
-        self.d2tDdT2_V = xD*vD*self.d2AnhdT2_V if 'jj' in self.mode else 0
-        self.d2tDdVdT = dxDdV*vD*self.dAnhdT_V+xD*dvDdV*self.dAnhdT_V+xD*vD*self.d2AnhdVdT if 'jj' in self.mode else 0
-        self.d3tDdV3_T = d3xDdV3*vD*self.Anh+3*d2xDdV2*dvDdV*self.Anh+3*d2xDdV2*vD*self.dAnhdV_T+3*dxDdV*d2vDdV2*self.Anh+6*dxDdV*dvDdV*self.dAnhdV_T+3*dxDdV*vD*self.d2AnhdV2_T+xD*d3vDdV3*self.Anh+3*xD*d2vDdV2*self.dAnhdV_T+3*xD*dvDdV*self.d2AnhdV2_T+xD*vD*self.d3AnhdV3_T  if 'jj' in self.mode else tD_DM*self.Anh*d3DMdV3
-        self.d3tDdV2dT =d2xDdV2*vD*self.dAnhdT_V+2*dxDdV*dvDdV*self.dAnhdT_V+2*dxDdV*vD*self.d2AnhdVdT+xD*d2vDdV2*self.dAnhdT_V+2*xD*dvDdV*self.d2AnhdVdT+xD*vD*self.d3AnhdV2dT  if 'jj' in self.mode else 0
-        self.d3tDdVdT2 = dxDdV*vD*self.d2AnhdT2_V+xD*dvDdV*self.d2AnhdT2_V+xD*vD*self.d3AnhdVdT2  if 'jj' in self.mode else 0
-        self.d4tDdV4_T = 6*d2xDdV2*d2vDdV2*self.Anh+12*d2xDdV2*dvDdV*self.dAnhdV_T+6*d2xDdV2*vD*self.d2AnhdV2_T+4*dxDdV*d3vDdV3*self.Anh+12*dxDdV*d2vDdV2*self.dAnhdV_T+12*dxDdV*dvDdV*self.d2AnhdV2_T+4*dxDdV*vD*self.d3AnhdV3_T+xD*d4vDdV4*self.Anh+4*xD*d3vDdV3*self.dAnhdV_T+6*xD*d2vDdV2*self.d2AnhdV2_T+4*xD*dvDdV*self.d3AnhdV3_T+xD*vD*self.d4AnhdV4_T+d4xDdV4*vD*self.Anh+4*d3xDdV3*dvDdV*self.Anh+4*d3xDdV3*vD*self.dAnhdV_T  if 'jj' in self.mode else tD_DM*self.Anh*d4DMdV4
+        if 'jj' in self.mode:
+            self.tD = xD*vD*self.Anh
+            self.dtDdV_T = dxDdV*vD*self.Anh+xD*dvDdV*self.Anh+xD*vD*self.dAnhdV_T
+            self.dtDdT_V = xD*vD*self.dAnhdT_V
+            self.d2tDdV2_T = d2xDdV2*vD*self.Anh+2*dxDdV*dvDdV*self.Anh+2*dxDdV*vD*self.dAnhdV_T+xD*d2vDdV2*self.Anh+2*xD*dvDdV*self.dAnhdV_T+xD*vD*self.d2AnhdV2_T
+            self.d2tDdT2_V = xD*vD*self.d2AnhdT2_V
+            self.d2tDdVdT = dxDdV*vD*self.dAnhdT_V+xD*dvDdV*self.dAnhdT_V+xD*vD*self.d2AnhdVdT
+            self.d3tDdV3_T = d3xDdV3*vD*self.Anh+3*d2xDdV2*dvDdV*self.Anh+3*d2xDdV2*vD*self.dAnhdV_T+3*dxDdV*d2vDdV2*self.Anh+6*dxDdV*dvDdV*self.dAnhdV_T+3*dxDdV*vD*self.d2AnhdV2_T+xD*d3vDdV3*self.Anh+3*xD*d2vDdV2*self.dAnhdV_T+3*xD*dvDdV*self.d2AnhdV2_T+xD*vD*self.d3AnhdV3_T
+            self.d3tDdV2dT = d2xDdV2*vD*self.dAnhdT_V+2*dxDdV*dvDdV*self.dAnhdT_V+2*dxDdV*vD*self.d2AnhdVdT+xD*d2vDdV2*self.dAnhdT_V+2*xD*dvDdV*self.d2AnhdVdT+xD*vD*self.d3AnhdV2dT
+            self.d3tDdVdT2 = dxDdV*vD*self.d2AnhdT2_V+xD*dvDdV*self.d2AnhdT2_V+xD*vD*self.d3AnhdVdT2
+            self.d4tDdV4_T = 6*d2xDdV2*d2vDdV2*self.Anh+12*d2xDdV2*dvDdV*self.dAnhdV_T+6*d2xDdV2*vD*self.d2AnhdV2_T+4*dxDdV*d3vDdV3*self.Anh+12*dxDdV*d2vDdV2*self.dAnhdV_T+12*dxDdV*dvDdV*self.d2AnhdV2_T+4*dxDdV*vD*self.d3AnhdV3_T+xD*d4vDdV4*self.Anh+4*xD*d3vDdV3*self.dAnhdV_T+6*xD*d2vDdV2*self.d2AnhdV2_T+4*xD*dvDdV*self.d3AnhdV3_T+xD*vD*self.d4AnhdV4_T+d4xDdV4*vD*self.Anh+4*d3xDdV3*dvDdV*self.Anh+4*d3xDdV3*vD*self.dAnhdV_T
+        else:
+            # theta_D = tD_DM * Anh(T, V) * DM(V), tD_DM constant: Leibniz rule for Anh*DM
+            A, A_V, A_VV, A_VVV, A_VVVV = self.Anh, self.dAnhdV_T, self.d2AnhdV2_T, self.d3AnhdV3_T, self.d4AnhdV4_T
+            A_T, A_TT, A_VT, A_VVT, A_VTT = self.dAnhdT_V, self.d2AnhdT2_V, self.d2AnhdVdT, self.d3AnhdV2dT, self.d3AnhdVdT2
+            c = tD_DM
+            self.tD = c*A*DM
+            self.dtDdV_T = c*(A_V*DM + A*dDMdV)
+            self.dtDdT_V = c*A_T*DM
+            self.d2tDdV2_T = c*(A_VV*DM + 2*A_V*dDMdV + A*d2DMdV2)
+            self.d2tDdT2_V = c*A_TT*DM
+            self.d2tDdVdT = c*(A_VT*DM + A_T*dDMdV)
+            self.d3tDdV3_T = c*(A_VVV*DM + 3*A_VV*dDMdV + 3*A_V*d2DMdV2 + A*d3DMdV3)
+            self.d3tDdV2dT = c*(A_VVT*DM + 2*A_VT*dDMdV + A_T*d2DMdV2)
+            self.d3tDdVdT2 = c*(A_VTT*DM + A_TT*dDMdV)
+            self.d4tDdV4_T = c*(A_VVVV*DM + 4*A_VVV*dDMdV + 6*A_VV*d2DMdV2 + 4*A_V*d3DMdV3 + A*d4DMdV4)
 
-    def set_theta_4minF(self, T: float, V: float) -> None:
-        """
-        Calculates the Debye Temperature and its derivatives.
-
-        :param float T: Temperature.
-        :param float V: Volume.
-        """
-        kv = self.kv
-        m = self.m
-        #
-        b_DM = self.b_DM
-        a_DM = self.a_DM
-        V0_DM = self.V0_DM
-        lam = self.lam
-        #
-        dE0dV_T = self.EOS.dE0dV_T(V)
-        d2E0dV2_T = self.EOS.d2E0dV2_T(V)
-        d2E0dV2_T_DM = self.EOS.d2E0dV2_T(V0_DM)
-        # d3E0dV3_T = self.EOS.d3E0dV3_T(V)
-        # d4E0dV4_T = self.EOS.d4E0dV4_T(V)
-        # d5E0dV5_T = self.EOS.d5E0dV5_T(V)
-        # d6E0dV6_T = self.EOS.d6E0dV6_T(V)
-        #
-        B0_DM = V0_DM * d2E0dV2_T_DM
-        #
-        P0 = - dE0dV_T
-        dP0dV = - d2E0dV2_T
-        dP0dV_DM = - d2E0dV2_T_DM
-        # d2P0dV2 = - d3E0dV3_T
-        # d3P0dV3 = - d4E0dV4_T
-        # d4P0dV4 = - d5E0dV5_T
-        # d5P0dV5 = - d6E0dV6_T
-        #
-        vDPrm_DM = - dP0dV_DM/(r*m)
-        vDsqrt_DM = np.sqrt(vDPrm_DM)
-        vD_DM = kv*V0_DM*vDsqrt_DM
-        xD = self.xDcte*(1/V)**(1/3.)/kB
-        xD_DM = self.xDcte*(1/V0_DM)**(1/3.)/kB
-        #
-        B2 = (-V*dP0dV-(2*lam*(1/3)+2/3)*P0)/(V*m*r)
-        # dB2dV = ((4*lam**2+14*lam+10)*P0-9*V*(-2*m*r*B2*(lam+1)*(1/3)+V*d2P0dV2))/(9*V**2*m*r)
-        # d2B2dV2 = ((-8*lam**3-60*lam**2-132*lam-80)*P0-27*V*(4*m*r*B2*(lam+4)*(lam+1)*(1/9)+V*(-2*m*r*(lam+1)*dB2dV*(1/3)+V*d3P0dV3)))/(27*V**3*m*r)
-        # d3B2dV3 = ((16*lam**4+208*lam**3+924*lam**2+1612*lam+880)*P0-81*V*(-8*r*(lam+4)*(lam+1)*(lam+11/2)*m*B2*(1/27)+V*(4*r*(lam+1)*(lam+11/2)*m*dB2dV*(1/9)+(-2*m*r*d2B2dV2*(lam+1)*(1/3)+V*d4P0dV4)*V)))/(81*V**4*m*r)
-        # d4B2dV4 = ((32*lam**5+256*lam**4-232*lam**3-6016*lam**2-14360*lam-8800)*P0-243*V*(-16*r*(lam-5)*(lam+4)*(lam+1)*(lam+11/2)*m*B2*(1/81)+V*(8*r*(lam-5)*(lam+1)*(lam+11/2)*m*dB2dV*(1/27)+(-4*m*r*(lam+1)*(lam-5)*d2B2dV2*(1/9)+V*(2*m*r*(lam+1)*d3B2dV3*(1/3)+V*d5P0dV5))*V)))/(243*V**5*m*r)
-        #
-        vD = V*kv*np.sqrt(B2)
-        # dvDdV = (V**3*kv**2*(dB2dV)+2*vD**2)/(2*V*vD)
-        # d2vDdV2 = (V**4*kv**2*(d2B2dV2)-2*dvDdV**2*V**2+8*dvDdV*V*vD-6*vD**2)/(2*V**2*vD)
-        # d3vDdV3 = (V**5*kv**2*(d3B2dV3)-(6*(2*vD+V*(V*d2vDdV2-2*dvDdV)))*(dvDdV*V-2*vD))/(2*vD*V**3)
-        # d4vDdV4 = ((d4B2dV4)*kv**2*V**6-120*vD**2+(16*V**3*d3vDdV3-72*d2vDdV2*V**2+192*dvDdV*V)*vD-72*dvDdV**2*V**2-8*V**3*(V*d3vDdV3-6*d2vDdV2)*dvDdV-6*d2vDdV2**2*V**4)/(2*V**4*vD)
-        # dxDdV = -self.xDcte/(3*kB*V**(4/3.))
-        # d2xDdV2 = 4*self.xDcte/(9*kB*V**(7/3.))
-        # d3xDdV3 = -28*self.xDcte/(27*V**(10/3)*kB)
-        # d4xDdV4 = 280*self.xDcte/(81*V**(13/3)*kB)
-        #
-        DM = (V*d2E0dV2_T/B0_DM)**b_DM/(V/V0_DM)**a_DM
-        # self.DM = DM
-        # dDMdV = (V*d2E0dV2_T/B0_DM)**b_DM*b_DM*(d2E0dV2_T/B0_DM+V*(d3E0dV3_T)/B0_DM)*B0_DM/(V*d2E0dV2_T*(V/V0_DM)**a_DM)-(V*d2E0dV2_T/B0_DM)**b_DM*a_DM/((V/V0_DM)**a_DM*V)
-        # d2DMdV2 = V0_DM**a_DM*B0_DM**(-b_DM)*(-2*(d3E0dV3_T)*b_DM*d2E0dV2_T**(b_DM-1)*(-b_DM+a_DM)*V**(b_DM-1-a_DM)+d2E0dV2_T**b_DM*(-b_DM+1+a_DM)*(-b_DM+a_DM)*V**(b_DM-2-a_DM)+V**(b_DM-a_DM)*(d2E0dV2_T**(b_DM-1)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-2)*(b_DM-1))*b_DM)
-        # d3DMdV3 = -V0_DM**a_DM*B0_DM**(-b_DM)*(d2E0dV2_T**b_DM*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*(-b_DM+a_DM)*V**(b_DM-a_DM-3)-3*b_DM*(-(d2E0dV2_T**(b_DM-1)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-2)*(b_DM-1))*(-b_DM+a_DM)*V**(b_DM-1-a_DM)+(d3E0dV3_T)*d2E0dV2_T**(b_DM-1)*(-b_DM+1+a_DM)*(-b_DM+a_DM)*V**(b_DM-2-a_DM)+(1/3)*V**(b_DM-a_DM)*(d2E0dV2_T**(b_DM-1)*(d5E0dV5_T)+(d3E0dV3_T)*(3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-3)*(b_DM-2))*(b_DM-1))))
-        # d4DMdV4 = (d2E0dV2_T**b_DM*(-b_DM+a_DM)*(-b_DM+a_DM+3)*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*V**(b_DM-4-a_DM)+6*b_DM*((d2E0dV2_T**(b_DM-1)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-2)*(b_DM-1))*(-b_DM+a_DM)*(-b_DM+1+a_DM)*V**(b_DM-2-a_DM)-(1/3)*(2*(d2E0dV2_T**(b_DM-1)*(d5E0dV5_T)+(d3E0dV3_T)*(3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-3)*(b_DM-2))*(b_DM-1)))*(-b_DM+a_DM)*V**(b_DM-1-a_DM)-2*(d3E0dV3_T)*d2E0dV2_T**(b_DM-1)*(-b_DM+2+a_DM)*(-b_DM+1+a_DM)*(- b_DM +a_DM)*V**(b_DM-a_DM-3)*(1/3)+(1/6)*(d2E0dV2_T**(b_DM-1)*(d6E0dV6_T)+(4*(d3E0dV3_T)*d2E0dV2_T**(b_DM-2)*(d5E0dV5_T)+3*d2E0dV2_T**(b_DM-2)*(d4E0dV4_T)**2+(6*d2E0dV2_T**(b_DM-3)*(d4E0dV4_T)+(d3E0dV3_T)**2*d2E0dV2_T**(b_DM-4)*(b_DM-3))*(b_DM-2)*(d3E0dV3_T)**2)*(b_DM-1))*V**(b_DM-a_DM)))*V0_DM**a_DM*B0_DM**(-b_DM)
-
-        tD_DM = xD_DM * vD_DM
-        self.tD = xD*vD*self.Anh if 'jj' in self.mode else tD_DM*self.Anh*DM
-        # self.dtDdV_T = 'X'#dxDdV*vD*self.Anh+xD*dvDdV*self.Anh+xD*vD*self.dAnhdV_T if 'jj' in self.mode else tD_DM*self.Anh*dDMdV
-        # self.dtDdT_V = 'X'#xD*vD*self.dAnhdT_V if 'jj' in self.mode else 0
-        # self.d2tDdV2_T ='X'#d2xDdV2*vD*self.Anh+2*dxDdV*dvDdV*self.Anh+2*dxDdV*vD*self.dAnhdV_T+xD*d2vDdV2*self.Anh+2*xD*dvDdV*self.dAnhdV_T+xD*vD*self.d2AnhdV2_T if 'jj' in self.mode else tD_DM*self.Anh*d2DMdV2
-        # self.d2tDdT2_V = 'X'#xD*vD*self.d2AnhdT2_V if 'jj' in self.mode else 0
-        # self.d2tDdVdT = 'X'#dxDdV*vD*self.dAnhdT_V+xD*dvDdV*self.dAnhdT_V+xD*vD*self.d2AnhdVdT if 'jj' in self.mode else 0
-        # self.d3tDdV3_T = 'X'#d3xDdV3*vD*self.Anh+3*d2xDdV2*dvDdV*self.Anh+3*d2xDdV2*vD*self.dAnhdV_T+3*dxDdV*d2vDdV2*self.Anh+6*dxDdV*dvDdV*self.dAnhdV_T+3*dxDdV*vD*self.d2AnhdV2_T+xD*d3vDdV3*self.Anh+3*xD*d2vDdV2*self.dAnhdV_T+3*xD*dvDdV*self.d2AnhdV2_T+xD*vD*self.d3AnhdV3_T  if 'jj' in self.mode else tD_DM*self.Anh*d3DMdV3
-        # self.d3tDdV2dT ='X'#d2xDdV2*vD*self.dAnhdT_V+2*dxDdV*dvDdV*self.dAnhdT_V+2*dxDdV*vD*self.d2AnhdVdT+xD*d2vDdV2*self.dAnhdT_V+2*xD*dvDdV*self.d2AnhdVdT+xD*vD*self.d3AnhdV2dT  if 'jj' in self.mode else 0
-        # self.d3tDdVdT2 = 'X'#dxDdV*vD*self.d2AnhdT2_V+xD*dvDdV*self.d2AnhdT2_V+xD*vD*self.d3AnhdVdT2  if 'jj' in self.mode else 0
-        # self.d4tDdV4_T = 'X'#6*d2xDdV2*d2vDdV2*self.Anh+12*d2xDdV2*dvDdV*self.dAnhdV_T+6*d2xDdV2*vD*self.d2AnhdV2_T+4*dxDdV*d3vDdV3*self.Anh+12*dxDdV*d2vDdV2*self.dAnhdV_T+12*dxDdV*dvDdV*self.d2AnhdV2_T+4*dxDdV*vD*self.d3AnhdV3_T+xD*d4vDdV4*self.Anh+4*xD*d3vDdV3*self.dAnhdV_T+6*xD*d2vDdV2*self.d2AnhdV2_T+4*xD*dvDdV*self.d3AnhdV3_T+xD*vD*self.d4AnhdV4_T+d4xDdV4*vD*self.Anh+4*d3xDdV3*dvDdV*self.Anh+4*d3xDdV3*vD*self.dAnhdV_T  if 'jj' in self.mode else tD_DM*self.Anh*d4DMdV4
-
-
-
-    def F(self, T: float, V: float) -> float:
+    def _F_1(self, T: float, V: float) -> float:
         """
         Vibration Helmholtz free energy.
 
@@ -294,13 +241,13 @@ class Vibrational:
 
         x = self.tD/T
         D3 = D_3(x)
-        # print(tD/T, tD, T)
-        if type(V) is not np.ndarray:
-            if x < 0.04:
-                return 1e10
-        return 3*NAv*kB*(self.tD*3/8+T*np.log(1-np.exp(-x))-D3*T/3)
+        # same value for scalar and array input (the scalar path used to return 1e10 for x < 0.04, finding 4.7);
+        # ln(1 - e^-x) = ln(-expm1(-x)), accurate for small and large x
+        with np.errstate(under='ignore'):
+            lnq = np.log(-np.expm1(-x))
+        return 3*NAv*kB*(self.tD*3/8+T*lnq-D3*T/3)
 
-    def dFdV_T(self, T: float, V: float) -> float:
+    def _dFdV_T_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -315,7 +262,7 @@ class Vibrational:
         dD3 = dD_3dx(x, D3)
         return 3*NAv*kB*(3*(self.dtDdV_T)*(1/8)+(self.dtDdV_T)*np.exp(-x)/(1-np.exp(-x))-(1/3)*dD3*(self.dtDdV_T))
 
-    def dFdT_V(self, T: float, V: float) -> float:
+    def _dFdT_V_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -327,18 +274,15 @@ class Vibrational:
         r = self.r
 
         x = self.tD / T
-        ixs = np.where(x >= 653)
-        # ixs = x[x >= 653]  # This gives the values, not indices
-        if len(ixs[0]) > 0:
-            if min(x[ixs]) >= 653:
-                for i in ixs:
-                    x[i] = 653
-        ex = np.exp(x)
+        # 1/(e^x - 1) written with e^-x: no overflow for large x, so no clamp is needed (finding 4.5b)
+        with np.errstate(under='ignore'):
+            em = np.exp(-x)
+        q = em / (1 - em)
         D3 = D_3(x)
         dD3dx = dD_3dx(x, D3)
-        return 9*NAv*kB*(self.dtDdT_V)*(1/8) + 3*kB*r*NAv*np.log(1-np.exp(-x)) + 3*r*NAv*kB*(self.dtDdT_V)/(ex*(1-1/ex)) - 3*r*NAv*kB*self.tD/(T*ex*(1-1/ex)) - r*NAv*kB*dD3dx*(self.dtDdT_V) + r*NAv*kB*dD3dx*self.tD/T - r*NAv*kB*D3
+        return 9*NAv*kB*(self.dtDdT_V)*(1/8) + 3*kB*NAv*np.log(-np.expm1(-x)) + 3*NAv*kB*(self.dtDdT_V)*q - 3*NAv*kB*self.tD/T*q - NAv*kB*dD3dx*(self.dtDdT_V) + NAv*kB*dD3dx*self.tD/T - NAv*kB*D3
 
-    def d2FdT2_V(self, T: float, V: float) -> float:
+    def _d2FdT2_V_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -349,21 +293,16 @@ class Vibrational:
         """
         r = self.r
         x = self.tD / T
-        ixs = np.where(x >= 653)
-        # ixs = x[x >= 653]  # This gives the values, not indices
-        if len(ixs[0]) > 0:
-            if min(x[ixs]) >= 653:
-                for i in ixs:
-                    x[i] = 653
-        ex = np.exp(x)
+        # numerator and denominator divided by (e^x - 1); 1/(e^x - 1) written with e^-x (no clamp, finding 4.5b)
+        with np.errstate(under='ignore'):
+            em = np.exp(-x)
+        q = em / (1 - em)
         D3 = D_3(x)
-        return 3  * NAv * ((ex - 1) * T * (
-                    T ** 2 * self.d2tDdT2_V * self.tD - 4 * (self.dtDdT_V * T - self.tD) ** 2) * D3 + 3 * self.tD * (
-                             self.d2tDdT2_V * self.tD * ex * T ** 2 - T ** 2 * self.d2tDdT2_V * self.tD + 8 * (
-                              self.dtDdT_V * T - self.tD) ** 2) * (1 / 8)) * kB / (
-                               self.tD ** 2 * (ex - 1) * T ** 2)
+        return 3 * NAv * (T * (T ** 2 * self.d2tDdT2_V * self.tD - 4 * (self.dtDdT_V * T - self.tD) ** 2) * D3
+                          + 3 * self.tD * (self.d2tDdT2_V * self.tD * T ** 2 + 8 * (self.dtDdT_V * T - self.tD) ** 2 * q) * (1 / 8)) * kB / (
+                               self.tD ** 2 * T ** 2)
 
-    def d2FdV2_T(self, T: float, V: float) -> float:
+    def _d2FdV2_T_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -380,7 +319,7 @@ class Vibrational:
                     8 * self.dtDdV_T ** 2 * self.tD * dD3dx - 8 * self.dtDdV_T ** 2 * D3 * T + 8 * self.d2tDdV2_T * D3 * self.tD * T + 3 * self.d2tDdV2_T * self.tD ** 2) / (
                            8 * self.tD ** 2)
 
-    def d3FdV3_T(self, T: float, V: float) -> float:
+    def _d3FdV3_T_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -399,7 +338,7 @@ class Vibrational:
                                     3 * self.dtDdV_T * self.d2tDdV2_T * T * self.tD ** 2 - 2 * self.dtDdV_T ** 3 * T * self.tD) * dD3dx + d2D3dx2 * self.dtDdV_T ** 3 * self.tD ** 2 + 3 * self.d3tDdV3_T * self.tD ** 3 * T * (
                                     1 / 8)) * kB * NAv / (T * self.tD ** 3)
 
-    def d4FdV4_T(self, T: float, V: float) -> float:
+    def _d4FdV4_T_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -428,7 +367,7 @@ class Vibrational:
                                                                                                                       1 / 3) + self.d4tDdV4_T * self.tD * T ** 2))) * self.tD)) * kB * NAv / (
                            T ** 2 * self.tD ** 4)
 
-    def d2FdVdT(self, T: float, V: float) -> float:
+    def _d2FdVdT_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -442,11 +381,11 @@ class Vibrational:
         D3 = D_3(x)
         dD3dx = dD_3dx(x, D3)
         return 3  * (dD3dx * (self.dtDdT_V / T - self.tD / T ** 2) * T + D3 + 3 * self.dtDdT_V * (
-                    1 / 8)) * kB * self.dtDdV_T * NAv / self.tD + 3 * r * (
-                           D3 * T + 3 * self.tD * (1 / 8)) * kB * self.d2tDdVdT * NAv / self.tD - 3 * r * (
+                    1 / 8)) * kB * self.dtDdV_T * NAv / self.tD + 3 * (
+                           D3 * T + 3 * self.tD * (1 / 8)) * kB * self.d2tDdVdT * NAv / self.tD - 3 * (
                            D3 * T + 3 * self.tD * (1 / 8)) * kB * self.dtDdV_T * NAv * self.dtDdT_V / self.tD ** 2
 
-    def d3FdV2dT(self, T: float, V: float) -> float:
+    def _d3FdV2dT_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -469,7 +408,7 @@ class Vibrational:
                                                      1 / 3) + self.tD * self.d3tDdV2dT * T ** 2) * (
                                                  1 / 8))) * kB * NAv / (T ** 2 * self.tD ** 3)
 
-    def d3FdVdT2(self, T: float, V: float) -> float:
+    def _d3FdVdT2_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -489,5 +428,47 @@ class Vibrational:
                                                                                           1 / 2) * self.d2tDdT2_V * T + self.dtDdT_V) * self.dtDdV_T + self.dtDdT_V * self.d2tDdVdT * T) * self.tD - self.dtDdT_V ** 2 * self.dtDdV_T * T) * dD3dx + (
                                               1 / 16) * (3 * (
                                       8 * self.dtDdV_T * (T * self.dtDdT_V - self.tD) ** 2 * d2D3dx2 * (
-                                          1 / 3) + self.tD * self.d3tDdVdT2 * T ** 3)) * self.tD) * self.tD)) * r * kB * NAv / (
-                           T ** 3 * self.tD ** 3)/self.r
+                                          1 / 3) + self.tD * self.d3tDdVdT2 * T ** 3)) * self.tD) * self.tD)) * kB * NAv / (
+                           T ** 3 * self.tD ** 3)
+
+    # Public methods: r times the r = 1 expressions above, so that every derivative carries the same
+    # factor r as the function itself (review decision D5).
+    def F(self, T: float, V: float) -> float:
+        """F of F_vib (r times the r = 1 value)."""
+        return self.r * self._F_1(T, V)
+
+    def dFdV_T(self, T: float, V: float) -> float:
+        """(dF/dV)_T of F_vib (r times the r = 1 value)."""
+        return self.r * self._dFdV_T_1(T, V)
+
+    def dFdT_V(self, T: float, V: float) -> float:
+        """(dF/dT)_V of F_vib (r times the r = 1 value)."""
+        return self.r * self._dFdT_V_1(T, V)
+
+    def d2FdT2_V(self, T: float, V: float) -> float:
+        """(d2F/dT2)_V of F_vib (r times the r = 1 value)."""
+        return self.r * self._d2FdT2_V_1(T, V)
+
+    def d2FdV2_T(self, T: float, V: float) -> float:
+        """(d2F/dV2)_T of F_vib (r times the r = 1 value)."""
+        return self.r * self._d2FdV2_T_1(T, V)
+
+    def d3FdV3_T(self, T: float, V: float) -> float:
+        """(d3F/dV3)_T of F_vib (r times the r = 1 value)."""
+        return self.r * self._d3FdV3_T_1(T, V)
+
+    def d4FdV4_T(self, T: float, V: float) -> float:
+        """(d4F/dV4)_T of F_vib (r times the r = 1 value)."""
+        return self.r * self._d4FdV4_T_1(T, V)
+
+    def d2FdVdT(self, T: float, V: float) -> float:
+        """d2F/dVdT of F_vib (r times the r = 1 value)."""
+        return self.r * self._d2FdVdT_1(T, V)
+
+    def d3FdV2dT(self, T: float, V: float) -> float:
+        """d3F/dV2dT of F_vib (r times the r = 1 value)."""
+        return self.r * self._d3FdV2dT_1(T, V)
+
+    def d3FdVdT2(self, T: float, V: float) -> float:
+        """d3F/dVdT2 of F_vib (r times the r = 1 value)."""
+        return self.r * self._d3FdVdT2_1(T, V)

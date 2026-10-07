@@ -28,7 +28,8 @@ class FminTestCase(unittest.TestCase):
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_BM.min_G(T,self.p_EOS[1],P=0)
 
-        self.assertAlmostEqual(35.165345471248784, ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'],places=2)
+        # B12: exact equilibrium volume (was 35.165345471248784 with fmin)
+        self.assertAlmostEqual(35.1653622131, ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'],places=4)
 
     def test_Free_energy_minimization_Al_fcc_RV(self):
         """ Test V(T) calculation by free energy minimization. RV."""
@@ -42,7 +43,8 @@ class FminTestCase(unittest.TestCase):
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_BM.min_G(T,self.p_EOS[1],P=0)
 
-        self.assertAlmostEqual(37.96026889055287 , ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'],places=2)
+        # B12: exact equilibrium volume (was 37.96026889055287 with fmin)
+        self.assertAlmostEqual(37.9669228322, ndeb_BM.eval_props(T[-1],V[-1],P=0)['Cp'],places=4)
 
     def test_Free_energy_minimization_Al_fcc_Morse(self):
         """ Test V(T) calculation by free energy minimization. Morse."""
@@ -65,7 +67,8 @@ class FminTestCase(unittest.TestCase):
         T = gen_Ts(self.T_initial, self.T_final, self.number_Temps)
         T, V = ndeb_Morse.min_G(T, self.p_EOS[1],P=0)
 
-        self.assertAlmostEqual(32.15627134521426, ndeb_Morse.eval_props(T[-1],V[-1],P=0)['Cp'],places=2)
+        # B12: exact equilibrium volume (was 32.15627134521426 with fmin)
+        self.assertAlmostEqual(32.1563643826, ndeb_Morse.eval_props(T[-1],V[-1],P=0)['Cp'],places=4)
 
     def test_Free_energy_minimization_Al_fcc_EAM(self):
         """ Test V(T) calculation by free energy minimization. EAM."""
@@ -88,7 +91,12 @@ class FminTestCase(unittest.TestCase):
         T, V = ndeb_Morse.min_G(T,self.p_EOS[1],P=0)
         # print(T, V)
 
-        self.assertAlmostEqual(32.905444673426054 , ndeb_Morse.eval_props(T[-1], V[-1],P=0)['Cp'],places=2)
+        # B1: updated for N_A = 6.02214076e23 in the EAM volume conversion (was 32.905444673426054 with 6.02e23)
+        # B12: exact equilibrium volume (was 32.912184579856515 with fmin)
+        # D-4: EOS.V0 is now the true minimum of the EAM E0 (fitEOS with fit=False and one dummy volume used to
+        # return the dummy volume itself); only the vacancy term, which uses V0 and B0 = V0 E''(V0), changes
+        # (32.9125590567 before; identical with vacancies off).
+        self.assertAlmostEqual(32.8266473030, ndeb_Morse.eval_props(T[-1], V[-1],P=0)['Cp'],places=4)
 
 
 if __name__=='__main__':

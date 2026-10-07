@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 # from scipy.optimize import fmin
 from scipy import optimize
 
@@ -12,9 +13,7 @@ from debyetools.XS import Xs
 
 from typing import Tuple
 
-hbar = 0.1054571800e-33
-NAv = 0.6022140857e24
-kB = 0.138064852e-22
+from debyetools.constants import hbar, NAv, kB
 
 
 class nDeb:
@@ -24,14 +23,34 @@ class nDeb:
     the method that implements an original Debye formalism for the calculation of
     the thermodynamic properties.
 
-    :param float nu: Poisson's ratio.
-    :param float m: mass in Kg/mol-at
-    :param np.ndarray p_intanh: Intrinsic anharmonicity parameters: a0, m0, V0.
-    :param object EOS: Equation of state instance.
-    :param np.ndarray p_electronic: Electronic contribution parameters.
-    :param np.ndarray p_defects: Mono-vacancies defects contribution parameters: Evac00,Svac00,Tm,a,P2,V0.
-    :param np.ndarray p_anh: Excess contribution parameters.
-    :param str mode: Type of approximation of the Debye temperature (see vibrational contribution).
+    All quantities are SI per mole of atoms: T in K, V in m^3/mol-at, energies in J/mol-at, P and moduli in Pa,
+    mass in kg/mol-at.
+
+    F(T, V) = E0(V) + F_vib + F_el + F_def + F_anh + F_xs.
+
+    :param float nu: Poisson's ratio (sets the sound-velocity factor of the Debye temperature).
+    :param float m: Mean atomic mass in kg/mol-at.
+    :param np.ndarray p_intanh: Intrinsic anharmonicity (a0, m0): theta_D(T, V) = theta_D(V) exp(a(V) T / 2),
+        a(V) = a0 (V/V0)^m0, a0 in 1/K, m0 dimensionless; V0 is taken from the EOS (see intAnharmonicity).
+    :param object EOS: Equation of state instance (potentials.BM, RV, MG, TB, MU, PT, MP, EAM). Its V0 and
+        B0 = V0 E0''(V0) are also used by the vacancy and intrinsic-anharmonicity terms.
+    :param np.ndarray p_electronic: Electronic contribution parameters (q0, q1, q2, q3), see electronic.Electronic.
+    :param np.ndarray p_defects: Mono-vacancy parameters (Evac00, Svac00, Tm, a): formation energy
+        E_vac = Evac00 k_B Tm and entropy S_vac = Svac00 k_B (Evac00, Svac00 dimensionless), Tm in K, a
+        dimensionless coefficient of the volume dependence of E_vac (see defects.Defects).
+    :param np.ndarray p_anh: Explicit anharmonicity (s0, s1, s2): F_anh = -A(V) T^2 / 2,
+        A(V) = s0 + s1 V + s2 V^2 in J/mol-at/K^2 (see anharmonicity.Anharmonicity).
+    :param str mode: Debye-temperature model: 'jjsl', 'jjdm', 'jjfv', 'Sl', 'DM', 'VZ' or 'mfv'
+        (see vibrational.Vibrational for definitions).
+    :param tuple xsparams: Excess term (xs0, ..., xs5): F_xs = xs0 + xs1 T + xs2 T^2 + xs3 T^3 + xs4 T ln T
+        + xs5 T^-2 in J/mol-at (see XS.Xs). Each coefficient is a number (V-independent) or a sequence
+        of polynomial coefficients in V (lowest order first, V in m^3/mol-at) for a V-dependent A_i(V).
+    :param float r: Number of atoms in the chemical formula (Lu et al., Acta Mater. 55 (2007) 1215). Keep the
+        default r = 1: with the per-mol-atom inputs above, r = 1 is exact (r cancels from theta_D, F_vib and F_def)
+        and every output is per mol-atom. r != 1 is only consistent when V, E0 and the electronic DOS are given
+        per mole of formula units; then the extensive outputs are per mole of formula units (r times the per-atom
+        values; F_el is not scaled by r). A UserWarning is issued when r != 1.
+    :param str units: Deprecated and ignored. All quantities are SI per mol-atom (J/mol, m^3/mol, kg/mol, Pa).
     """
 
     def __init__(self, nu: float, m: float, p_intanh: np.ndarray, EOS: object, p_electronic: np.ndarray, p_defects: np.ndarray, p_anh: np.ndarray, *args: object, units: str = 'J/mol',
@@ -44,6 +63,14 @@ class nDeb:
 
         xs0, xs1, xs2, xs3, xs4, xs5 = xsparams
 
+        if units != 'J/mol':
+            warnings.warn("nDeb: the 'units' argument is ignored (deprecated); inputs must be SI per mol-atom.",
+                          DeprecationWarning, stacklevel=2)
+        if r != 1:
+            warnings.warn("nDeb: r = %s != 1. All debyetools inputs and outputs are per mol-atom, for which r must "
+                          "be 1. r != 1 requires V, E0 and the electronic DOS per mole of formula units and gives "
+                          "extensive results per mole of formula units (the electronic term is not scaled by r)." % r,
+                          UserWarning, stacklevel=2)
         self.nu, self.r, self.m = nu, r, m
         self.mode = mode
 
@@ -53,7 +80,7 @@ class nDeb:
         self.anh = Anharmonicity(s0, s1, s2)
         self.intanh = intAnharmonicity(a0, m0, EOS.V0)
         self.el = Electronic(q0, q1, q2, q3)
-        self.deff = Defects(Evac00, Svac00, Tm, a, EOS.V0 * EOS.d2E0dV2_T(EOS.V0), EOS.V0)
+        self.deff = Defects(Evac00, Svac00, Tm, a, EOS.V0 * EOS.d2E0dV2_T(EOS.V0), EOS.V0, r=r)
 
         self.EOS = EOS  # getattr(pots,EOS_name)(*args,units=units, parameters = p_EOS)
         # self.EOS.pEOS = p_EOS
@@ -75,8 +102,6 @@ class nDeb:
         :return: Free energy.
         :rtype: float
         """
-        # self.vib.set_int_anh_4minF(T, V)
-        # self.vib.set_theta_4minF(T,V)
         self.vib.set_int_anh(T, V)
         self.vib.set_theta(T, V)
 
@@ -89,53 +114,135 @@ class nDeb:
         F = E0 + Fvib + Fel + Fdef + Fa + Fxs
         return F+P*V#(dFdV_T + P)**2
 
+    def _dFdV_d2FdV2(self, T: float, V: float) -> Tuple[float, float, float]:
+        """
+        Total (dF/dV)_T and (d2F/dV2)_T at (T, V), summed over the same contributions as eval_props,
+        and the Debye temperature.
+
+        :param float T: Temperature.
+        :param float V: Volume.
+        :return: dF/dV, d2F/dV2, theta_D
+        :rtype: Tuple[float, float, float]
+        """
+        self.vib.set_int_anh(T, V)
+        self.vib.set_theta(T, V)
+        dFdV = (self.EOS.dE0dV_T(V) + self.vib.dFdV_T(T, V) + self.el.dFdV_T(T, V) + self.deff.dFdV_T(T, V)
+                + self.anh.dFdV_T(T, V) + self.xs.dFdV_T(T, V))
+        d2FdV2 = (self.EOS.d2E0dV2_T(V) + self.vib.d2FdV2_T(T, V) + self.el.d2FdV2_T(T, V) + self.deff.d2FdV2_T(T, V)
+                  + self.anh.d2FdV2_T(T, V) + self.xs.d2FdV2_T(T, V))
+        return float(np.real(dFdV)), float(np.real(d2FdV2)), float(np.real(self.vib.tD))
+
+    def _equilibrium_V(self, T: float, V_guess: float, P: float, max_steps: int = 200) -> Tuple[float, str]:
+        """
+        Stable root of g(V) = (dF/dV)_T + P = 0 on the branch connected to V_guess.
+
+        On a mechanically stable branch d2F/dV2 > 0, so g increases with V. Starting at V_guess the
+        volume is stepped (step doubled after each accepted step, halved when a point is not
+        stable) in the direction that reduces |g| until g changes sign; the root is then found with
+        brentq. The minimum of G = F + PV on that branch is the same point.
+
+        :param float T: Temperature.
+        :param float V_guess: Starting volume (previous temperature or initial guess).
+        :param float P: Pressure.
+        :param int max_steps: Maximum number of bracketing steps.
+        :return: volume and status ('ok', 'invalid start', 'unstable', 'no bracket', 'not stable at root').
+        :rtype: Tuple[float, str]
+        """
+        def ev(V):
+            with np.errstate(all='ignore'):
+                g, h, tD = self._dFdV_d2FdV2(T, V)
+            ok = np.isfinite(g) and np.isfinite(h) and np.isfinite(tD) and tD > 0 and h > 0
+            return g + P, ok
+
+        Va = float(V_guess)
+        ga, ok = ev(Va)
+        if not ok:
+            return np.nan, 'invalid start'
+        if ga == 0:
+            return Va, 'ok'
+        direction = -1. if ga > 0 else 1.
+        step = 1e-3
+        for _ in range(max_steps):
+            Vb = Va * (1. + direction * step)
+            gb, ok = ev(Vb)
+            if not ok:
+                step *= 0.5
+                if step < 1e-12:
+                    return np.nan, 'unstable'
+                continue
+            if np.sign(gb) != np.sign(ga):
+                lo, hi = (Va, Vb) if Va < Vb else (Vb, Va)
+                V = optimize.brentq(lambda v: ev(v)[0], lo, hi, xtol=1e-15 * lo, rtol=4 * np.finfo(float).eps)
+                return (V, 'ok') if ev(V)[1] else (np.nan, 'not stable at root')
+            Va, ga = Vb, gb
+            step = min(2 * step, 0.2)
+        return np.nan, 'no bracket'
+
     def min_G(self, T: np.ndarray, initial_V: float, P: float) -> Tuple[np.ndarray,np.ndarray]:
         """
-        Procedure for the calculation of the volume as function of temperature.
+        Equilibrium volume as a function of temperature at pressure P.
+
+        For each temperature the volume is the stable root of P = -(dF/dV)_T (equivalently the
+        minimum of G = F + PV) on the branch continued from the previous temperature (from
+        initial_V for the first one). The derivatives are the analytic ones used by eval_props, so
+        eval_props(T, V)['P'] equals P to solver precision.
+
+        If no mechanically stable solution exists at some temperature (Kt <= 0, theta_D not finite
+        or <= 0, e.g. beyond the EOS spinodal), the calculation stops there: T and V are returned up
+        to the last stable temperature and a UserWarning is issued. Per-temperature details are
+        stored in self.min_G_info (keys 'T', 'V', 'P_residual', 'status').
 
         :param list_of_floats T: Temperature.
-        :param float initial_V: initial guess.
+        :param float initial_V: initial guess (if it is not mechanically stable, EOS.V0 is used).
         :param float P: Pressure.
         :return: Temperature and Volume
         :rtype: Tuple[np.ndarray,np.ndarray]
 
         """
+        T = np.asarray(T, dtype=float)
+        n = len(T)
+        Vs = np.full(n, np.nan)
+        Pres = np.full(n, np.nan)
+        status = ['not computed'] * n
 
-        V0i = initial_V
-        V = []
-        for Ti in T[0:1]:
-            f2min = lambda Vi: self.f2min(Ti, Vi, P)
-            V0i = optimize.fmin(f2min, x0=V0i, disp=False)[0]
-            # V0i = fmin(f2min, x0=V0i, disp=False)[0]
-            V.append(V0i)
-        if self.mode == '':
-            pass
-        else:
-            self.vib.V0_DM = V[0]
-        V = []
-        for Ti in T:
-            f2min = lambda Vi: self.f2min(Ti, Vi, P)
-            # f2min = lambda Vi: 1e3*(self.dGdV_T(Ti,Vi,P=P))**2
-            V0i = optimize.fmin(f2min, x0=V0i, disp=False)[0]
-            V.append(V0i)
+        Vprev = float(initial_V)
+        nok = 0
+        for k, Ti in enumerate(T):
+            Vk, st = self._equilibrium_V(Ti, Vprev, P)
+            if k == 0 and st == 'invalid start' and Vprev != self.EOS.V0:
+                # initial guess outside the stable region: restart from the EOS equilibrium volume
+                Vk, st = self._equilibrium_V(Ti, self.EOS.V0, P)
+            status[k] = st
+            if st != 'ok':
+                warnings.warn('nDeb.min_G: no stable equilibrium volume at T = %g K, P = %g Pa (%s); '
+                              'returning the %d temperature(s) below it.' % (Ti, P, st, nok), UserWarning, stacklevel=2)
+                break
+            Vs[k] = Vk
+            Pres[k] = -self._dFdV_d2FdV2(Ti, Vk)[0] - P
+            Vprev = Vk
+            nok += 1
 
-
-        newV = np.array(V)  # V[0]*np.exp(self.integrl())
-        del V
-
-        ixs = np.where(newV <= 1.5 * newV[0])
-        # Tmax = T[-1]
-        T, V = T[ixs], newV[ixs]
-
-        return T, V
+        self.min_G_info = {'T': T.copy(), 'V': Vs.copy(), 'P_residual': Pres, 'status': status}
+        return T[:nok], Vs[:nok]
 
     def eval_props(self, T: np.ndarray, V: np.ndarray, P = None) -> dict:
         """
         Evaluates the thermodynamic properties of a given compound/element at (T,V).
 
         :param np.ndarray T: The temperature in Kelvin.
-        :param np.ndarray V: The volume in "units".
-        :return: A dictionary with the following keys: 'T': temperature, 'V': volume, 'tD': Debye temperature, 'g': Gruneisen parameter, 'Kt': isothermal bulk modulus, 'Ktp': pressure derivative of the isothermal bulk modulus, 'Ktpp': second order pressure derivative of the isothermal bulk modulus, 'Cv': constant-volume heat capacity, 'a': thermal expansion, 'Cp': constant-pressure heat capacity, 'Ks': adiabatic bulk modulus , 'Ksp': pressure derivative of the adiabatic bulk modulus, 'G': Gibbs free energy, 'E': total internal energy, 'S': entropy, 'E0': 'cold' internal energy defined by the EOS, 'Fvib': vibrational free energy, 'Evib': vibrational internal energy, 'Svib': vibrational entropy, 'Cvvib': vibrational heat capacity, 'Pcold': 'cold' pressure, 'dPdT_V': (dP/dT)_V, 'G^2': Ktp**2-2*Kt*Ktpp, 'dSdP_T': (dS/dP)_T, 'dKtdT_P': (dKt/dT)_P, 'dadP_T': (da/dP)_T, 'dCpdP_T': (dCp/dP)_T, 'ddSdT_PdP_T': (d2S/dTdP).
+        :param np.ndarray V: The volume in m^3/mol-at.
+        :param P: Deprecated and ignored; P is computed as -dF/dV at (T, V) and returned under key 'P'.
+        :return: dict of arrays (SI per mol-atom): 'T' (K), 'V' (m^3/mol-at), 'P' = -(dF/dV)_T (Pa), 'tD' Debye
+            temperature (K), 'g' Debye-Grueneisen parameter -dln(theta_D)/dln(V) (not the thermodynamic
+            gamma = a Kt V / Cv), 'Kt' isothermal bulk modulus (Pa), 'Ktp' (dKt/dP)_T, 'Ktpp' (d2Kt/dP2)_T (1/Pa),
+            'Cv', 'Cp' heat capacities (J/mol-at/K), 'a' volumetric thermal expansion (1/K), 'Ks' adiabatic bulk
+            modulus (Pa), 'Ksp' (dKs/dP)_T at constant T (not (dKs/dP)_S), 'G' Gibbs energy F + PV, 'E' internal
+            energy, 'E0' cold energy from the EOS, 'Fvib', 'Evib' vibrational free / internal energy (J/mol-at),
+            'S', 'Svib' entropies and 'Cvvib' vibrational heat capacity (J/mol-at/K), 'Pcold' = -dE0/dV (Pa),
+            'dPdT_V' (Pa/K), 'G^2' = Ktp^2 - 2 Kt Ktpp, 'dSdP_T' (J/mol-at/K/Pa), 'dKtdT_P' (Pa/K),
+            'dadP_T' (1/K/Pa), 'dCpdP_T' (J/mol-at/K/Pa), 'ddSdT_PdP_T' (d2S/dTdP), plus intermediate quantities
+            ('dtDdV_T', 'd2tDdV2_T', 'D_3', 'd2E0dV2_T', 'dPdV_T', 'dE0dV_T', 'd3E0dV3_T', 'Fa', 'Fdef', 'Fel',
+            'Sa', 'Fxs').
         :rtype: dict
         """
         del P
@@ -159,18 +266,18 @@ class nDeb:
         d3E0dVdT2 = 0
 
         Fvib = self.vib.F(T, V)
-        Svib = -self.vib.dFdT_V(T, V)/self.r
-        Evib = Fvib + T*Fvib
+        Svib = -self.vib.dFdT_V(T, V)
+        Evib = Fvib + T*Svib  # was Fvib + T*Fvib (review finding 6.1)
 
         dFvibdV_T = self.vib.dFdV_T(T,V)
-        dFvibdT_V = self.vib.dFdT_V(T,V)/self.r
-        d2FvibdT2_V = self.vib.d2FdT2_V(T,V)/self.r**2
+        dFvibdT_V = self.vib.dFdT_V(T,V)
+        d2FvibdT2_V = self.vib.d2FdT2_V(T,V)
         d2FvibdV2_T = self.vib.d2FdV2_T(T,V)
         d3FvibdV3_T = self.vib.d3FdV3_T(T,V)
         d4FvibdV4_T = self.vib.d4FdV4_T(T,V)
-        d2FvibdVdT = self.vib.d2FdVdT(T,V)/self.r
-        d3FvibdV2dT = self.vib.d3FdV2dT(T,V)/self.r
-        d3FvibdVdT2 = self.vib.d3FdVdT2(T,V)/self.r**2
+        d2FvibdVdT = self.vib.d2FdVdT(T,V)
+        d3FvibdV2dT = self.vib.d3FdV2dT(T,V)
+        d3FvibdVdT2 = self.vib.d3FdVdT2(T,V)
 
         # Eel = self.el.E(T, V)
         # Sel = self.el.S(T, V)
@@ -302,11 +409,16 @@ class nDeb:
 
     def eval_Cp(self, T: np.ndarray, V: np.ndarray, P = None) -> dict:
         """
-        Evaluates the Heat capacity of a given compound/element at (T,V).
+        Constant-pressure heat capacity at (T, V) only (lighter than eval_props: second derivatives only).
+
+        Uses the same contributions and factors as eval_props (E0, vibrational, electronic, defects,
+        explicit anharmonicity and excess Xs, same assembly as eval_props),
+        so eval_Cp(T, V)['Cp'] equals eval_props(T, V)['Cp'].
 
         :param np.ndarray T: The temperature in Kelvin.
-        :param np.ndarray V: The volume in "units".
-        :return: A dictionary with the following keys: 'T': temperature, 'V': volume, 'tD': Debye temperature, 'g': Gruneisen parameter, 'Kt': isothermal bulk modulus, 'Ktp': pressure derivative of the isothermal bulk modulus, 'Ktpp': second order pressure derivative of the isothermal bulk modulus, 'Cv': constant-volume heat capacity, 'a': thermal expansion, 'Cp': constant-pressure heat capacity, 'Ks': adiabatic bulk modulus , 'Ksp': pressure derivative of the adiabatic bulk modulus, 'G': Gibbs free energy, 'E': total internal energy, 'S': entropy, 'E0': 'cold' internal energy defined by the EOS, 'Fvib': vibrational free energy, 'Evib': vibrational internal energy, 'Svib': vibrational entropy, 'Cvvib': vibrational heat capacity, 'Pcold': 'cold' pressure, 'dPdT_V': (dP/dT)_V, 'G^2': Ktp**2-2*Kt*Ktpp, 'dSdP_T': (dS/dP)_T, 'dKtdT_P': (dKt/dT)_P, 'dadP_T': (da/dP)_T, 'dCpdP_T': (dCp/dP)_T, 'ddSdT_PdP_T': (d2S/dTdP).
+        :param np.ndarray V: The volume in m^3/mol-at.
+        :param P: Deprecated and ignored.
+        :return: {'Cp': constant-pressure heat capacity}.
         :rtype: dict
         """
         del P
@@ -334,9 +446,13 @@ class nDeb:
         d2FadV2_T = self.anh.d2FdV2_T(T, V)
         d2FadVdT = self.anh.d2FdVdT(T, V)
 
-        d2FdV2_T = d2E0dV2_T + d2FvibdV2_T + d2FeldV2_T + d2FdefdV2_T + d2FadV2_T
-        d2FdT2_V = d2E0dT2_V + d2FvibdT2_V + d2FeldT2_V + d2FdefdT2_V + d2FadT2_V
-        d2FdVdT = d2E0dVdT + d2FvibdVdT + d2FeldVdT + d2FdefdVdT + d2FadVdT
+        d2FxsdT2_V = self.xs.d2FdT2_V(T, V)
+        d2FxsdV2_T = self.xs.d2FdV2_T(T, V)
+        d2FxsdVdT = self.xs.d2FdVdT(T, V)
+
+        d2FdV2_T = d2E0dV2_T + d2FvibdV2_T + d2FeldV2_T + d2FdefdV2_T + d2FadV2_T + d2FxsdV2_T
+        d2FdT2_V = d2E0dT2_V + d2FvibdT2_V + d2FeldT2_V + d2FdefdT2_V + d2FadT2_V + d2FxsdT2_V
+        d2FdVdT = d2E0dVdT + d2FvibdVdT + d2FeldVdT + d2FdefdVdT + d2FadVdT + d2FxsdVdT
 
         Cp = -T * (d2FdT2_V - (d2FdVdT) ** 2 / d2FdV2_T)
 

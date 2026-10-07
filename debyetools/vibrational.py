@@ -11,12 +11,29 @@ class Vibrational:
     Instantiate the vibrational contribution to the free energy and its derivatives for the calculation of the
     thermodynamic properties.
 
+    F_vib = 3 N_A k_B [ 3/8 theta_D + T ln(1 - exp(-theta_D/T)) - T D_3(theta_D/T) / 3 ]  (J/mol-at),
+    theta_D(T, V) = theta_D(V) * Anh(T, V) (intrinsic anharmonicity, see anharmonicity.intAnharmonicity).
+
+    Debye-temperature models (`mode`); gamma = -dln(theta_D)/dln(V) is the Debye-Grueneisen parameter:
+
+    - 'jjsl', 'jjdm', 'jjfv': theta_D(V) from the sound velocity of the pressure-corrected curvature
+      B2(V) = (-V dP/dV - (2 lambda + 2)/3 P) / (V m r) of the cold curve at every volume, with
+      lambda = -1 (Slater), 0 (Dugdale-MacDonald), +1 (free volume / Vashchenko-Zubarev).
+      At V0 (P = 0): gamma = B0'/2 - 1/6, -1/2, -5/6.
+    - 'Sl', 'DM', 'VZ', 'mfv': scaling form
+      theta_D(V) = theta_D,0 (V E0''(V) / (V0 E0''(V0)))^(1/2) (V/V0)^(-a), with the reference volume
+      V0 = EOS.V0 (V0_DM) and a = -1/6 (Slater), -1/2 (Dugdale-MacDonald), -5/6 (Vashchenko-Zubarev) and
+      a = -0.95 ('mfv', mean-free-volume value; a separate model, not equal to VZ).
+      At V0 each of 'Sl', 'DM', 'VZ' gives the same theta_D and gamma = B0'/2 + a as 'jjsl', 'jjdm', 'jjfv'.
+
     :param nu: Poisson's ratio.
     :type nu: float
     :param EOS_obj: Equation of state object.
     :type EOS_obj: potential_instance
-    :param float m: Mass in Kg/mol-at.
+    :param float m: Mean atomic mass in kg/mol-at.
     :param intAnharmonicity_instance intanh: Intrinsic anharmonicity object.
+    :param str mode: Debye-temperature model (see above).
+    :param float rin: Scaling factor r (keep 1; its meaning is under review).
     """
 
     def __init__(self, nu: float, EOS_obj: object, m: float, intanh: np.ndarray, mode: str, rin=1):

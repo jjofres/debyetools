@@ -5,14 +5,16 @@ from debyetools.constants import kB, NAv
 
 class Defects:
     """
-    Implementation of the defects contribution due to monovancies to the free energy.
+    Contribution of thermally activated mono-vacancies to the free energy (J/mol-at):
+    F_def = -N_A k_B T exp((T S_vac - E_vac(V)) / (k_B T)),
+    E_vac(V) = Evac00 k_B Tm - V0 a (V - V0) P2 / (N_A V)  (J per vacancy),  S_vac = Svac00 k_B.
 
-    :param float Evac00: Fomration energy of vacancies.
-    :param float Svac00: Fomration entropy of vacancies.
-    :param float Tm: Melting temperature.
-    :param float a: Volume ratio of a mono vacancie relative to the equilibrium volume.
-    :param float P2: Bulk modulus.
-    :param float V0: Equilibrium volume.
+    :param float Evac00: Formation energy of vacancies in units of k_B Tm (dimensionless).
+    :param float Svac00: Formation entropy of vacancies in units of k_B (dimensionless).
+    :param float Tm: Melting temperature in K.
+    :param float a: Dimensionless coefficient of the volume dependence of E_vac.
+    :param float P2: Bulk modulus in Pa (nDeb passes B0 = V0 E0''(V0) of the EOS).
+    :param float V0: Equilibrium volume in m^3/mol-at (nDeb passes EOS.V0).
     """
     def __init__(self, Evac00: float, Svac00: float, Tm: float, a: float, P2: float, V0: float):
         self.pdef = Evac00,Svac00,Tm,a,P2,V0

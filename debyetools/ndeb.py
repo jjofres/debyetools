@@ -23,14 +23,28 @@ class nDeb:
     the method that implements an original Debye formalism for the calculation of
     the thermodynamic properties.
 
-    :param float nu: Poisson's ratio.
-    :param float m: mass in Kg/mol-at
-    :param np.ndarray p_intanh: Intrinsic anharmonicity parameters: a0, m0, V0.
-    :param object EOS: Equation of state instance.
-    :param np.ndarray p_electronic: Electronic contribution parameters.
-    :param np.ndarray p_defects: Mono-vacancies defects contribution parameters: Evac00,Svac00,Tm,a,P2,V0.
-    :param np.ndarray p_anh: Excess contribution parameters.
-    :param str mode: Type of approximation of the Debye temperature (see vibrational contribution).
+    All quantities are SI per mole of atoms: T in K, V in m^3/mol-at, energies in J/mol-at, P and moduli in Pa,
+    mass in kg/mol-at.
+
+    F(T, V) = E0(V) + F_vib + F_el + F_def + F_anh + F_xs.
+
+    :param float nu: Poisson's ratio (sets the sound-velocity factor of the Debye temperature).
+    :param float m: Mean atomic mass in kg/mol-at.
+    :param np.ndarray p_intanh: Intrinsic anharmonicity (a0, m0): theta_D(T, V) = theta_D(V) exp(a(V) T / 2),
+        a(V) = a0 (V/V0)^m0, a0 in 1/K, m0 dimensionless; V0 is taken from the EOS (see intAnharmonicity).
+    :param object EOS: Equation of state instance (potentials.BM, RV, MG, TB, MU, PT, MP, EAM). Its V0 and
+        B0 = V0 E0''(V0) are also used by the vacancy and intrinsic-anharmonicity terms.
+    :param np.ndarray p_electronic: Electronic contribution parameters (q0, q1, q2, q3), see electronic.Electronic.
+    :param np.ndarray p_defects: Mono-vacancy parameters (Evac00, Svac00, Tm, a): formation energy
+        E_vac = Evac00 k_B Tm and entropy S_vac = Svac00 k_B (Evac00, Svac00 dimensionless), Tm in K, a
+        dimensionless coefficient of the volume dependence of E_vac (see defects.Defects).
+    :param np.ndarray p_anh: Explicit anharmonicity (s0, s1, s2): F_anh = -A(V) T^2 / 2,
+        A(V) = s0 + s1 V + s2 V^2 in J/mol-at/K^2 (see anharmonicity.Anharmonicity).
+    :param str mode: Debye-temperature model: 'jjsl', 'jjdm', 'jjfv', 'Sl', 'DM', 'VZ' or 'mfv'
+        (see vibrational.Vibrational for definitions).
+    :param tuple xsparams: Excess term (xs0, ..., xs5): F_xs = xs0 + xs1 T + xs2 T^2 + xs3 T^3 + xs4 T ln T
+        + xs5 T^-2 in J/mol-at (see XS.Xs).
+    :param float r: Scaling factor of the vibrational term (keep 1; its meaning is under review).
     :param str units: Deprecated and ignored. All quantities are SI per mol-atom (J/mol, m^3/mol, kg/mol, Pa).
     """
 
@@ -208,7 +222,17 @@ class nDeb:
         :param np.ndarray T: The temperature in Kelvin.
         :param np.ndarray V: The volume in m^3/mol-at.
         :param P: Deprecated and ignored; P is computed as -dF/dV at (T, V) and returned under key 'P'.
-        :return: A dictionary with the following keys: 'T': temperature, 'V': volume, 'tD': Debye temperature, 'g': Gruneisen parameter, 'Kt': isothermal bulk modulus, 'Ktp': pressure derivative of the isothermal bulk modulus, 'Ktpp': second order pressure derivative of the isothermal bulk modulus, 'Cv': constant-volume heat capacity, 'a': thermal expansion, 'Cp': constant-pressure heat capacity, 'Ks': adiabatic bulk modulus , 'Ksp': pressure derivative of the adiabatic bulk modulus, 'G': Gibbs free energy, 'E': total internal energy, 'S': entropy, 'E0': 'cold' internal energy defined by the EOS, 'Fvib': vibrational free energy, 'Evib': vibrational internal energy, 'Svib': vibrational entropy, 'Cvvib': vibrational heat capacity, 'Pcold': 'cold' pressure, 'dPdT_V': (dP/dT)_V, 'G^2': Ktp**2-2*Kt*Ktpp, 'dSdP_T': (dS/dP)_T, 'dKtdT_P': (dKt/dT)_P, 'dadP_T': (da/dP)_T, 'dCpdP_T': (dCp/dP)_T, 'ddSdT_PdP_T': (d2S/dTdP).
+        :return: dict of arrays (SI per mol-atom): 'T' (K), 'V' (m^3/mol-at), 'P' = -(dF/dV)_T (Pa), 'tD' Debye
+            temperature (K), 'g' Debye-Grueneisen parameter -dln(theta_D)/dln(V) (not the thermodynamic
+            gamma = a Kt V / Cv), 'Kt' isothermal bulk modulus (Pa), 'Ktp' (dKt/dP)_T, 'Ktpp' (d2Kt/dP2)_T (1/Pa),
+            'Cv', 'Cp' heat capacities (J/mol-at/K), 'a' volumetric thermal expansion (1/K), 'Ks' adiabatic bulk
+            modulus (Pa), 'Ksp' (dKs/dP)_T at constant T (not (dKs/dP)_S), 'G' Gibbs energy F + PV, 'E' internal
+            energy, 'E0' cold energy from the EOS, 'Fvib', 'Evib' vibrational free / internal energy (J/mol-at),
+            'S', 'Svib' entropies and 'Cvvib' vibrational heat capacity (J/mol-at/K), 'Pcold' = -dE0/dV (Pa),
+            'dPdT_V' (Pa/K), 'G^2' = Ktp^2 - 2 Kt Ktpp, 'dSdP_T' (J/mol-at/K/Pa), 'dKtdT_P' (Pa/K),
+            'dadP_T' (1/K/Pa), 'dCpdP_T' (J/mol-at/K/Pa), 'ddSdT_PdP_T' (d2S/dTdP), plus intermediate quantities
+            ('dtDdV_T', 'd2tDdV2_T', 'D_3', 'd2E0dV2_T', 'dPdV_T', 'dE0dV_T', 'd3E0dV3_T', 'Fa', 'Fdef', 'Fel',
+            'Sa', 'Fxs').
         :rtype: dict
         """
         del P

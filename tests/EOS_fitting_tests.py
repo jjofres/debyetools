@@ -3,6 +3,7 @@ import numpy as np
 from debyetools.potentials import MP, BM, EAM
 from debyetools.aux_functions import load_V_E, load_cell
 import os
+from debyetools.constants import A3_ATOM_TO_M3_MOL, EV_ATOM_TO_J_MOL
 HERE = os.path.dirname(os.path.abspath(__file__))  # test data paths are relative to this file
 class EOSparametrizationTestCase(unittest.TestCase):
     def setUp(self):
@@ -28,8 +29,8 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
     def test_EOS_Morse_Al_fcc_evaluations_eV_units(self):
         """ Test evaluation of Morse potential using Al fcc DFT data, eV/atom units."""
-        V_DFT = self.V_DFT/(1e-30*6.02e23)
-        E_DFT = self.E_DFT/(0.160218e-18*6.02214e23)
+        V_DFT = self.V_DFT/A3_ATOM_TO_M3_MOL
+        E_DFT = self.E_DFT/EV_ATOM_TO_J_MOL
 
         p_EOS = np.array([3.492281316e-01, 9.977375168e-01, 3.246481751e+00])
         eos_Morse = MP(self.formula, self.primitive_cell(4.0396918604), self.basis_vectors, self.cutoff, self.number_of_neighbor_levels, units='eV/atom', parameters = p_EOS)

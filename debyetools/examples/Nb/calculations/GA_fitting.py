@@ -6,6 +6,7 @@ from debyetools.electronic import fit_electronic
 from debyetools.poisson import poisson_ratio
 from debyetools.ndeb import nDeb
 from debyetools.aux_functions import gen_Ts
+from debyetools.constants import A3_ATOM_TO_M3_MOL, EV_ATOM_TO_J_MOL
 dir_list_initial = [d for d in dir()]+['dir_list_initial']
 
 
@@ -13,7 +14,7 @@ dir_list_initial = [d for d in dir()]+['dir_list_initial']
 # load data #
 #############
 #------------------------------------------------------------
-VASPrun_Data = ldft.extract_from_DFT('..')
+VASPrun_Data = ldft.extract_from_DFT('..', energies_file='elements_energies.out')  # the table lives next to this script
 
 print('Data loaded')
 #------------------------------------------------------------
@@ -25,7 +26,7 @@ print('Data loaded')
 E_data = VASPrun_Data.E
 V_data = VASPrun_Data.V
 
-V_DFT, E_DFT = np.array([Vi*(1e-30 * 6.02e23) for Vi in V_data]), np.array([Ei*(0.160218e-18 * 6.02214e23) for Ei in E_data])
+V_DFT, E_DFT = np.array([Vi*A3_ATOM_TO_M3_MOL for Vi in V_data]), np.array([Ei*EV_ATOM_TO_J_MOL for Ei in E_data])
 initial_parameters = np.array([-4e+05, 1e-05, 7e+10, 4])
 eos_BM = potentials.BM()
 eos_BM.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters, fit=True)

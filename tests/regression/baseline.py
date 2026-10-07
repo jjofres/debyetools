@@ -291,6 +291,15 @@ def layer_ext():
         put("fit/get_EM/Nb/EM", get_EM(os.path.join(ROOT, "debyetools", "examples", "Nb", "elastic")))
     guard("fit/get_EM/Nb", fgem)
 
+    # C11: extract_from_DFT on the Nb example (elements_energies.out lives in examples/Nb/calculations)
+    def fxd():
+        from debyetools.load_data_from_DFT import extract_from_DFT
+        nb = os.path.join(ROOT, "debyetools", "examples", "Nb")
+        v = extract_from_DFT(nb, energies_file=os.path.join(nb, "calculations", "elements_energies.out"))
+        put("fit/extract_from_DFT/Nb/V", v.V); put("fit/extract_from_DFT/Nb/E", v.E)
+        put("fit/extract_from_DFT/Nb/E0_Ef_mass", [v.E0, v.Ef, v.mass])
+    guard("fit/extract_from_DFT/Nb", fxd)
+
     # (8) POSCAR variants for load_cell / load_V_E  [1.4, 7.6]
     a = 4.04
     frac = ["0 0 0", "0 0.5 0.5", "0.5 0 0.5", "0.5 0.5 0"]

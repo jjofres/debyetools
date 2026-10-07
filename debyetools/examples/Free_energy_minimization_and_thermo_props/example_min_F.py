@@ -5,10 +5,11 @@ from debyetools.poisson import poisson_ratio
 from debyetools.electronic import fit_electronic
 from debyetools.aux_functions import load_EM
 from debyetools.aux_functions import load_doscar
+from debyetools.constants import A3_ATOM_TO_M3_MOL, EV_ATOM_TO_J_MOL
 
 m = 0.021971375
 V_data, E_data = load_V_E('../Al3Li_L12/SUMMARY', '../Al3Li_L12/CONTCAR')
-V_data, E_data = V_data*(1E-30*6.02E+23), E_data*(1.60218E-19 * 6.02214E+23)
+V_data, E_data = V_data*A3_ATOM_TO_M3_MOL, E_data*EV_ATOM_TO_J_MOL
 
 params_initial_guess = [-3e5, 1e-5, 7e10, 4]
 eos = potentials.BM()

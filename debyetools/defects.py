@@ -6,7 +6,7 @@ from debyetools.constants import kB, NAv
 class Defects:
     """
     Contribution of thermally activated mono-vacancies to the free energy (J/mol-at):
-    F_def = -N_A k_B T exp((T S_vac - E_vac(V)) / (k_B T)),
+    F_def = -r N_A k_B T exp((T S_vac - E_vac(V)) / (k_B T))  (SM eq. S.61),
     E_vac(V) = Evac00 k_B Tm - V0 a (V - V0) P2 / (N_A V)  (J per vacancy),  S_vac = Svac00 k_B.
 
     :param float Evac00: Formation energy of vacancies in units of k_B Tm (dimensionless).
@@ -15,8 +15,11 @@ class Defects:
     :param float a: Dimensionless coefficient of the volume dependence of E_vac.
     :param float P2: Bulk modulus in Pa (nDeb passes B0 = V0 E0''(V0) of the EOS).
     :param float V0: Equilibrium volume in m^3/mol-at (nDeb passes EOS.V0).
+    :param float r: Number of types of atoms per formula unit (default 1); E, S, F and all derivatives
+        carry the factor r.
     """
-    def __init__(self, Evac00: float, Svac00: float, Tm: float, a: float, P2: float, V0: float):
+    def __init__(self, Evac00: float, Svac00: float, Tm: float, a: float, P2: float, V0: float, r: float = 1):
+        self.r = r
         self.pdef = Evac00,Svac00,Tm,a,P2,V0
         self.Evac00 = Evac00
         self.Svac00 = Svac00
@@ -115,7 +118,7 @@ class Defects:
         """
         return 24*self.V0*self.a*self.P2/(NAv*V**4)-24*self.V0*self.a*(V-self.V0)*self.P2/(NAv*V**5)
 
-    def E(self, T: float, V: float) -> float:
+    def _E_1(self, T: float, V: float) -> float:
         """
         Defects energy.
 
@@ -125,7 +128,7 @@ class Defects:
         :rtype: float
         """
         return self.Evac(V)*NAv*np.exp(self.Svac(V)/kB - self.Evac(V)/(kB*T))
-    def S(self, T: float, V: float) -> float:
+    def _S_1(self, T: float, V: float) -> float:
         """
         Defects entropy.
 
@@ -135,7 +138,7 @@ class Defects:
         :rtype: float
         """
         return (T*kB+self.Evac(V))*NAv*np.exp(self.Svac(V)/kB - self.Evac(V)/(kB*T))/T
-    def F(self, T: float, V: float) -> float:
+    def _F_1(self, T: float, V: float) -> float:
         """
         Implementation of the defects contribution to the free energy.
 
@@ -145,7 +148,7 @@ class Defects:
         :rtype: float
         """
         return -NAv*T*kB*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))
-    def dFdV_T(self, T: float, V: float) -> float:
+    def _dFdV_T_1(self, T: float, V: float) -> float:
         """
         Derivative of defects contribution to the free energy.
 
@@ -156,7 +159,7 @@ class Defects:
         """
         return -NAv*(self.dSvacdV_T(V)*T-self.dEvacdV_T(V))*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))
 
-    def dFdT_V(self, T: float, V: float) -> float:
+    def _dFdT_V_1(self, T: float, V: float) -> float:
         """
         Derivative of defects contribution to the free energy.
 
@@ -166,7 +169,7 @@ class Defects:
         :rtype: float
         """
         return -NAv*kB*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))-NAv*T*kB*(self.Svac(V)/(T*kB)-(self.Svac(V)*T-self.Evac(V))/(T**2*kB))*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))
-    def d2FdT2_V(self, T: float, V: float) -> float:
+    def _d2FdT2_V_1(self, T: float, V: float) -> float:
         """
         Derivative of defects contribution to the free energy.
 
@@ -176,7 +179,7 @@ class Defects:
         :rtype: float
         """
         return -NAv*self.Evac(V)**2*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))/(T**3*kB)
-    def d2FdV2_T(self, T: float, V: float) -> float:
+    def _d2FdV2_T_1(self, T: float, V: float) -> float:
         """
         Derivative of defects contribution to the free energy.
 
@@ -186,7 +189,7 @@ class Defects:
         :rtype: float
         """
         return -(-(self.d2EvacdV2_T(V))*T*kB+(self.d2SvacdV2_T(V))*T**2*kB+((self.dSvacdV_T(V))*T-(self.dEvacdV_T(V)))**2)*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))*NAv/(T*kB)
-    def d3FdV3_T(self, T: float, V: float) -> float:
+    def _d3FdV3_T_1(self, T: float, V: float) -> float:
         """
         Derivative of defects contribution to the free energy.
 
@@ -196,7 +199,7 @@ class Defects:
         :rtype: float
         """
         return -NAv*(self.d3SvacdV3_T(V)*T-self.d3EvacdV3_T(V))*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))-3*NAv*(self.d2SvacdV2_T(V)*T-self.d2EvacdV2_T(V))*(self.dSvacdV_T(V)*T-self.dEvacdV_T(V))*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))/(T*kB)-NAv*(self.dSvacdV_T(V)*T-self.dEvacdV_T(V))**3*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))/(T**2*kB**2)
-    def d4FdV4_T(self, T: float, V: float) -> float:
+    def _d4FdV4_T_1(self, T: float, V: float) -> float:
         """
         Derivative of defects contribution to the free energy.
 
@@ -216,7 +219,7 @@ class Defects:
         eu = np.exp((self.Svac(V)*T-self.Evac(V))/kT)
         return -NAv*eu*(g4 + (4*g1*g3 + 3*g2**2)/kT + 6*g1**2*g2/kT**2 + g1**4/kT**3)
 
-    def d2FdVdT(self, T: float, V: float) -> float:
+    def _d2FdVdT_1(self, T: float, V: float) -> float:
         """
         Derivative of defects contribution to the free energy.
 
@@ -226,7 +229,7 @@ class Defects:
         :rtype: float
         """
         return -np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))*(T*(T*kB+self.Evac(V))*(self.dSvacdV_T(V))-(self.dEvacdV_T(V))*self.Evac(V))*NAv/(T**2*kB)
-    def d3FdV2dT(self, T: float, V: float) -> float:
+    def _d3FdV2dT_1(self, T: float, V: float) -> float:
         """
         Derivative of defects contribution to the free energy.
 
@@ -236,7 +239,7 @@ class Defects:
         :rtype: float
         """
         return -NAv*(self.d2SvacdV2_T(V))*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))-NAv*((self.d2SvacdV2_T(V))*T-(self.d2EvacdV2_T(V)))*(self.Svac(V)/(T*kB)-(self.Svac(V)*T-self.Evac(V))/(T**2*kB))*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))-2*NAv*((self.dSvacdV_T(V))*T-(self.dEvacdV_T(V)))*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))*(self.dSvacdV_T(V))/(T*kB)+NAv*((self.dSvacdV_T(V))*T-(self.dEvacdV_T(V)))**2*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))/(T**2*kB)-NAv*((self.dSvacdV_T(V))*T-(self.dEvacdV_T(V)))**2*(self.Svac(V)/(T*kB)-(self.Svac(V)*T-self.Evac(V))/(T**2*kB))*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))/(T*kB)
-    def d3FdVdT2(self, T: float, V: float) -> float:
+    def _d3FdVdT2_1(self, T: float, V: float) -> float:
         """
         Derivative of defects contribution to the free energy.
 
@@ -246,3 +249,53 @@ class Defects:
         :rtype: float
         """
         return -2*NAv*self.dSvacdV_T(V)*(self.Svac(V)/(T*kB)-(self.Svac(V)*T-self.Evac(V))/(T**2*kB))*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))-NAv*(self.dSvacdV_T(V)*T-self.dEvacdV_T(V))*(-2*self.Svac(V)/(T**2*kB)+(2*(self.Svac(V)*T-self.Evac(V)))/(T**3*kB))*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))-NAv*(self.dSvacdV_T(V)*T-self.dEvacdV_T(V))*(self.Svac(V)/(T*kB)-(self.Svac(V)*T-self.Evac(V))/(T**2*kB))**2*np.exp((self.Svac(V)*T-self.Evac(V))/(T*kB))
+
+    # Public methods: r times the r = 1 expressions above, so that every derivative carries the same
+    # factor r as the function itself (review decision D5).
+    def E(self, T: float, V: float) -> float:
+        """E of F_def (r times the r = 1 value)."""
+        return self.r * self._E_1(T, V)
+
+    def S(self, T: float, V: float) -> float:
+        """S of F_def (r times the r = 1 value)."""
+        return self.r * self._S_1(T, V)
+
+    def F(self, T: float, V: float) -> float:
+        """F of F_def (r times the r = 1 value)."""
+        return self.r * self._F_1(T, V)
+
+    def dFdV_T(self, T: float, V: float) -> float:
+        """(dF/dV)_T of F_def (r times the r = 1 value)."""
+        return self.r * self._dFdV_T_1(T, V)
+
+    def dFdT_V(self, T: float, V: float) -> float:
+        """(dF/dT)_V of F_def (r times the r = 1 value)."""
+        return self.r * self._dFdT_V_1(T, V)
+
+    def d2FdT2_V(self, T: float, V: float) -> float:
+        """(d2F/dT2)_V of F_def (r times the r = 1 value)."""
+        return self.r * self._d2FdT2_V_1(T, V)
+
+    def d2FdV2_T(self, T: float, V: float) -> float:
+        """(d2F/dV2)_T of F_def (r times the r = 1 value)."""
+        return self.r * self._d2FdV2_T_1(T, V)
+
+    def d3FdV3_T(self, T: float, V: float) -> float:
+        """(d3F/dV3)_T of F_def (r times the r = 1 value)."""
+        return self.r * self._d3FdV3_T_1(T, V)
+
+    def d4FdV4_T(self, T: float, V: float) -> float:
+        """(d4F/dV4)_T of F_def (r times the r = 1 value)."""
+        return self.r * self._d4FdV4_T_1(T, V)
+
+    def d2FdVdT(self, T: float, V: float) -> float:
+        """d2F/dVdT of F_def (r times the r = 1 value)."""
+        return self.r * self._d2FdVdT_1(T, V)
+
+    def d3FdV2dT(self, T: float, V: float) -> float:
+        """d3F/dV2dT of F_def (r times the r = 1 value)."""
+        return self.r * self._d3FdV2dT_1(T, V)
+
+    def d3FdVdT2(self, T: float, V: float) -> float:
+        """d3F/dVdT2 of F_def (r times the r = 1 value)."""
+        return self.r * self._d3FdVdT2_1(T, V)

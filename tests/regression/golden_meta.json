@@ -4,7 +4,7 @@
   "numpy": "1.26.4",
   "scipy": "1.13.1",
   "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35",
-  "git_head": "898bdcc5bd139803fa931995762096282e274b68"
+  "git_head": "a54c5281b9c7e789f687676e648572e028a23f67"
  },
  "errors": {
   "io/elastic_clamped/Al13Fe4_C2m": "ValueError",
@@ -16,6 +16,6 @@
   "io/elastic_clamped/NaCl_Fm3m": "ValueError",
   "io/elastic_clamped/NbC_Fm3m": "ValueError"
  },
- "n_keys": 2848,
+ "n_keys": 2876,
  "non_finite_keys": []
 }

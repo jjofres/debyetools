@@ -187,10 +187,10 @@ def layer_eval():
 def layer_pipe():
     T = gen_Ts(0.1, 1000.1, 21)
 
-    def run(tag, eos_name, mode="jjsl", p_intanh=(0, 1), p_anh=(0, 0, 0), xs=(0,) * 6):
+    def run(tag, eos_name, mode="jjsl", p_intanh=(0, 1), p_anh=(0, 0, 0), xs=(0,) * 6, r=1):
         def f():
             eos = make_eos(eos_name, eos_params(eos_name))
-            nd = nDeb(NU_AL, M_AL, p_intanh, eos, P_EL_AL, P_DEF_AL, p_anh, mode=mode, xsparams=xs)
+            nd = nDeb(NU_AL, M_AL, p_intanh, eos, P_EL_AL, P_DEF_AL, p_anh, mode=mode, xsparams=xs, r=r)
             Tm, Vm = nd.min_G(T.copy(), eos.V0, P=0)
             tp = nd.eval_props(Tm, Vm, P=0)
             for k in ["T", "V", "tD", "g", "Kt", "Ktp", "Cv", "a", "Cp", "Ks", "G", "E", "S", "P"]:
@@ -204,6 +204,8 @@ def layer_pipe():
     run("BM_jjsl_allcontrib", "BM", p_intanh=(-1e-5, 1.5), p_anh=(1e-4, -1e-7, 1e-10),
         xs=(10., 0.01, 1e-6, 1e-9, 0.1, 1e3))
     run("BM_jjsl_xsV", "BM", xs=([10., 1e5], [0.01, 50.], 1e-6, 1e-9, [0.1, -1e3], 1e3))  # V-dependent A_i(V)
+    run("BM_jjsl_r2", "BM", p_intanh=(-1e-5, 1.5), r=2)  # r = 2 (D5), with intrinsic anharmonicity
+    run("BM_DM_r2", "BM", mode="DM", p_intanh=(-1e-5, 1.5), r=2)
 
 
 # ------------------------------------------------------------------------------------------

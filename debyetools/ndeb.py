@@ -45,7 +45,8 @@ class nDeb:
     :param tuple xsparams: Excess term (xs0, ..., xs5): F_xs = xs0 + xs1 T + xs2 T^2 + xs3 T^3 + xs4 T ln T
         + xs5 T^-2 in J/mol-at (see XS.Xs). Each coefficient is a number (V-independent) or a sequence
         of polynomial coefficients in V (lowest order first, V in m^3/mol-at) for a V-dependent A_i(V).
-    :param float r: Scaling factor of the vibrational term (keep 1; its meaning is under review).
+    :param float r: Number of types of atoms per formula unit (default 1). Enters theta_D and multiplies
+        F_vib and F_def (SM eqs. S.9, S.27, S.61) and all their derivatives.
     :param str units: Deprecated and ignored. All quantities are SI per mol-atom (J/mol, m^3/mol, kg/mol, Pa).
     """
 
@@ -71,7 +72,7 @@ class nDeb:
         self.anh = Anharmonicity(s0, s1, s2)
         self.intanh = intAnharmonicity(a0, m0, EOS.V0)
         self.el = Electronic(q0, q1, q2, q3)
-        self.deff = Defects(Evac00, Svac00, Tm, a, EOS.V0 * EOS.d2E0dV2_T(EOS.V0), EOS.V0)
+        self.deff = Defects(Evac00, Svac00, Tm, a, EOS.V0 * EOS.d2E0dV2_T(EOS.V0), EOS.V0, r=r)
 
         self.EOS = EOS  # getattr(pots,EOS_name)(*args,units=units, parameters = p_EOS)
         # self.EOS.pEOS = p_EOS
@@ -257,18 +258,18 @@ class nDeb:
         d3E0dVdT2 = 0
 
         Fvib = self.vib.F(T, V)
-        Svib = -self.vib.dFdT_V(T, V)/self.r
+        Svib = -self.vib.dFdT_V(T, V)
         Evib = Fvib + T*Svib  # was Fvib + T*Fvib (review finding 6.1)
 
         dFvibdV_T = self.vib.dFdV_T(T,V)
-        dFvibdT_V = self.vib.dFdT_V(T,V)/self.r
-        d2FvibdT2_V = self.vib.d2FdT2_V(T,V)/self.r**2
+        dFvibdT_V = self.vib.dFdT_V(T,V)
+        d2FvibdT2_V = self.vib.d2FdT2_V(T,V)
         d2FvibdV2_T = self.vib.d2FdV2_T(T,V)
         d3FvibdV3_T = self.vib.d3FdV3_T(T,V)
         d4FvibdV4_T = self.vib.d4FdV4_T(T,V)
-        d2FvibdVdT = self.vib.d2FdVdT(T,V)/self.r
-        d3FvibdV2dT = self.vib.d3FdV2dT(T,V)/self.r
-        d3FvibdVdT2 = self.vib.d3FdVdT2(T,V)/self.r**2
+        d2FvibdVdT = self.vib.d2FdVdT(T,V)
+        d3FvibdV2dT = self.vib.d3FdV2dT(T,V)
+        d3FvibdVdT2 = self.vib.d3FdVdT2(T,V)
 
         # Eel = self.el.E(T, V)
         # Sel = self.el.S(T, V)
@@ -403,7 +404,7 @@ class nDeb:
         Constant-pressure heat capacity at (T, V) only (lighter than eval_props: second derivatives only).
 
         Uses the same contributions and factors as eval_props (E0, vibrational, electronic, defects,
-        explicit anharmonicity and excess Xs; vibrational T-derivatives divided by r as in eval_props),
+        explicit anharmonicity and excess Xs, same assembly as eval_props),
         so eval_Cp(T, V)['Cp'] equals eval_props(T, V)['Cp'].
 
         :param np.ndarray T: The temperature in Kelvin.
@@ -421,9 +422,9 @@ class nDeb:
         d2E0dT2_V = 0
         d2E0dVdT = 0
 
-        d2FvibdT2_V = self.vib.d2FdT2_V(T,V)/self.r**2
+        d2FvibdT2_V = self.vib.d2FdT2_V(T,V)
         d2FvibdV2_T = self.vib.d2FdV2_T(T,V)
-        d2FvibdVdT = self.vib.d2FdVdT(T,V)/self.r
+        d2FvibdVdT = self.vib.d2FdVdT(T,V)
 
         d2FeldT2_V = self.el.d2FdT2_V(T, V)
         d2FeldV2_T = self.el.d2FdV2_T(T, V)

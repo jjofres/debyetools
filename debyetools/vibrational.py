@@ -11,7 +11,9 @@ class Vibrational:
     Instantiate the vibrational contribution to the free energy and its derivatives for the calculation of the
     thermodynamic properties.
 
-    F_vib = 3 N_A k_B [ 3/8 theta_D + T ln(1 - exp(-theta_D/T)) - T D_3(theta_D/T) / 3 ]  (J/mol-at),
+    F_vib = 3 r N_A k_B [ 3/8 theta_D + T ln(1 - exp(-theta_D/T)) - T D_3(theta_D/T) / 3 ]  (J/mol),
+    with r the number of types of atoms per formula unit (default 1); r also enters theta_D through
+    (6 pi^2 r N_A / V)^(1/3) and B2 ~ 1/(m r). Every derivative of F_vib carries the same factor r.
     theta_D(T, V) = theta_D(V) * Anh(T, V) (intrinsic anharmonicity, see anharmonicity.intAnharmonicity).
 
     Debye-temperature models (`mode`); gamma = -dln(theta_D)/dln(V) is the Debye-Grueneisen parameter:
@@ -33,7 +35,7 @@ class Vibrational:
     :param float m: Mean atomic mass in kg/mol-at.
     :param intAnharmonicity_instance intanh: Intrinsic anharmonicity object.
     :param str mode: Debye-temperature model (see above).
-    :param float rin: Scaling factor r (keep 1; its meaning is under review).
+    :param float rin: r, number of types of atoms per formula unit (default 1).
     """
 
     def __init__(self, nu: float, EOS_obj: object, m: float, intanh: np.ndarray, mode: str, rin=1):
@@ -225,7 +227,7 @@ class Vibrational:
             self.d3tDdVdT2 = c*(A_VTT*DM + A_TT*dDMdV)
             self.d4tDdV4_T = c*(A_VVVV*DM + 4*A_VVV*dDMdV + 6*A_VV*d2DMdV2 + 4*A_V*d3DMdV3 + A*d4DMdV4)
 
-    def F(self, T: float, V: float) -> float:
+    def _F_1(self, T: float, V: float) -> float:
         """
         Vibration Helmholtz free energy.
 
@@ -244,7 +246,7 @@ class Vibrational:
             lnq = np.log(-np.expm1(-x))
         return 3*NAv*kB*(self.tD*3/8+T*lnq-D3*T/3)
 
-    def dFdV_T(self, T: float, V: float) -> float:
+    def _dFdV_T_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -259,7 +261,7 @@ class Vibrational:
         dD3 = dD_3dx(x, D3)
         return 3*NAv*kB*(3*(self.dtDdV_T)*(1/8)+(self.dtDdV_T)*np.exp(-x)/(1-np.exp(-x))-(1/3)*dD3*(self.dtDdV_T))
 
-    def dFdT_V(self, T: float, V: float) -> float:
+    def _dFdT_V_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -277,9 +279,9 @@ class Vibrational:
         q = em / (1 - em)
         D3 = D_3(x)
         dD3dx = dD_3dx(x, D3)
-        return 9*NAv*kB*(self.dtDdT_V)*(1/8) + 3*kB*r*NAv*np.log(-np.expm1(-x)) + 3*r*NAv*kB*(self.dtDdT_V)*q - 3*r*NAv*kB*self.tD/T*q - r*NAv*kB*dD3dx*(self.dtDdT_V) + r*NAv*kB*dD3dx*self.tD/T - r*NAv*kB*D3
+        return 9*NAv*kB*(self.dtDdT_V)*(1/8) + 3*kB*NAv*np.log(-np.expm1(-x)) + 3*NAv*kB*(self.dtDdT_V)*q - 3*NAv*kB*self.tD/T*q - NAv*kB*dD3dx*(self.dtDdT_V) + NAv*kB*dD3dx*self.tD/T - NAv*kB*D3
 
-    def d2FdT2_V(self, T: float, V: float) -> float:
+    def _d2FdT2_V_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -299,7 +301,7 @@ class Vibrational:
                           + 3 * self.tD * (self.d2tDdT2_V * self.tD * T ** 2 + 8 * (self.dtDdT_V * T - self.tD) ** 2 * q) * (1 / 8)) * kB / (
                                self.tD ** 2 * T ** 2)
 
-    def d2FdV2_T(self, T: float, V: float) -> float:
+    def _d2FdV2_T_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -316,7 +318,7 @@ class Vibrational:
                     8 * self.dtDdV_T ** 2 * self.tD * dD3dx - 8 * self.dtDdV_T ** 2 * D3 * T + 8 * self.d2tDdV2_T * D3 * self.tD * T + 3 * self.d2tDdV2_T * self.tD ** 2) / (
                            8 * self.tD ** 2)
 
-    def d3FdV3_T(self, T: float, V: float) -> float:
+    def _d3FdV3_T_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -335,7 +337,7 @@ class Vibrational:
                                     3 * self.dtDdV_T * self.d2tDdV2_T * T * self.tD ** 2 - 2 * self.dtDdV_T ** 3 * T * self.tD) * dD3dx + d2D3dx2 * self.dtDdV_T ** 3 * self.tD ** 2 + 3 * self.d3tDdV3_T * self.tD ** 3 * T * (
                                     1 / 8)) * kB * NAv / (T * self.tD ** 3)
 
-    def d4FdV4_T(self, T: float, V: float) -> float:
+    def _d4FdV4_T_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -364,7 +366,7 @@ class Vibrational:
                                                                                                                       1 / 3) + self.d4tDdV4_T * self.tD * T ** 2))) * self.tD)) * kB * NAv / (
                            T ** 2 * self.tD ** 4)
 
-    def d2FdVdT(self, T: float, V: float) -> float:
+    def _d2FdVdT_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -378,11 +380,11 @@ class Vibrational:
         D3 = D_3(x)
         dD3dx = dD_3dx(x, D3)
         return 3  * (dD3dx * (self.dtDdT_V / T - self.tD / T ** 2) * T + D3 + 3 * self.dtDdT_V * (
-                    1 / 8)) * kB * self.dtDdV_T * NAv / self.tD + 3 * r * (
-                           D3 * T + 3 * self.tD * (1 / 8)) * kB * self.d2tDdVdT * NAv / self.tD - 3 * r * (
+                    1 / 8)) * kB * self.dtDdV_T * NAv / self.tD + 3 * (
+                           D3 * T + 3 * self.tD * (1 / 8)) * kB * self.d2tDdVdT * NAv / self.tD - 3 * (
                            D3 * T + 3 * self.tD * (1 / 8)) * kB * self.dtDdV_T * NAv * self.dtDdT_V / self.tD ** 2
 
-    def d3FdV2dT(self, T: float, V: float) -> float:
+    def _d3FdV2dT_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -405,7 +407,7 @@ class Vibrational:
                                                      1 / 3) + self.tD * self.d3tDdV2dT * T ** 2) * (
                                                  1 / 8))) * kB * NAv / (T ** 2 * self.tD ** 3)
 
-    def d3FdVdT2(self, T: float, V: float) -> float:
+    def _d3FdVdT2_1(self, T: float, V: float) -> float:
         """
         Derivative of vibrational Helmholtz free energy.
 
@@ -425,5 +427,47 @@ class Vibrational:
                                                                                           1 / 2) * self.d2tDdT2_V * T + self.dtDdT_V) * self.dtDdV_T + self.dtDdT_V * self.d2tDdVdT * T) * self.tD - self.dtDdT_V ** 2 * self.dtDdV_T * T) * dD3dx + (
                                               1 / 16) * (3 * (
                                       8 * self.dtDdV_T * (T * self.dtDdT_V - self.tD) ** 2 * d2D3dx2 * (
-                                          1 / 3) + self.tD * self.d3tDdVdT2 * T ** 3)) * self.tD) * self.tD)) * r * kB * NAv / (
-                           T ** 3 * self.tD ** 3)/self.r
+                                          1 / 3) + self.tD * self.d3tDdVdT2 * T ** 3)) * self.tD) * self.tD)) * kB * NAv / (
+                           T ** 3 * self.tD ** 3)
+
+    # Public methods: r times the r = 1 expressions above, so that every derivative carries the same
+    # factor r as the function itself (review decision D5).
+    def F(self, T: float, V: float) -> float:
+        """F of F_vib (r times the r = 1 value)."""
+        return self.r * self._F_1(T, V)
+
+    def dFdV_T(self, T: float, V: float) -> float:
+        """(dF/dV)_T of F_vib (r times the r = 1 value)."""
+        return self.r * self._dFdV_T_1(T, V)
+
+    def dFdT_V(self, T: float, V: float) -> float:
+        """(dF/dT)_V of F_vib (r times the r = 1 value)."""
+        return self.r * self._dFdT_V_1(T, V)
+
+    def d2FdT2_V(self, T: float, V: float) -> float:
+        """(d2F/dT2)_V of F_vib (r times the r = 1 value)."""
+        return self.r * self._d2FdT2_V_1(T, V)
+
+    def d2FdV2_T(self, T: float, V: float) -> float:
+        """(d2F/dV2)_T of F_vib (r times the r = 1 value)."""
+        return self.r * self._d2FdV2_T_1(T, V)
+
+    def d3FdV3_T(self, T: float, V: float) -> float:
+        """(d3F/dV3)_T of F_vib (r times the r = 1 value)."""
+        return self.r * self._d3FdV3_T_1(T, V)
+
+    def d4FdV4_T(self, T: float, V: float) -> float:
+        """(d4F/dV4)_T of F_vib (r times the r = 1 value)."""
+        return self.r * self._d4FdV4_T_1(T, V)
+
+    def d2FdVdT(self, T: float, V: float) -> float:
+        """d2F/dVdT of F_vib (r times the r = 1 value)."""
+        return self.r * self._d2FdVdT_1(T, V)
+
+    def d3FdV2dT(self, T: float, V: float) -> float:
+        """d3F/dV2dT of F_vib (r times the r = 1 value)."""
+        return self.r * self._d3FdV2dT_1(T, V)
+
+    def d3FdVdT2(self, T: float, V: float) -> float:
+        """d3F/dVdT2 of F_vib (r times the r = 1 value)."""
+        return self.r * self._d3FdVdT2_1(T, V)

@@ -334,6 +334,19 @@ def layer_ext():
                 p = ga_fitting(fun, X, Y, list(p0), npop=20, ngen=40, verbose=False)
             put("fit/ga/%s/params" % tag, p)
         guard("fit/ga/" + tag, fga)
+    # B13: zero_scale (parameter with initial guess 0 can move and change sign) and failing / truncated model evaluations
+    def fga2():
+        g = lambda x, p: p[0] + p[1] * x + p[2] * x ** 2
+        with contextlib.redirect_stdout(io.StringIO()):
+            put("fit/ga/quadratic_zero_scale/params", ga_fitting(g, X, 2 + 3 * X - 0.5 * X ** 2, [2., 3., 0.], npop=20, ngen=40,
+                                                                 verbose=False, seed=3, zero_scale=1.0))
+        def bad(x, p):
+            if p[0] > 1.8 and p[1] < 2.7: return np.full_like(x, np.nan)
+            if p[0] < 1.4: return (p[0] + p[1] * x)[:-3]
+            return p[0] + p[1] * x
+        with contextlib.redirect_stdout(io.StringIO()):
+            put("fit/ga/failing_model/params", ga_fitting(bad, X, 2 + 3 * X, [1.5, 2.5], npop=20, ngen=40, verbose=False, seed=1))
+    guard("fit/ga/extra", fga2)
 
 
 def run_all():

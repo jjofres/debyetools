@@ -309,6 +309,21 @@ def layer_ext():
         def fve(p=p, tag=tag):
             put("io/poscar/%s/V_eV_per_atom" % tag, load_V_E(summ, p, units="eV/atom")[0])
         guard("io/poscar/%s/load_cell" % tag, fpc); guard("io/poscar/%s/load_V_E" % tag, fve)
+    # C7: further POSCAR forms (non-triangular cell, negative scale = volume, VASP 4, skewed Cartesian + scale + selective)
+    ah, ch = 2.95, 4.68
+    Hc = np.array([[ah, 0, 0], [-ah / 2, ah * np.sqrt(3) / 2, 0], [0, 0, ch]]); Hb = np.array([[1 / 3, 2 / 3, .25], [2 / 3, 1 / 3, .75]])
+    extra = {"fcc_primitive": "Al\n1.0\n0 2.02 2.02\n2.02 0 2.02\n2.02 2.02 0\nAl\n1\nDirect\n0 0 0\n",
+             "negative_scale": "Al\n-65.939264\n1 0 0\n0 1 0\n0 0 1\nAl\n4\nDirect\n" + "\n".join(frac) + "\n",
+             "vasp4": "Al3Li\n1.0\n4.0 0 0\n0 4.0 0\n0 0 4.0\n3 1\nDirect\n0 .5 .5\n.5 0 .5\n.5 .5 0\n0 0 0\n",
+             "hcp_cart_scale2_sel": "Ti\n2.0\n" + "\n".join(" ".join("%.17g" % (v / 2) for v in r) for r in Hc) + "\nTi\n2\nSelective dynamics\nCartesian\n"
+                                    + "\n".join(" ".join("%.17g" % (v / 2) for v in (Hb @ Hc)[k]) + " T T F" for k in range(2)) + "\n"}
+    for tag, txt in extra.items():
+        p = os.path.join(tmpd, "POSCAR_" + tag); open(p, "w").write(txt)
+        def fpc2(p=p, tag=tag):
+            f, cell, basis = load_cell(p)
+            put("io/poscar/%s/cell" % tag, cell); put("io/poscar/%s/basis" % tag, basis); put("io/poscar/%s/nat" % tag, len(basis))
+            put("io/poscar/%s/V_eV_per_atom" % tag, load_V_E(summ, p, units="eV/atom")[0])
+        guard("io/poscar/%s/load" % tag, fpc2)
 
     # (9) FactSage fit on two pipelines  [8.5, 8.6]
     T = gen_Ts(0.1, 1000.1, 21)

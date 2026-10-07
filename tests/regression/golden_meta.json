@@ -4,7 +4,7 @@
   "numpy": "1.26.4",
   "scipy": "1.13.1",
   "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35",
-  "git_head": "e373842cc9b91f60cb6b3f78c2eae40c1288f0df"
+  "git_head": "349c04921f19e390771e9421c5893a88c87a0bd4"
  },
  "errors": {
   "io/elastic_clamped/Al13Fe4_C2m": "ValueError",
@@ -14,9 +14,8 @@
   "io/elastic_clamped/InP_F43m": "ValueError",
   "io/elastic_clamped/MgCl2_R3m": "ValueError",
   "io/elastic_clamped/NaCl_Fm3m": "ValueError",
-  "io/elastic_clamped/NbC_Fm3m": "ValueError",
-  "io/poscar/selective/load_cell": "ValueError"
+  "io/elastic_clamped/NbC_Fm3m": "ValueError"
  },
- "n_keys": 2797,
+ "n_keys": 2815,
  "non_finite_keys": []
 }

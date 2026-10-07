@@ -136,44 +136,91 @@ def load_doscar(filename_sufix: str, list_filetags: list = None) -> tuple[list, 
     return E, N, Ef
 
 
+def _read_poscar(filename: str) -> dict:
+    """
+    Parse a VASP POSCAR/CONTCAR (VASP 4 or 5 format).
+
+    Handles: scale factor (positive = lattice scale, negative = target cell volume in A^3, or three
+    factors for the x, y, z Cartesian components), optional element-symbol line, optional "Selective dynamics" line (the T/F flags
+    after the coordinates are ignored), Direct or Cartesian coordinates (Cartesian ones are scaled by the
+    scale factor as VASP does and converted to fractional).
+
+    :param str filename: path of the POSCAR/CONTCAR file.
+    :return: dict with 'cell' (3x3, rows = lattice vectors in A, scale applied), 'species' (list of
+             symbols or None for VASP 4 files), 'counts' (atoms per species), 'frac' (nat x 3 fractional
+             coordinates), 'volume' (|det(cell)| in A^3), 'selective' (bool).
+    :rtype: dict
+    """
+    with open(filename) as f:
+        lines = [l.strip() for l in f.readlines()]
+    scale = [float(v) for v in lines[1].split()]
+    raw = np.array([[float(v) for v in lines[i].split()[:3]] for i in range(2, 5)])
+    if len(scale) == 3:
+        s_xyz = np.array(scale)                                   # factors for the x, y, z components
+    elif scale[0] < 0:
+        s_xyz = np.full(3, (-scale[0] / abs(np.linalg.det(raw))) ** (1 / 3))   # target volume
+    else:
+        s_xyz = np.full(3, scale[0])
+    cell = raw * s_xyz[None, :]
+    i = 5
+    tokens = lines[i].split()
+    if all(t.lstrip('+').isdigit() for t in tokens):
+        species = None                                   # VASP 4: counts directly after the lattice
+    else:
+        species = [t.split('/')[0].split('_')[0] for t in tokens]   # VASP 5 (also "Al_pv" or "Al/<hash>")
+        i += 1
+    counts = [int(t) for t in lines[i].split()]
+    nat = sum(counts)
+    i += 1
+    selective = lines[i][:1] in ('S', 's')
+    if selective:
+        i += 1
+    cartesian = lines[i][:1] in ('C', 'c', 'K', 'k')
+    i += 1
+    coords = np.array([[float(v) for v in lines[i + j].split()[:3]] for j in range(nat)])
+    if cartesian:
+        frac = (coords * s_xyz[None, :]) @ np.linalg.inv(cell)
+    else:
+        frac = coords
+    return {'cell': cell, 'species': species, 'counts': counts, 'frac': frac,
+            'volume': abs(np.linalg.det(cell)), 'selective': selective}
+
+
 def load_V_E(energy_dir_summary: str, energy_dir_contcar: str, units: str = 'eV/atom') -> tuple[np.ndarray, np.ndarray]:
     """
     Loads Energy curve as function of volume from VASP outputs.
+
+    The reference volume per atom is the cell volume of the POSCAR/CONTCAR (|det| of the lattice
+    matrix, scale factor applied) divided by the number of atoms. Each SUMMARY line is read as
+    "d  ...  ...  E": column 1 is the isotropic linear strain d of that calculation relative to the
+    POSCAR/CONTCAR cell (V = V_ref (1 + d)^3), column 4 the total energy of the cell in eV.
+    Exact duplicate lines are read once.
+
     :param energy_dir_summary: Summary file path.
     :type energy_dir_summary: str
-    :param energy_dir_contcar: Atoms positions file path.
+    :param energy_dir_contcar: Atoms positions file path (reference cell, d = 0).
     :type energy_dir_contcar: str
-    :param units: units.
+    :param units: 'eV/atom' (V in A^3/atom, E in eV/atom) or 'J/mol' (m^3/mol-at, J/mol-at).
     :type units: str
     :return: Energy as function of volume
     :rtype: tuple[np.ndarray,np.ndarray]
     """
-    with open(energy_dir_contcar, 'r') as f_poscar:
-        f_poscar_lines = f_poscar.readlines()
-        cell_poscar = f_poscar_lines[2:5]
-
-        cell_lst = [c.split() for c in cell_poscar]
-        diag_cell = [float(c[i]) for i, c in enumerate(cell_lst)]
-
-        try:
-            nat = sum([int(li) for li in np.fromstring(f_poscar_lines[5], dtype=int, sep=' ')])
-            1 / nat
-        except:
-            nat = sum([int(li) for li in np.fromstring(f_poscar_lines[6], dtype=int, sep=' ')])
-            1 / nat
+    pos = _read_poscar(energy_dir_contcar)
+    nat = sum(pos['counts'])
+    V_ref = pos['volume'] / nat
     with open(energy_dir_summary) as f_summary:
         f_summary_lines = f_summary.readlines()
         f_summary_lines = list(dict.fromkeys(f_summary_lines))
         ds = []
         E = []
         for l in f_summary_lines:
-            l_lst = l.split(' ')
+            l_lst = l.split()
+            if not l_lst:
+                continue
             ds.append(float(l_lst[0]))
             E.append(float(l_lst[3]) / nat)
 
-    V = []
-    for di in ds:
-        V.append(np.prod(np.array(diag_cell) * (1 + di)) / nat)
+    V = [V_ref * (1 + di) ** 3 for di in ds]
 
     uconvV, uconvE = None, None
     if units == 'J/mol':
@@ -181,6 +228,8 @@ def load_V_E(energy_dir_summary: str, energy_dir_contcar: str, units: str = 'eV/
         uconvV = A3_ATOM_TO_M3_MOL
     elif units == 'eV/atom':
         uconvE, uconvV = 1, 1
+    else:
+        raise ValueError("load_V_E: units must be 'eV/atom' or 'J/mol'")
     return np.array(V).T * uconvV, np.array(E).T * uconvE
 
 
@@ -238,34 +287,20 @@ def load_EM(filename_outcar_eps: str, block: str = 'relaxed') -> np.ndarray:
 def load_cell(filename_contcar: str) -> tuple[str, np.ndarray, np.ndarray]:
     """
     Extract crystal structure from file in VASP format (POSCAR or CONTCAR).
+
+    VASP 4 and 5 formats, scale factor, "Selective dynamics" and Direct or Cartesian coordinates are
+    supported (see _read_poscar). For VASP 4 files (no element line) the species are named A, B, C, ...
+
     :param filename_contcar: File path
     :type filename_contcar: str
-    :return: formula,, cell, and basis.
+    :return: formula (symbols repeated per atom, e.g. 'AlAlAlLi'), cell (rows = lattice vectors in A,
+             scale applied) and basis (fractional coordinates).
     :rtype: tuple[str,np.ndarray,np.ndarray]
     """
-    with open(filename_contcar) as f:
-        poscar_lines = f.readlines()
-    mult = float(poscar_lines[1])
-    cell = np.array([np.fromstring(line_i, dtype=float, sep=' ') for line_i in poscar_lines[2:5]])
-    cell = cell * mult
-
-    ix_nats = 6
-    re.findall('[A-Z][^A-Z]*', 'ABC')
-    ats_types = re.findall('[A-Z][^A-Z]*',
-                           poscar_lines[ix_nats - 1].replace('  ', '').replace(' ', '').replace('\n', ''))
-    ats_types = [ai + 'x' for ai in ats_types]
-    nats = np.fromstring(poscar_lines[ix_nats], dtype=int, sep=' ')
-
-    formula_lst = []
-    for at_i, na_i in zip(ats_types, nats):
-        formula_lst.append(at_i * na_i)
-    formula = ''.join(formula_lst)
-    tots_nats = sum(nats)
-
-    basis = np.array([np.fromstring(line_i, dtype=float, sep=' ') for line_i in poscar_lines[8:8 + tots_nats]])
-    # basis = np.dot(basis,cell)
-
-    return formula.replace('x', ''), cell, basis
+    pos = _read_poscar(filename_contcar)
+    species = pos['species'] if pos['species'] is not None else [chr(65 + k) for k in range(len(pos['counts']))]
+    formula = ''.join(sp_i * n_i for sp_i, n_i in zip(species, pos['counts']))
+    return formula, pos['cell'], pos['frac']
 
 # #####
 # from debyetools.tpropsgui.atomtools import atomic_mass

@@ -93,12 +93,20 @@ def gen_Ps(Pi, Pf, nPs):
 
 def load_doscar(filename_sufix: str, list_filetags: list = None) -> tuple[list, list, list]:
     """
-    Extract electronic density, energies and Fermi level as function of volume from DOSCAR's.
-    :param filename_sufix: folder path.
+    Read the total electronic DOS of a series of VASP DOSCAR files (one per volume).
+
+    Only the total-DOS block (NEDOS lines after the 6-line header) is read; projected
+    blocks are ignored. For spin-polarised files (ISPIN = 2, 5 columns) the two spin
+    channels are summed; for ISPIN = 1 (3 columns) the DOS column is used. The DOS is
+    divided by the number of atoms.
+
+    :param filename_sufix: common part of the file names (path + prefix).
     :type filename_sufix: str
-    :param list_filetags: filename tags.
+    :param list_filetags: filename tags appended to filename_sufix (default
+        '-0.10' ... '0.10'), in the same order as the volumes.
     :type list_filetags: list
-    :return: E,N,Ef.
+    :return: E (energy grids, eV), N (total DOS, states/eV/atom), Ef (Fermi levels, eV),
+        one entry per file.
     :rtype: tuple[list,list,list]
     """
     if list_filetags is None:
@@ -106,30 +114,29 @@ def load_doscar(filename_sufix: str, list_filetags: list = None) -> tuple[list, 
                          '-0.02', '-0.01', '-0.00', '0.01', '0.02', '0.03', '0.04', '0.05', '0.06',
                          '0.07', '0.08', '0.09', '0.10']
 
-    list_filetags = [str(li) for li in list_filetags]
     E = []
     N = []
     Ef = []
-    nat = 0
-    for dosfile in list_filetags:
-        countline = 0
-        EN = []
-
-        filename = filename_sufix + dosfile
+    for tag in list_filetags:
+        filename = filename_sufix + str(tag)
         with open(filename) as infile:
-            for line in infile:
-                if countline == 0:
-                    nat = float(line.split()[0])
-                if countline == 5:
-                    Ef.append(float(line.split()[3]))
-                if countline > 5:
-                    EN.append(line.split()[0:2])
-
-                countline += 1
-        ENAl = np.array(EN)
-        # print(dosfile, EN)
-        E.append([float(s) for s in list(ENAl[:, 0])])
-        N.append([float(s) / nat for s in list(ENAl[:, 1])])
+            lines = infile.read().splitlines()
+        nat = int(lines[0].split()[0])
+        head = lines[5].split()
+        nedos = int(head[2])
+        block = np.array([[float(v) for v in line.split()] for line in lines[6:6 + nedos]])
+        if block.ndim != 2 or block.shape[0] != nedos:
+            raise ValueError("%s: expected %d total-DOS lines." % (filename, nedos))
+        if block.shape[1] == 5:
+            dos = block[:, 1] + block[:, 2]
+        elif block.shape[1] == 3:
+            dos = block[:, 1]
+        else:
+            raise ValueError("%s: unexpected number of columns (%d) in the total-DOS block."
+                             % (filename, block.shape[1]))
+        E.append(block[:, 0])
+        N.append(dos / nat)
+        Ef.append(float(head[3]))
 
     return E, N, Ef
 

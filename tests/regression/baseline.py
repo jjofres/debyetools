@@ -28,7 +28,7 @@ import scipy
 import debyetools.potentials as potentials
 from debyetools.ndeb import nDeb
 from debyetools.aux_functions import gen_Ts, load_V_E, load_EM, load_doscar, load_cell
-from debyetools.electronic import fit_electronic
+from debyetools.electronic import fit_electronic, N_at_Fermi
 from debyetools.poisson import poisson_ratio
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -120,6 +120,9 @@ def layer_fit():
         Ee, N, Ef = load_doscar(AL + "/DOSCAR.EvV.", list_filetags=AL_TAGS)
         put("fit/Al/Ef", Ef)
         put("fit/Al/p_el", fit_electronic(V, P_EL_AL, Ee, N, Ef))
+        put("fit/Al/NEF", [N_at_Fermi(Ee[i], N[i], Ef[i]) for i in range(len(Ef))])
+        put("fit/Al/p_el_sigma01", fit_electronic(V, P_EL_AL, Ee, N, Ef, sigma=0.1))
+        put("fit/Al/p_el_scaling", fit_electronic(V, P_EL_AL, Ee, N, Ef, mode="scaling", V0=V[10]))
     guard("fit/Al/el", fel)
 
     def fnu():
@@ -139,6 +142,7 @@ def layer_fit():
             EM = load_EM(d + "/OUTCAR.eps"); put("fit/%s/nu" % mat, poisson_ratio(EM))
             Ee, N, Ef = load_doscar(d + "/DOSCAR.EvV.")
             put("fit/%s/p_el" % mat, fit_electronic(Vm, P_EL_AL, Ee, N, Ef))
+            put("fit/%s/NEF" % mat, [N_at_Fermi(Ee[i], N[i], Ef[i]) for i in range(len(Ef))])
         guard("fit/" + mat, fm)
 
 

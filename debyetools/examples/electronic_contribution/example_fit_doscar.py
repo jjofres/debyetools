@@ -18,5 +18,5 @@ E, N, Ef = load_doscar('../Al3Li_L12/DOSCAR.EvV.',
 params_el = fit_electronic(V_data, p_el_initial,
                            E, N, Ef)
 print(params_el)
-#1.733724914e-01, -6.877536975e+03, 0.000000000e+00, 0.000000000e+00
+# [-1.05880912e+00  4.38316404e+05 -4.96441646e+10  1.88800475e+15]  (p_el_initial is not used)
 

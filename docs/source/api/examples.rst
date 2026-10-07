@@ -40,15 +40,15 @@ Loading the energy curve and fitting the Birch-Murnaghan EOS:
 array([-3.26544606e+05,  9.82088168e-06,  6.31181335e+10,  4.32032416e+00])
 
 To fit the electronic contribution to eDOS data we can load them as `VASP` format `DOSCAR` files using the function ``load_doscar``.
-Then, at each ``V_DFT`` volume, the parameters of the electronic contribution will be fitted with the ``fit_electronic`` function from the ``electronic`` module, using ``p_el_initial`` as initial parameters.
+Then the density of states at the Fermi level of each ``V_DFT`` volume is fitted to a cubic polynomial in V with the ``fit_electronic`` function from the ``electronic`` module (linear least squares; the second argument, an initial guess, is not used and kept for compatibility).
 
 >>> from debyetools.aux_functions import load_doscar
 >>> from debyetools.electronic import fit_electronic
->>> p_el_inittial = [3.8027342892e-01, -1.8875015171e-02, 5.3071034596e-04, -7.0100707467e-06]
->>> E, N, Ef = load_doscar(dir_path+'/examples/Al3Li_L12/DOSCAR.EvV.')
->>> p_electronic = fit_electronic(V_DFT, p_el_inittial,E,N,Ef)
+>>> list_filetags = ['%02d' % i for i in range(1, 22)]
+>>> E, N, Ef = load_doscar(dir_path+'/examples/Al3Li_L12/DOSCAR.EvV.', list_filetags=list_filetags)
+>>> p_electronic = fit_electronic(V_DFT, None, E, N, Ef)
 >>> p_electronic
-array([ 1.73372534e-01, -6.87754210e+03,  5.30710346e-04, -7.01007075e-06])
+array([-1.05880912e+00,  4.38316404e+05, -4.96441646e+10,  1.88800475e+15])
 
 The Poisson's ratio and elastic constants can be calculated using the ``poisson_ratio`` method and the `elastic moduli matrix` in the `VASP` format `OUTCAR` obtained when using ``IBRION = 6`` in the `INCAR` file, loaded using ``load_EM``.
 

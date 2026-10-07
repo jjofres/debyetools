@@ -254,11 +254,13 @@ class Vibrational:
         r = self.r
 
         x = self.tD / T
-        x = np.minimum(x, 653)  # same clamp as before; works for scalars, 0-d and 1-d arrays (numpy 2)
-        ex = np.exp(x)
+        # 1/(e^x - 1) written with e^-x: no overflow for large x, so no clamp is needed (finding 4.5b)
+        with np.errstate(under='ignore'):
+            em = np.exp(-x)
+        q = em / (1 - em)
         D3 = D_3(x)
         dD3dx = dD_3dx(x, D3)
-        return 9*NAv*kB*(self.dtDdT_V)*(1/8) + 3*kB*r*NAv*np.log(1-np.exp(-x)) + 3*r*NAv*kB*(self.dtDdT_V)/(ex*(1-1/ex)) - 3*r*NAv*kB*self.tD/(T*ex*(1-1/ex)) - r*NAv*kB*dD3dx*(self.dtDdT_V) + r*NAv*kB*dD3dx*self.tD/T - r*NAv*kB*D3
+        return 9*NAv*kB*(self.dtDdT_V)*(1/8) + 3*kB*r*NAv*np.log1p(-em) + 3*r*NAv*kB*(self.dtDdT_V)*q - 3*r*NAv*kB*self.tD/T*q - r*NAv*kB*dD3dx*(self.dtDdT_V) + r*NAv*kB*dD3dx*self.tD/T - r*NAv*kB*D3
 
     def d2FdT2_V(self, T: float, V: float) -> float:
         """
@@ -271,14 +273,14 @@ class Vibrational:
         """
         r = self.r
         x = self.tD / T
-        x = np.minimum(x, 653)  # same clamp as before; works for scalars, 0-d and 1-d arrays (numpy 2)
-        ex = np.exp(x)
+        # numerator and denominator divided by (e^x - 1); 1/(e^x - 1) written with e^-x (no clamp, finding 4.5b)
+        with np.errstate(under='ignore'):
+            em = np.exp(-x)
+        q = em / (1 - em)
         D3 = D_3(x)
-        return 3  * NAv * ((ex - 1) * T * (
-                    T ** 2 * self.d2tDdT2_V * self.tD - 4 * (self.dtDdT_V * T - self.tD) ** 2) * D3 + 3 * self.tD * (
-                             self.d2tDdT2_V * self.tD * ex * T ** 2 - T ** 2 * self.d2tDdT2_V * self.tD + 8 * (
-                              self.dtDdT_V * T - self.tD) ** 2) * (1 / 8)) * kB / (
-                               self.tD ** 2 * (ex - 1) * T ** 2)
+        return 3 * NAv * (T * (T ** 2 * self.d2tDdT2_V * self.tD - 4 * (self.dtDdT_V * T - self.tD) ** 2) * D3
+                          + 3 * self.tD * (self.d2tDdT2_V * self.tD * T ** 2 + 8 * (self.dtDdT_V * T - self.tD) ** 2 * q) * (1 / 8)) * kB / (
+                               self.tD ** 2 * T ** 2)
 
     def d2FdV2_T(self, T: float, V: float) -> float:
         """

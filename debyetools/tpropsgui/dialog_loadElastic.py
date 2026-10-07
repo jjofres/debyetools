@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import  QDialog, QFileDialog
+from PySide6.QtWidgets import  QDialog, QFileDialog, QMessageBox
 from debyetools.tpropsgui.ui_dialog_loadElastic import Ui_Dialog as Ui_OUTCAR
 from debyetools.aux_functions import load_EM as dt_load_EM
 
@@ -39,18 +39,18 @@ class dialogLoadElastic(QDialog):
 #        self.ui.poscarpath.setText(poscarpath)
 
     def on_pushButton_OK(self):
+        """Read the OUTCAR when OK is pressed (not on close) and paste the moduli in GPa; errors are shown (G11)."""
         self.outcarpath = self.ui.outcarpath.text()
-#        self.poscarpath = self.ui.poscarpath.text()
-        self.close()
-    def closeEvent(self, event):
-        EM = dt_load_EM(self.outcarpath)
-#        print(EM)
-
+        try:
+            EM = dt_load_EM(self.outcarpath)  # kBar, relaxed-ion (D1)
+        except Exception as e:
+            QMessageBox.information(self, 'Error', 'Could not read the elastic constants:\n%s' % e, QMessageBox.Ok)
+            return
         txt2paste = ''
         for rowi in EM:
             txt2paste=txt2paste+' '.join(['%.2f'%(float(coli)/10) for coli in rowi])+'\n'
-#        print('event', event)
         self.elastic_constants.setText(txt2paste)
+        self.close()
 
     def is_dark_mode(self):
         # Detect if the application is in dark mode using the palette

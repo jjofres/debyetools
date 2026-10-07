@@ -5,6 +5,7 @@ from debyetools.tpropsgui.ui_dialog_fitEOS import Ui_Form as Ui_iparams
 from debyetools.tpropsgui.atomtools import dt_potentials
 
 import numpy as np
+import warnings
 
 from debyetools.tpropsgui.dialog_loadEOS import dialogLoadEOS
 
@@ -85,10 +86,22 @@ class dialogFitEOS(QDialog):
         return (data[:, i] * conv[i] for i in range(ncols))
 
     def get_EOS_params(self):
-        txt = self.ui.lineEdit_3.text()
-        if txt == '':
-            return -3e5, 9e-6, 7e10, 4
-        return [float(ti) for ti in txt.replace(' ', '').split(',')]
+        """
+        Initial parameters typed in the dialog, or None when the field is empty, cannot be read or has the wrong
+        number of values for the EOS: fitEOS then starts from the data (analytic EOS) or from the Morse default.
+        """
+        txt = self.ui.lineEdit_3.text().replace(',', ' ').split()
+        try:
+            p = [float(ti) for ti in txt]
+        except ValueError:
+            return None
+        if not p:
+            return None
+        if self.eos_str in ('BM', 'RV', 'MG', 'TB', 'MU', 'PT') and len(p) != 4:
+            return None
+        if self.eos_str == 'MP' and len(p) != 3 * np.shape(self.eos.npair)[1]:
+            return None
+        return p
 
     def on_pushloadEvV(self):
         self.dialog_loadEOS.mass = 0
@@ -121,21 +134,51 @@ class dialogFitEOS(QDialog):
 
         try:
             Vdata, Edata = self.get_EvV()
+            if len(Vdata) < 2:
+                raise ValueError('at least two (V, E) points are needed')
         except Exception as e:
-            print(e)
-            error_msg = 'Something is wrong with the data for energy versus volume.\n Please check and try again.'
+            error_msg = 'Something is wrong with the data for energy versus volume:\n%s\nPlease check and try again.' % e
             QMessageBox.information(self, 'Error', error_msg, QMessageBox.Ok)
-
+            self.ui.progress_3.setValue(0)
+            return
 
         self.Vdata = Vdata
         self.Edata = Edata
 
         initial_guess = self.get_EOS_params()
-        self.eos.fitEOS(Vdata, Edata, initial_parameters=initial_guess, fit=True)
+        if self.eos_str == 'EAM' and initial_guess is None:
+            QMessageBox.information(self, 'Error', 'EAM needs initial parameters.', QMessageBox.Ok)
+            self.ui.progress_3.setValue(0)
+            return
+        try:
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter('always')
+                self.eos.fitEOS(Vdata, Edata, initial_parameters=initial_guess, fit=True)
+        except dt_potentials.EOSFitError as e:
+            # no starting point gave an acceptable fit: ask whether to keep the best attempt (G8)
+            answer = QMessageBox.question(self, 'EOS fit',
+                                          '%s\n\nKeep the best attempt anyway?' % e, QMessageBox.Yes | QMessageBox.No)
+            if answer != QMessageBox.Yes:
+                self.ui.progress_3.setValue(0)
+                return
+            try:
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter('always')
+                    self.eos.fitEOS(Vdata, Edata, initial_parameters=initial_guess, fit=True, on_failure='warn')
+            except Exception as e2:
+                QMessageBox.information(self, 'Error', 'The EOS fit failed:\n%s' % e2, QMessageBox.Ok)
+                self.ui.progress_3.setValue(0)
+                return
+        except Exception as e:
+            QMessageBox.information(self, 'Error', 'The EOS fit failed:\n%s' % e, QMessageBox.Ok)
+            self.ui.progress_3.setValue(0)
+            return
 
         self.ui.lineEdit_3.setText(', '.join(['%.9e' % (p) for p in self.eos.pEOS]))
-
         self.ui.progress_3.setValue(100)
+        notes = [str(w.message) for w in caught if issubclass(w.category, UserWarning)]
+        if notes:
+            QMessageBox.information(self, 'EOS fit', '\n\n'.join(notes), QMessageBox.Ok)
 
     def is_dark_mode(self):
         # Detect if the application is in dark mode using the palette

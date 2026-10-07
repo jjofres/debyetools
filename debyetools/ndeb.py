@@ -375,12 +375,16 @@ class nDeb:
 
     def eval_Cp(self, T: np.ndarray, V: np.ndarray, P = None) -> dict:
         """
-        Evaluates the Heat capacity of a given compound/element at (T,V).
+        Constant-pressure heat capacity at (T, V) only (lighter than eval_props: second derivatives only).
+
+        Uses the same contributions and factors as eval_props (E0, vibrational, electronic, defects,
+        explicit anharmonicity and excess Xs; vibrational T-derivatives divided by r as in eval_props),
+        so eval_Cp(T, V)['Cp'] equals eval_props(T, V)['Cp'].
 
         :param np.ndarray T: The temperature in Kelvin.
         :param np.ndarray V: The volume in m^3/mol-at.
-        :param P: Deprecated and ignored; P is computed as -dF/dV at (T, V) and returned under key 'P'.
-        :return: A dictionary with the following keys: 'T': temperature, 'V': volume, 'tD': Debye temperature, 'g': Gruneisen parameter, 'Kt': isothermal bulk modulus, 'Ktp': pressure derivative of the isothermal bulk modulus, 'Ktpp': second order pressure derivative of the isothermal bulk modulus, 'Cv': constant-volume heat capacity, 'a': thermal expansion, 'Cp': constant-pressure heat capacity, 'Ks': adiabatic bulk modulus , 'Ksp': pressure derivative of the adiabatic bulk modulus, 'G': Gibbs free energy, 'E': total internal energy, 'S': entropy, 'E0': 'cold' internal energy defined by the EOS, 'Fvib': vibrational free energy, 'Evib': vibrational internal energy, 'Svib': vibrational entropy, 'Cvvib': vibrational heat capacity, 'Pcold': 'cold' pressure, 'dPdT_V': (dP/dT)_V, 'G^2': Ktp**2-2*Kt*Ktpp, 'dSdP_T': (dS/dP)_T, 'dKtdT_P': (dKt/dT)_P, 'dadP_T': (da/dP)_T, 'dCpdP_T': (dCp/dP)_T, 'ddSdT_PdP_T': (d2S/dTdP).
+        :param P: Deprecated and ignored.
+        :return: {'Cp': constant-pressure heat capacity}.
         :rtype: dict
         """
         del P
@@ -392,9 +396,9 @@ class nDeb:
         d2E0dT2_V = 0
         d2E0dVdT = 0
 
-        d2FvibdT2_V = self.vib.d2FdT2_V(T,V)
+        d2FvibdT2_V = self.vib.d2FdT2_V(T,V)/self.r**2
         d2FvibdV2_T = self.vib.d2FdV2_T(T,V)
-        d2FvibdVdT = self.vib.d2FdVdT(T,V)
+        d2FvibdVdT = self.vib.d2FdVdT(T,V)/self.r
 
         d2FeldT2_V = self.el.d2FdT2_V(T, V)
         d2FeldV2_T = self.el.d2FdV2_T(T, V)
@@ -408,9 +412,13 @@ class nDeb:
         d2FadV2_T = self.anh.d2FdV2_T(T, V)
         d2FadVdT = self.anh.d2FdVdT(T, V)
 
-        d2FdV2_T = d2E0dV2_T + d2FvibdV2_T + d2FeldV2_T + d2FdefdV2_T + d2FadV2_T
-        d2FdT2_V = d2E0dT2_V + d2FvibdT2_V + d2FeldT2_V + d2FdefdT2_V + d2FadT2_V
-        d2FdVdT = d2E0dVdT + d2FvibdVdT + d2FeldVdT + d2FdefdVdT + d2FadVdT
+        d2FxsdT2_V = self.xs.d2FdT2_V(T, V)
+        d2FxsdV2_T = self.xs.d2FdV2_T(T, V)
+        d2FxsdVdT = self.xs.d2FdVdT(T, V)
+
+        d2FdV2_T = d2E0dV2_T + d2FvibdV2_T + d2FeldV2_T + d2FdefdV2_T + d2FadV2_T + d2FxsdV2_T
+        d2FdT2_V = d2E0dT2_V + d2FvibdT2_V + d2FeldT2_V + d2FdefdT2_V + d2FadT2_V + d2FxsdT2_V
+        d2FdVdT = d2E0dVdT + d2FvibdVdT + d2FeldVdT + d2FdefdVdT + d2FadVdT + d2FxsdVdT
 
         Cp = -T * (d2FdT2_V - (d2FdVdT) ** 2 / d2FdV2_T)
 

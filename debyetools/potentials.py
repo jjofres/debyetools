@@ -60,6 +60,157 @@ def _V0_from_dE0dV(eos, Vdata) -> float:
     return V0
 
 
+class EOSFitError(RuntimeError):
+    """Raised by fitEOS when no starting point gives an acceptable fit (see _fit_with_restarts)."""
+
+
+def _analytic_start_from_data(Vdata, Edata):
+    """
+    Starting point (E0, V0, B0, B0') for the 4-parameter analytic EOS from the data alone: a cubic in
+    x = V/V_m - 1 fitted to E(V), its minimum gives E0 and V0, V0 E2 gives B0 and -1 - V0 E3/E2 (E2, E3: 2nd and 3rd derivatives) gives
+    B0' (clipped to [2, 8]). Falls back to the lowest data point, 100 GPa and 4.5 when the cubic has no
+    minimum in the data range.
+    """
+    V = np.asarray(Vdata, dtype=float); E = np.asarray(Edata, dtype=float)
+    i = int(np.argmin(E))
+    fallback = np.array([E[i], V[i], 1e11, 4.5])
+    if len(V) < 4:
+        return fallback
+    Vm = V.mean()
+    P = np.polynomial.Polynomial.fit(V / Vm - 1, E, 3).convert()
+    d1, d2, d3 = P.deriv(1), P.deriv(2), P.deriv(3)
+    xs = [x.real for x in d1.roots() if abs(x.imag) < 1e-12 and d2(x.real) > 0]
+    xs = [x for x in xs if V.min() <= Vm * (1 + x) <= V.max()]
+    if not xs:
+        return fallback
+    x0 = min(xs, key=lambda x: P(x))
+    V0 = Vm * (1 + x0)
+    E2 = d2(x0) / Vm ** 2
+    E3 = d3(x0) / Vm ** 3
+    B0 = V0 * E2
+    Bp = float(np.clip(-1 - V0 * E3 / E2, 2.0, 8.0))
+    if not (np.isfinite(B0) and B0 > 0):
+        return fallback
+    return np.array([P(x0), V0, B0, Bp])
+
+
+def _clip_into(p, bounds):
+    """Starting point moved inside the bounds (a value on or below a finite lower bound is set just above it)."""
+    lb, ub = (np.broadcast_to(np.asarray(b, dtype=float), np.shape(p)) for b in bounds)
+    q = np.clip(np.array(p, dtype=float), lb, ub)
+    eps_l = 1e-9 * np.where(np.isfinite(lb) & (lb != 0), np.abs(lb), 1.0)
+    eps_u = 1e-9 * np.where(np.isfinite(ub) & (ub != 0), np.abs(ub), 1.0)
+    q = np.where(np.isfinite(lb) & (q <= lb), lb + eps_l, q)
+    q = np.where(np.isfinite(ub) & (q >= ub), ub - eps_u, q)
+    return q
+
+
+def _fit_check(eos, popt, Vdata, Edata, kind, rel_tol):
+    """Set the parameters and judge the fit: finite, minimum found with B0 > 0, V0 within a factor 2 of the
+    data range, rms of the residuals below rel_tol times the energy range of the data."""
+    V = np.asarray(Vdata, dtype=float); E = np.asarray(Edata, dtype=float)
+    info = {'params': np.array(popt, dtype=float)}
+    if not np.all(np.isfinite(popt)):
+        info['reason'] = 'non-finite parameters'; return False, info
+    if hasattr(eos, '_set_fit_params'):
+        eos._set_fit_params(popt)
+    else:
+        eos.pEOS = np.array(popt, dtype=float)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        try:
+            res = np.asarray(eos.E0(V), dtype=float) - E
+            V0 = float(popt[1]) if kind == 'analytic' else _V0_from_dE0dV(eos, V)
+            B0 = V0 * float(eos.d2E0dV2_T(V0))
+        except Exception as e:  # no minimum, overflow, ...
+            info['reason'] = 'no minimum of E0(V) (%s)' % e; return False, info
+    erange = max(float(E.max() - E.min()), 1e-300)
+    info.update(rms=float(np.sqrt(np.mean(res ** 2))), V0=V0, B0=B0)
+    info['rel_rms'] = info['rms'] / erange if len(E) > 1 else 0.0
+    if not (np.isfinite(info['rms']) and np.isfinite(B0)):
+        info['reason'] = 'non-finite energies'; return False, info
+    if B0 <= 0:
+        info['reason'] = 'B0 = V0 E0\'\'(V0) <= 0 (unstable)'; return False, info
+    if len(V) > 1 and not (0.5 * V.min() <= V0 <= 2 * V.max()):
+        info['reason'] = 'V0 = %.4g far outside the data range' % V0; return False, info
+    if info['rel_rms'] > rel_tol:
+        info['reason'] = 'rms %.3g J/mol = %.3g of the energy range > rel_tol %.3g' % (info['rms'], info['rel_rms'], rel_tol)
+        return False, info
+    info['reason'] = 'ok'
+    return True, info
+
+
+def _fit_with_restarts(eos, Vdata, Edata, p0, bounds, kind, rel_tol=0.02, max_starts=12, on_failure='raise',
+                       x_scale='jac'):
+    """
+    Least-squares fit of an EOS with a check of the result and automatic restarts.
+
+    The fit is started from p0 (the user's initial parameters). If the result fails the check (no minimum,
+    B0 <= 0, V0 far from the data, or rms above rel_tol times the energy range of the data) other starting
+    points are tried, one at a time, until one passes: for the analytic EOS (kind='analytic', parameters
+    E0, V0, B0, B0') a start from a cubic fitted to the data and variations of B0 and B0'; for the pair
+    potentials (kind='pair') deterministic random rescalings of p0 by factors 1/3 to 3. Every attempt is
+    recorded in eos.fit_info. If none passes: on_failure='raise' raises EOSFitError (give better initial
+    parameters), on_failure='warn' keeps the best attempt with a UserWarning.
+
+    :return: fitted parameters.
+    """
+    V = np.asarray(Vdata, dtype=float); E = np.asarray(Edata, dtype=float)
+    starts = []
+    if p0 is not None and not (isinstance(p0, str) and p0 == ''):
+        starts.append(('initial_parameters', np.array(p0, dtype=float)))
+    if kind == 'analytic':
+        d = _analytic_start_from_data(V, E)
+        starts.append(('from data', d))
+        for fB, Bp in [(1, 3.0), (1, 6.0), (0.5, 4.5), (2, 4.5), (0.5, 3.0), (2, 6.0), (1, 8.0), (0.25, 4.5), (4, 4.5)]:
+            starts.append(('from data, B0 x %g, B0\' = %g' % (fB, Bp), np.array([d[0], d[1], d[2] * fB, Bp])))
+    else:
+        if not starts:
+            raise ValueError('fitEOS: initial_parameters are required for this potential.')
+        rng = np.random.default_rng(20261007)
+        for k in range(max_starts):
+            f = np.exp(rng.uniform(np.log(1 / 3), np.log(3), size=len(starts[0][1])))
+            starts.append(('initial_parameters x random factors (%d)' % (k + 1), starts[0][1] * f))
+    starts = starts[:max_starts]
+    attempts = []
+    best = None
+    for label, x0 in starts:
+        x0 = _clip_into(x0, bounds)
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                sol = least_squares(eos.error2min, x0, args=(V, E), bounds=bounds, x_scale=x_scale)
+            ok, info = _fit_check(eos, sol.x, V, E, kind, rel_tol)
+        except Exception as e:
+            ok, info = False, {'params': None, 'reason': 'fit failed (%s)' % e}
+            sol = None
+        info.update(start=label, x0=x0)
+        attempts.append(info)
+        if sol is not None and np.isfinite(info.get('rms', np.inf)) and (best is None or info['rms'] < best[1]['rms']):
+            best = (sol, info)
+        if ok:
+            eos.fit_info = {'accepted': label, 'attempts': attempts}
+            if len(attempts) > 1:
+                warnings.warn('fitEOS (%s): the fit from %s was rejected (%s); accepted the fit from %s.'
+                              % (type(eos).__name__, attempts[0]['start'], attempts[0]['reason'], label),
+                              UserWarning, stacklevel=3)
+            eos.eos_residuals = sol.fun
+            return sol.x
+    eos.fit_info = {'accepted': None, 'attempts': attempts}
+    lines = '; '.join('%s: %s' % (a['start'], a['reason']) for a in attempts)
+    if on_failure == 'warn' and best is not None:
+        warnings.warn('fitEOS (%s): no starting point gave an acceptable fit; keeping the best one (%s, %s). '
+                      'Tried: %s' % (type(eos).__name__, best[1]['start'], best[1]['reason'], lines),
+                      UserWarning, stacklevel=3)
+        if hasattr(eos, '_set_fit_params'):
+            eos._set_fit_params(best[0].x)
+        eos.eos_residuals = best[0].fun
+        return best[0].x
+    raise EOSFitError('fitEOS (%s): no starting point gave an acceptable fit. Please provide initial_parameters '
+                      'closer to the solution (or use on_failure="warn" to keep the best attempt). Tried: %s'
+                      % (type(eos).__name__, lines))
+
+
 class BM:
     """
     Third order Birch-Murnaghan EOS and derivatives.
@@ -72,7 +223,7 @@ class BM:
             self.pEOS = parameters[:4]
             self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> None:
         """
         Parameters fitting.
 
@@ -84,14 +235,18 @@ class BM:
         :type initial_parameters: np.ndarray
         :param fit: True to run the fitting. False to just use the input parameters.
         :type fit: bool.
+        :param rel_tol: A fit is accepted when its rms is below rel_tol times the energy range of the data (and it has
+            a minimum with B0 > 0 within a factor 2 of the data volumes); otherwise other starting points are tried.
+        :param max_starts: Maximum number of starting points.
+        :param on_failure: 'raise' (EOSFitError, default) or 'warn' (keep the best attempt) when no start passes.
 
         :return: Optimal parameters.
         :rtype: np.ndarray
         """
         if fit:
-            pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=EOS4_BOUNDS, x_scale='jac')['x']
-            self.pEOS = popt
+            p0 = None if initial_parameters is None or (isinstance(initial_parameters, str) and initial_parameters == '') \
+                else np.asarray(initial_parameters, dtype=float)[:4]
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, p0, EOS4_BOUNDS, 'analytic', rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters[:4]
 
@@ -227,7 +382,7 @@ class RV:  # Rose-Vinet
             self.pEOS = parameters[:4]
             self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> None:
         """
         Parameters fitting.
 
@@ -239,14 +394,18 @@ class RV:  # Rose-Vinet
         :type initial_parameters: np.ndarray
         :param fit: True to run the fitting. False to just use the input parameters.
         :type fit: bool.
+        :param rel_tol: A fit is accepted when its rms is below rel_tol times the energy range of the data (and it has
+            a minimum with B0 > 0 within a factor 2 of the data volumes); otherwise other starting points are tried.
+        :param max_starts: Maximum number of starting points.
+        :param on_failure: 'raise' (EOSFitError, default) or 'warn' (keep the best attempt) when no start passes.
 
         :return: Optimal parameters.
         :rtype: np.ndarray
         """
         if fit:
-            pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=EOS4_BOUNDS, x_scale='jac')['x']
-            self.pEOS = popt
+            p0 = None if initial_parameters is None or (isinstance(initial_parameters, str) and initial_parameters == '') \
+                else np.asarray(initial_parameters, dtype=float)[:4]
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, p0, EOS4_BOUNDS, 'analytic', rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters[:4]
 
@@ -409,7 +568,7 @@ class MG:  # Mie-Gruneisen
             self.pEOS = parameters[:4]
             self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> None:
         """
         Parameters fitting.
 
@@ -421,14 +580,18 @@ class MG:  # Mie-Gruneisen
         :type initial_parameters: np.ndarray
         :param fit: True to run the fitting. False to just use the input parameters.
         :type fit: bool.
+        :param rel_tol: A fit is accepted when its rms is below rel_tol times the energy range of the data (and it has
+            a minimum with B0 > 0 within a factor 2 of the data volumes); otherwise other starting points are tried.
+        :param max_starts: Maximum number of starting points.
+        :param on_failure: 'raise' (EOSFitError, default) or 'warn' (keep the best attempt) when no start passes.
 
         :return: Optimal parameters.
         :rtype: np.ndarray
         """
         if fit:
-            pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=EOS4_BOUNDS, x_scale='jac')['x']
-            self.pEOS = popt
+            p0 = None if initial_parameters is None or (isinstance(initial_parameters, str) and initial_parameters == '') \
+                else np.asarray(initial_parameters, dtype=float)[:4]
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, p0, EOS4_BOUNDS, 'analytic', rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters[:4]
 
@@ -576,7 +739,7 @@ class TB:  # TB-SMA
             self.pEOS = parameters[:4]
             self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
+    def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True, rel_tol=0.02, max_starts=12, on_failure='raise'):
         """
         Parameters fitting.
 
@@ -587,9 +750,9 @@ class TB:  # TB-SMA
         :return list_of_floats: Optimal parameters.
         """
         if fit:
-            pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=EOS4_BOUNDS, x_scale='jac')['x']
-            self.pEOS = popt
+            p0 = None if initial_parameters is None or (isinstance(initial_parameters, str) and initial_parameters == '') \
+                else np.asarray(initial_parameters, dtype=float)[:4]
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, p0, EOS4_BOUNDS, 'analytic', rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters[:4]
 
@@ -774,7 +937,17 @@ class MP:  # Morse
             self.pEOS = parameters
         #### pr0nt('xxx',self.ndist,self.npair,self.Vstar)
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
+    def default_initial_parameters(self, Vdata, Edata) -> np.ndarray:
+        """
+        Starting point when no initial_parameters are given: for every pair type D = 0.5 eV, alpha = 1.5 1/A and
+        r0 = the nearest-neighbour distance at the data volume with the lowest energy.
+        """
+        V = np.asarray(Vdata, dtype=float); E = np.asarray(Edata, dtype=float)
+        Vmin = V[np.argmin(E)] if V.size > 1 else float(np.ravel(V)[0])
+        r_nn = float(self.ndist[0]) * (Vmin / self.mult_V / self.Vstar) ** (1 / 3)
+        return np.tile([0.5, 1.5, r_nn], int(np.shape(self.npair)[1]))
+
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> None:
         """
         Parameters fitting.
 
@@ -786,16 +959,19 @@ class MP:  # Morse
         :type initial_parameters: np.ndarray
         :param fit: True to run the fitting. False to just use the input parameters.
         :type fit: bool.
+        :param rel_tol: A fit is accepted when its rms is below rel_tol times the energy range of the data (and it has
+            a minimum with B0 > 0 within a factor 2 of the data volumes); otherwise other starting points are tried.
+        :param max_starts: Maximum number of starting points.
+        :param on_failure: 'raise' (EOSFitError, default) or 'warn' (keep the best attempt) when no start passes.
 
         :return: Optimal parameters.
         :rtype: np.ndarray
         """
         if fit:
-            pEOS = initial_parameters
-            lstsq_sol = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=(0, np.inf), x_scale='jac')
-            popt = lstsq_sol['x']
-            self.pEOS = popt
-            self.eos_residuals = lstsq_sol['fun']
+            if initial_parameters is None:
+                initial_parameters = self.default_initial_parameters(Vdata, Edata)
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, np.asarray(initial_parameters, dtype=float), (0, np.inf),
+                                           'pair', rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters
 
@@ -1029,7 +1205,7 @@ class MU:  # Murnaghan
             self.pEOS = parameters[:4]
             self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> None:
         """
         Parameters fitting.
 
@@ -1041,14 +1217,18 @@ class MU:  # Murnaghan
         :type initial_parameters: np.ndarray
         :param fit: True to run the fitting. False to just use the input parameters.
         :type fit: bool.
+        :param rel_tol: A fit is accepted when its rms is below rel_tol times the energy range of the data (and it has
+            a minimum with B0 > 0 within a factor 2 of the data volumes); otherwise other starting points are tried.
+        :param max_starts: Maximum number of starting points.
+        :param on_failure: 'raise' (EOSFitError, default) or 'warn' (keep the best attempt) when no start passes.
 
         :return: Optimal parameters.
         :rtype: np.ndarray
         """
         if fit:
-            pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=([-np.inf, 0, 0, 0], [0, np.inf, np.inf, np.inf]), x_scale='jac')['x']
-            self.pEOS = popt
+            p0 = None if initial_parameters is None else np.asarray(initial_parameters, dtype=float)[:4]
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, p0, ([-np.inf, 0, 0, 0], [0, np.inf, np.inf, np.inf]),
+                                           'analytic', rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters[:4]
 
@@ -1196,7 +1376,7 @@ class PT:  # Poirier-Tarantola
             self.pEOS = parameters[:4]
             self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> None:
         """
         Parameters fitting.
 
@@ -1208,14 +1388,18 @@ class PT:  # Poirier-Tarantola
         :type initial_parameters: np.ndarray
         :param fit: True to run the fitting. False to just use the input parameters.
         :type fit: bool.
+        :param rel_tol: A fit is accepted when its rms is below rel_tol times the energy range of the data (and it has
+            a minimum with B0 > 0 within a factor 2 of the data volumes); otherwise other starting points are tried.
+        :param max_starts: Maximum number of starting points.
+        :param on_failure: 'raise' (EOSFitError, default) or 'warn' (keep the best attempt) when no start passes.
 
         :return: Optimal parameters.
         :rtype: np.ndarray
         """
         if fit:
-            pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=EOS4_BOUNDS, x_scale='jac')['x']
-            self.pEOS = popt
+            p0 = None if initial_parameters is None or (isinstance(initial_parameters, str) and initial_parameters == '') \
+                else np.asarray(initial_parameters, dtype=float)[:4]
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, p0, EOS4_BOUNDS, 'analytic', rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters[:4]
 
@@ -2076,7 +2260,14 @@ class EAM:  #
         #     self.params_elmt_type(pEOS_et)
         pass
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
+    def _set_fit_params(self, p) -> None:
+        """Set the raw parameter vector and the pair / element parameters derived from it."""
+        self.pEOS = np.array(p, dtype=float)
+        pEOS_pt, pEOS_et = self.paramos_raw_2_pt_et(self.pEOS)
+        self.params_pair_type(pEOS_pt)
+        self.params_elmt_type(pEOS_et)
+
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> None:
         """
         Parameters fitting.
 
@@ -2088,14 +2279,17 @@ class EAM:  #
         :type initial_parameters: np.ndarray
         :param fit: True to run the fitting. False to just use the input parameters.
         :type fit: bool.
+        :param rel_tol: A fit is accepted when its rms is below rel_tol times the energy range of the data (and it has
+            a minimum with B0 > 0 within a factor 2 of the data volumes); otherwise other starting points are tried.
+        :param max_starts: Maximum number of starting points.
+        :param on_failure: 'raise' (EOSFitError, default) or 'warn' (keep the best attempt) when no start passes.
 
         :return: Optimal parameters.
         :rtype: np.ndarray
         """
         if fit:
-            pEOS = initial_parameters#[1 for _ in initial_parameters]#
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata), x_scale='jac')['x']
-            self.pEOS = popt
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, initial_parameters, (-np.inf, np.inf), 'pair',
+                                           rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters
     #

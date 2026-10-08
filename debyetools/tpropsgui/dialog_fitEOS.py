@@ -126,8 +126,6 @@ class dialogFitEOS(QDialog):
         self.ui.progress_3.setValue(33)
         args = (None,)
         if self.eos_str == 'MP':
-            print(self.molecule.__dir__())
-            print(self.molecule_from_crystal.__dir__())
             self.molecule.formula, self.molecule.cell, self.molecule.basis, self.molecule.cutoff, self.molecule.number_of_NNs = self.molecule_from_crystal.formula, self.molecule_from_crystal.cell, self.molecule_from_crystal.basis, self.molecule_from_crystal.cutoff, self.molecule_from_crystal.number_of_NNs
             args = self.molecule.formula, self.molecule.cell, self.molecule.basis, self.molecule.cutoff, self.molecule.number_of_NNs
         self.eos = getattr(dt_potentials, self.eos_str)(*args)  # *self.ipotparamsdialog.args)

@@ -1,3 +1,4 @@
+import numpy as np
 from PySide6.QtWidgets import QDialog
 
 from debyetools.tpropsgui.atomtools import atomic_mass
@@ -14,6 +15,19 @@ def create_formula_from_dict(d):
                 result += f"{key}{value}"  # Add key and value if value is greater than 1
     return result
 
+def mean_mass(dict_formula, mean='arithmetic'):
+    """Mean atomic mass of a formula, kg/mol-atom: arithmetic mean sum(n_i m_i)/N, or logarithmic (geometric)
+    mean exp(sum(n_i ln m_i)/N), recommended by Lu et al. (2007) for large mass differences (G15).
+    Returns 0 for an empty formula."""
+    counts = {k: int(v) for k, v in dict_formula.items() if int(v) > 0}
+    N = sum(counts.values())
+    if N == 0:
+        return 0
+    if mean == 'logarithmic':
+        return float(np.exp(sum(n * np.log(atomic_mass[k]) for k, n in counts.items()) / N)) / 1000
+    return sum(n * atomic_mass[k] for k, n in counts.items()) / N / 1000
+
+
 class dialogPeriodicTable(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -22,6 +36,7 @@ class dialogPeriodicTable(QDialog):
 
         self.formula = ''
         self.mass = 0  # 0.02698
+        self.mean = 'arithmetic'  # or 'logarithmic', set by the start window (G15)
         self.dict_formula = {k:0 for k in [getattr(self.ui, 'pushB'+str(i)).text() for i in range(118)]}
         # self.dict_formula['Al']=0#4
         # Example setup with multiple counting buttons
@@ -47,13 +62,7 @@ class dialogPeriodicTable(QDialog):
             btn.set_style()
         self.ui.lineEdit.setText(self.formula)
 
-        mass = 0
-        total_count = 0
-        for k,v in self.dict_formula.items():
-            total_count += int(v)
-            mass += atomic_mass[k]*int(v)
-
-        self.mass = mass/total_count/1000
+        self.mass = mean_mass(self.dict_formula, self.mean)
 
 
         # self.ui.browse.clicked.connect(self.getfiles)

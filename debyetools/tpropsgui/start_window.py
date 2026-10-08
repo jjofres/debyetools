@@ -1,9 +1,9 @@
 # This Python file uses the following encoding: utf-8
 import sys
 
-from PySide6.QtWidgets import QApplication, QMainWindow
+from PySide6.QtWidgets import QApplication, QMainWindow, QRadioButton, QButtonGroup
 
-from debyetools.tpropsgui.dialog_periodictable import dialogPeriodicTable
+from debyetools.tpropsgui.dialog_periodictable import dialogPeriodicTable, mean_mass
 from debyetools.tpropsgui.dialog_crystal import dialogCrystal
 # from main_window import dialogMainWindow
 from debyetools.tpropsgui.main_window_small import dialogMainWindow
@@ -39,6 +39,20 @@ class StartWindow(QMainWindow):
         self.dialogperiodictable.external_lineEdit = self.ui.lineEdit_compoundname
         self.dialogperiodictable.external_lineEdit2 = self.ui.lineEdit_mass
 
+        # mean atomic mass of the formula: arithmetic (default) or logarithmic mean (Lu et al. 2007) (G15)
+        self.radio_mass_arith = QRadioButton('arithmetic', self.ui.centralwidget)
+        self.radio_mass_log = QRadioButton('logarithmic', self.ui.centralwidget)
+        self.radio_mass_arith.setChecked(True)
+        self.radio_mass_arith.setToolTip('Mean atomic mass: sum(n_i m_i) / N')
+        self.radio_mass_log.setToolTip('Mean atomic mass: exp(sum(n_i ln m_i) / N), Lu et al. (2007), '
+                                       'for large mass differences')
+        self.group_mass = QButtonGroup(self)
+        self.group_mass.addButton(self.radio_mass_arith)
+        self.group_mass.addButton(self.radio_mass_log)
+        self.ui.horizontalLayout.addWidget(self.radio_mass_arith)
+        self.ui.horizontalLayout.addWidget(self.radio_mass_log)
+        self.radio_mass_log.toggled.connect(self.on_mass_mean_changed)
+
         self.ui.pushButtonNext.clicked.connect(self.showDialogNext)
 
         self.dialogmainwindow = dialogMainWindow(self)
@@ -53,6 +67,14 @@ class StartWindow(QMainWindow):
         self.ui.lineEdit_2.textChanged.connect(lambda: self.on_text_changed(self.ui.lineEdit_2))
 
 
+
+    def on_mass_mean_changed(self):
+        mean = 'logarithmic' if self.radio_mass_log.isChecked() else 'arithmetic'
+        self.dialogperiodictable.mean = mean
+        mass = mean_mass(self.dialogperiodictable.dict_formula, mean)
+        self.dialogperiodictable.mass = mass
+        if mass > 0:
+            self.ui.lineEdit_mass.setText(f'{mass}')
 
     def showDialogPeriodicTable(self):
         self.dialogperiodictable.ui.lineEdit.setText(self.ui.lineEdit_compoundname.text())
@@ -72,11 +94,8 @@ class StartWindow(QMainWindow):
 
             self.show_hidden_comboboxitems()
             self.removed_items = {i:self.dialogmainwindow.ui.comboBox.itemText(i) for i in range(6)}
-            print('removed_items', self.removed_items)
             for i in range(self.dialogmainwindow.ui.comboBox.count()-1, -1, -1):
-                print(self.dialogmainwindow.ui.comboBox.itemText(i))
                 if self.dialogmainwindow.ui.comboBox.itemText(i) in self.removed_items.values():
-                    print(i, self.dialogmainwindow.ui.comboBox.itemText(i))
 
                     self.dialogmainwindow.ui.comboBox.removeItem(i)
 

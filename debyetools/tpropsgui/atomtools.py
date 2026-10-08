@@ -671,7 +671,6 @@ class atomsPositions:
 
     def __next__(self):
         if self._current_index < self._nats:
-            print('xxxx', self.types[self._current_index], self.positions[self._current_index])
             type_i = self.types[self._current_index]
             atom = atomSingle(type_i, self.positions[self._current_index])
             self._current_index+=1

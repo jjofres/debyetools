@@ -1,7 +1,7 @@
 import numpy as np
 import warnings
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QMainWindow, QTableWidgetItem, QMenu, QMessageBox, QApplication, QPushButton
+from PySide6.QtWidgets import QMainWindow, QTableWidgetItem, QMenu, QMessageBox, QApplication, QPushButton, QCheckBox
 from debyetools.fs_compound_db import fit_FS as dt_fit_FS
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
@@ -65,6 +65,13 @@ class dialogCpWindow(QMainWindow):
         self.pushRefs = QPushButton('Reference energies...', self.ui.centralwidget)
         self.ui.verticalLayout_5.insertWidget(1, self.pushRefs)
         self.pushRefs.clicked.connect(self.on_pushRefs)
+        # optional T^-3 term of the FactSage Cp fit (D11, default off); toggling refits without recomputing (G16)
+        self.checkCpT3 = QCheckBox('T^(-3) term', self.ui.centralwidget)
+        self.checkCpT3.setChecked(False)
+        self.checkCpT3.setToolTip('Fit the T^-3 coefficient of the FactSage Cp polynomial (fit_FS cp_T3). '
+                                  'Off: 5 terms, T^-3 coefficient = 0.')
+        self.ui.horizontalLayout_5.insertWidget(1, self.checkCpT3)
+        self.checkCpT3.toggled.connect(self.on_toggle_cpT3)
         self.ui.pushCloseAll.clicked.connect(self.on_pushCloseAll)
 
         # Connect the textChanged signals to a shared color change method
@@ -345,6 +352,31 @@ class dialogCpWindow(QMainWindow):
         with open('dtoutput4cmpnd', 'w') as f:
             f.write(txt4output)
 
+    def fit_FS_at(self, k, tp):
+        """FactSage Cp fit of one pressure, only inside the computed temperature range (G6); T^-3 term if the
+        check box is on (G16, D11). Returns the notes for the user."""
+        notes = []
+        Tmax = float(tp['T'][-1])
+        if Tmax < self.FS_Tto - 1e-6:
+            notes.append('P = %s GPa: FactSage Cp fit limited to %.1f K (last stable temperature).' % (k, Tmax))
+        if np.sum((tp['T'] >= self.FS_Tfrom) & (tp['T'] <= self.FS_Tto)) >= 6:
+            self.dict_FS[k] = dt_fit_FS(tp, self.FS_Tfrom, min(self.FS_Tto, Tmax), cp_T3=self.checkCpT3.isChecked())
+        else:
+            self.dict_FS[k] = {'Cp': [np.nan] * 6}
+            notes.append('P = %s GPa: fewer than 6 temperatures between %.2f and %.2f K; no FactSage fit.'
+                         % (k, self.FS_Tfrom, self.FS_Tto))
+        return notes
+
+    def on_toggle_cpT3(self):
+        """Refit the FactSage Cp coefficients of the last run with / without the T^-3 term (same T window)."""
+        if getattr(self, 'txt4output', None) is None:
+            return
+        for k, tp in self.dict_tp.items():
+            if isinstance(tp, dict):
+                self.fit_FS_at(k, tp)
+        self.build_export()
+        self.selectionchange(self.ui.comboBox.currentIndex())
+
     def on_pushRefs(self):
         if getattr(self, 'txt4output', None) is None:
             QMessageBox.information(self, 'Warning', 'Run a calculation first.', QMessageBox.Ok)
@@ -408,15 +440,7 @@ class dialogCpWindow(QMainWindow):
             tp = molecule.tprops_dict
             self.dict_tp[key(P)] = tp
 
-            # FactSage Cp fit only inside the computed temperature range
-            Tmax = float(tp['T'][-1])
-            if Tmax < self.FS_Tto - 1e-6:
-                notes.append('P = %s GPa: FactSage Cp fit limited to %.1f K (last stable temperature).' % (key(P), Tmax))
-            if np.sum((tp['T'] >= self.FS_Tfrom) & (tp['T'] <= self.FS_Tto)) >= 6:
-                self.dict_FS[key(P)] = dt_fit_FS(tp, self.FS_Tfrom, min(self.FS_Tto, Tmax))
-            else:
-                notes.append('P = %s GPa: fewer than 6 temperatures between %.2f and %.2f K; no FactSage fit.'
-                             % (key(P), self.FS_Tfrom, self.FS_Tto))
+            notes += self.fit_FS_at(key(P), tp)
 
             ix_T0 = np.where(np.abs(tp['T'] - 298.15) < 1e-6)[0]
             if len(ix_T0):

@@ -418,6 +418,9 @@ atomic_colors = np.array([
 [0.922 ,0.   , 0.149]])
 atomic_color = {k:v for k, v in zip(atomic_symbols, atomic_colors)}
 
+# Elemental reference energies, eV/atom, VASP PAW_PBE, keyed by the exact POTCAR name (e.g. 'Cr' and 'Cr_pv'
+# differ). Removed (G2): Mg_pv = +1.66 and Mg_sv = +10.21 (positive, not a ground-state energy), Sb = Sm = 0
+# (placeholders). Missing potentials are entered by the user in the Reference energies dialog.
 atom_energy = {
 'VA': -0.00001,
 'Ac': -4.04728,
@@ -482,8 +485,6 @@ atom_energy = {
 'Li_sv': -1.9043,
 'Lu': -4.52114,
 'Mg': -1.50604,
-'Mg_pv': 1.65841,
-'Mg_sv': 10.21228,
 'Mn': -8.97821,
 'Mn_pv': -8.99024,
 'Mo': -10.94954,
@@ -517,12 +518,10 @@ atom_energy = {
 'Ru': -9.25325,
 'Ru_pv': -9.2409,
 'Ru_sv': -9.27694,
-'Sb': 0,
 'Sc': -6.20186,
 'Sc_sv': -6.24773,
 'Se': -3.49831,
 'Si': -5.17948,
-'Sm': 0,
 'Sn': -3.82696,
 'Sn_A4': -3.82696,
 'Sn_A5': -3.62817,
@@ -567,6 +566,73 @@ def check_type_in_energies(ti):
         return last_occurence
     else:
         return ti
+
+REF_FUNCTIONAL = 'PAW_PBE'  # POTCAR set of the atom_energy values
+
+
+def read_potentials(path):
+    """POTCAR names used in a VASP OUTCAR (or POTCAR), in POTCAR order, from the TITEL lines.
+
+    Returns (functional, [potential, ...]), e.g. ('PAW_PBE', ['Li', 'Al']) or ('PAW_PBE', ['Cr_pv']).
+    """
+    functional, potentials = None, []
+    with open(path, 'r', errors='replace') as f:
+        for line in f:
+            if 'TITEL' in line:
+                words = line.split('=', 1)[1].split()
+                functional, potentials = words[0], potentials + [words[1]]
+            elif 'ions per type' in line:  # end of the POTCAR block of an OUTCAR
+                break
+    if not potentials:
+        raise ValueError('no TITEL line (POTCAR name) found in %s' % path)
+    return functional, potentials
+
+
+def element_of(potential):
+    """Element symbol of a POTCAR name: 'Cr_pv' -> 'Cr', 'H.75' -> 'H', 'Ca_sv_GW' -> 'Ca'."""
+    m = re.match('[A-Z][a-z]?', potential)
+    return m.group(0) if m else potential
+
+
+class ReferenceEnergies:
+    """Elemental reference energies for the formation energy, for the current GUI session (G2).
+
+    potentials: element -> POTCAR name, read from an OUTCAR / POTCAR or entered by the user;
+    sources: element -> where the potential came from; edited: POTCAR name -> eV/atom entered by the user
+    (overrides atom_energy, not saved to disk).
+    """
+
+    def __init__(self):
+        self.potentials = {}
+        self.sources = {}
+        self.functional = None
+        self.edited = {}
+
+    def read_outcar(self, path):
+        """Set the potential of every element found in an OUTCAR / POTCAR; returns the {element: potential} read."""
+        functional, potentials = read_potentials(path)
+        found = {element_of(p): p for p in potentials}
+        for el, p in found.items():
+            self.potentials[el] = p
+            self.sources[el] = path
+        self.functional = functional
+        return found
+
+    def potential(self, element):
+        """POTCAR name for an element; the plain symbol if none was read or entered (flagged by assumed())."""
+        return self.potentials.get(element, element)
+
+    def assumed(self, element):
+        return element not in self.potentials
+
+    def energy(self, potential):
+        """eV/atom for an exact POTCAR name (no substring matching), None if unknown."""
+        e = self.edited.get(potential, atom_energy.get(potential))
+        return None if e is None else float(e)
+
+
+REFERENCES = ReferenceEnergies()
+
 
 class atomSingle:
     def __init__(self, type, coords):

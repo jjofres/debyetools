@@ -1,13 +1,14 @@
 import numpy as np
 import warnings
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QMainWindow, QTableWidgetItem, QMenu, QMessageBox, QApplication
+from PySide6.QtWidgets import QMainWindow, QTableWidgetItem, QMenu, QMessageBox, QApplication, QPushButton
 from debyetools.fs_compound_db import fit_FS as dt_fit_FS
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.widgets import Cursor
 
-from debyetools.tpropsgui.atomtools import atom_energy
+from debyetools.tpropsgui.atomtools import REFERENCES
+from debyetools.tpropsgui.dialog_refEnergies import dialogRefEnergies
 from debyetools.tpropsgui.ui_cp_window import Ui_MainWindow as Ui_Cp
 from PySide6.QtGui import QPixmap, QPalette
 from debyetools.constants import EV_ATOM_TO_J_MOL
@@ -60,6 +61,10 @@ class dialogCpWindow(QMainWindow):
         self.ui.pushBack.clicked.connect(self.on_pushBack)
 
         self.ui.pushExport.clicked.connect(self.on_pushExport)
+        # elemental reference energies of the formation energy, editable for the session (G2)
+        self.pushRefs = QPushButton('Reference energies...', self.ui.centralwidget)
+        self.ui.verticalLayout_5.insertWidget(1, self.pushRefs)
+        self.pushRefs.clicked.connect(self.on_pushRefs)
         self.ui.pushCloseAll.clicked.connect(self.on_pushCloseAll)
 
         # Connect the textChanged signals to a shared color change method
@@ -243,18 +248,51 @@ class dialogCpWindow(QMainWindow):
 
         self.canvas.draw()
 
-    def check_type_in_energies(self, ti):
-        number_of_occurences = 0
-        last_occurence = ''
-        for key_ai in atom_energy.keys():
-            if ti in key_ai:
-                number_of_occurences += 1
-                last_occurence = key_ai
-                # print(key_ai)
-        if number_of_occurences == 1:
-            return last_occurence
+    def compute_Ef(self):
+        """Static formation energy per formula unit, Ef = nats * (E0(V0) - mean_i E_i^ref), with E_i^ref the
+        reference energy of the exact POTCAR used for element i (G2). Returns the notes for the user."""
+        molecule = self.molecule
+        elements = list(dict.fromkeys(molecule.types))
+        notes = []
+        missing = [el for el in elements if REFERENCES.energy(REFERENCES.potential(el)) is None]
+        assumed = [el for el in elements if REFERENCES.assumed(el)]
+        if assumed:
+            notes.append('POTCAR not read from an OUTCAR for %s; assumed %s. Check it with "Reference energies...".'
+                         % (', '.join(assumed), ', '.join("'%s'" % REFERENCES.potential(el) for el in assumed)))
+        if missing:
+            self.Ef = np.nan
+            notes.append('No reference energy for %s: the formation energy is not computed. Enter the value with '
+                         '"Reference energies...".'
+                         % ', '.join('%s (%s)' % (el, REFERENCES.potential(el)) for el in missing))
         else:
-            return ti
+            E_ref = np.mean([REFERENCES.energy(REFERENCES.potential(ti)) for ti in molecule.types]) * EV_ATOM_TO_J_MOL
+            self.Ef = (molecule.eos.E0(molecule.eos.V0) - E_ref) * len(molecule.types)
+        return notes
+
+    def build_export(self):
+        """One export text, every value per formula unit (Ef, S298 and the Cp coefficients) at the reference
+        pressure; written to dtoutput4cmpnd now and to export_dtoutput4cmpnd by the Export button (G7)."""
+        key = '%.1f' % (self.P_ref / 1e9)
+        nats = self.nats
+        txt4output = f'{self.formula}$' + f'{self.Ef:.7e}' + f'${self.S298:.7e}$'
+        txt4output += '&'.join([f'{p * nats:.7e}' for p in self.dict_FS[key]['Cp']])
+        txt4output += '$' + '&'.join([f'{p:.2e}' for p in [self.FS_Tfrom, self.FS_Tto]])
+        self.txt4output = txt4output
+        with open('dtoutput4cmpnd', 'w') as f:
+            f.write(txt4output)
+
+    def on_pushRefs(self):
+        if getattr(self, 'txt4output', None) is None:
+            QMessageBox.information(self, 'Warning', 'Run a calculation first.', QMessageBox.Ok)
+            return
+        self.dialog_refs = dialogRefEnergies(self.molecule.types, self, on_apply=self.on_refs_applied)
+        self.dialog_refs.show()
+
+    def on_refs_applied(self):
+        notes = self.compute_Ef()
+        self.build_export()
+        msg = 'Ef = %.6e J/mol per formula unit (static: E0(V0) - sum of the reference energies).' % self.Ef
+        QMessageBox.information(self, 'Formation energy', '\n'.join(notes + [msg]), QMessageBox.Ok)
 
     def debye_run(self, molecule, ui_progress, formula):
         self.formula = formula
@@ -331,23 +369,9 @@ class dialogCpWindow(QMainWindow):
         self.P_ref = min(computed, key=abs)
         nats = len(molecule.types)
         self.nats = nats
-        try:
-            Ef = molecule.eos.E0(molecule.eos.V0) - sum([atom_energy[self.check_type_in_energies(ti)] for ti in molecule.types]) * (
-                        EV_ATOM_TO_J_MOL) / len(molecule.types)
-            self.Ef = Ef * nats
-        except KeyError as e:
-            self.Ef = np.nan
-            notes.append('No elemental reference energy for %s: the formation energy is not computed.' % e)
+        notes += self.compute_Ef()
         self.S298 = self.dict_S298[key(self.P_ref)] * nats
-
-        # one export text, every value per formula unit (Ef, S298 and the Cp coefficients); written to
-        # dtoutput4cmpnd now and to export_dtoutput4cmpnd by the Export button (G7)
-        txt4output = f'{formula}$' + f'{self.Ef:.7e}' + f'${self.S298:.7e}$'
-        txt4output += '&'.join([f'{p * nats:.7e}' for p in self.dict_FS[key(self.P_ref)]['Cp']])
-        txt4output += '$' + '&'.join([f'{p:.2e}' for p in [self.FS_Tfrom, self.FS_Tto]])
-        self.txt4output = txt4output
-        with open('dtoutput4cmpnd', 'w') as f:
-            f.write(txt4output)
+        self.build_export()
 
         self.ui.comboBox.setCurrentText(key(self.P_ref))
         self.selectionchange(self.ui.comboBox.currentIndex())

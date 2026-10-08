@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import  QDialog, QFileDialog, QMessageBox
 from debyetools.tpropsgui.ui_dialog_loadElastic import Ui_Dialog as Ui_OUTCAR
 from debyetools.aux_functions import load_EM as dt_load_EM
+from debyetools.tpropsgui.atomtools import REFERENCES
 
 import numpy as np
 from PySide6.QtCore import QTimer
@@ -55,6 +56,10 @@ class dialogLoadElastic(QDialog):
         for rowi in EM:
             txt2paste=txt2paste+' '.join(['%.2f'%(float(coli)/10) for coli in rowi])+'\n'
         self.elastic_constants.setText(txt2paste)
+        try:  # POTCAR names of the elements, used for the reference energies of Ef (G2)
+            REFERENCES.read_outcar(self.outcarpath)
+        except Exception:
+            pass
         self.close()
 
     def is_dark_mode(self):

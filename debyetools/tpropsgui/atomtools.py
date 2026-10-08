@@ -1,3 +1,4 @@
+import csv
 import re
 
 import debyetools.potentials as dt_potentials
@@ -612,6 +613,7 @@ class ReferenceEnergies:
         self.edited = {}
         self.h298_runs = {}
         self.h298_edited = {}
+        self.table_path = None  # last reference table saved or loaded
 
     def read_outcar(self, path):
         """Set the potential of every element found in an OUTCAR / POTCAR; returns the {element: potential} read."""
@@ -645,6 +647,60 @@ class ReferenceEnergies:
 
 
 REFERENCES = ReferenceEnergies()
+
+REF_TABLE_COLUMNS = ['POTCAR', 'E_ref_eV_atom', 'H298_J_mol_atom', 'H298_from', 'Debye_model', 'source']
+
+
+def save_reference_table(path, edited, h298_runs, h298_edited):
+    """Write the session references to a CSV file (one row per POTCAR name), so element runs and entered values
+    carry over between sessions. E_ref: only values entered by the user (the tabulated atom_energy values are not
+    repeated); H298: the effective value – entered if there is one, else from a pure-element run (with its Debye
+    model and source). Returns the number of rows written."""
+    pots = sorted(set(edited) | set(h298_runs) | set(h298_edited))
+    with open(path, 'w', newline='') as f:
+        f.write('# debyetools reference energies (GUI). E_ref: static energy, eV/atom; H298: H at 298.15 K, J/mol-atom,\n'
+                '# same energy scale as the E(V) data. Valid only with the same VASP settings (ENCUT, k-points, POTCAR).\n')
+        w = csv.writer(f)
+        w.writerow(REF_TABLE_COLUMNS)
+        for pot in pots:
+            E = '' if pot not in edited else repr(float(edited[pot]))
+            if pot in h298_edited:
+                H, frm, model, src = repr(float(h298_edited[pot])), 'entered', '', 'entered'
+            elif pot in h298_runs:
+                H, src, model = h298_runs[pot]
+                H, frm = repr(float(H)), 'run'
+            else:
+                H, frm, model, src = '', '', '', ''
+            w.writerow([pot, E, H, frm, model, src])
+    return len(pots)
+
+
+def load_reference_table(path):
+    """Read a file written by save_reference_table. Returns (edited, h298_runs, h298_edited) dictionaries
+    (same meaning as in ReferenceEnergies); ValueError with the line number for an unreadable row."""
+    edited, h298_runs, h298_edited = {}, {}, {}
+    with open(path, newline='') as f:
+        rows = [(i + 1, r) for i, r in enumerate(csv.reader(f)) if r and not r[0].lstrip().startswith('#')]
+    if not rows or [c.strip() for c in rows[0][1]] != REF_TABLE_COLUMNS:
+        raise ValueError('%s: not a reference table (header %s expected)' % (path, ', '.join(REF_TABLE_COLUMNS)))
+    for line, r in rows[1:]:
+        r = [c.strip() for c in r] + [''] * (len(REF_TABLE_COLUMNS) - len(r))
+        pot, E, H, frm, model, src = r[:6]
+        try:
+            if not pot:
+                raise ValueError('empty POTCAR name')
+            if E:
+                edited[pot] = float(E)
+            if H:
+                if frm == 'run':
+                    h298_runs[pot] = (float(H), src or 'run (file)', model)
+                elif frm in ('entered', ''):
+                    h298_edited[pot] = float(H)
+                else:
+                    raise ValueError("H298_from must be 'run' or 'entered', not '%s'" % frm)
+        except ValueError as e:
+            raise ValueError('%s, line %d: %s' % (path, line, e))
+    return edited, h298_runs, h298_edited
 
 
 class atomSingle:

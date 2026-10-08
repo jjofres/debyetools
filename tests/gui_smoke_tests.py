@@ -222,6 +222,40 @@ def test_reference_energy_dialog(qapp, msgs):
         at.read_potentials(str(TI / 'CaO_Fm3m' / 'OUTCAR.eps'))  # moduli only, no TITEL
 
 
+def test_reference_table_save_and_load(qapp, msgs):
+    """Element runs saved to a CSV file and loaded in a new session give the same DH298 (reference-table workflow)."""
+    import debyetools.tpropsgui.atomtools as at
+    m = (3 * M_AL + M_LI) / 4
+    run_cp(qapp, msgs, 'Al_fcc', 'Al', M_AL)
+    run_cp(qapp, msgs, 'Li_bcc', 'Li', M_LI)
+    mw, cw, _ = run_cp(qapp, msgs, 'Al3Li_L12', 'Al3Li', m)
+    dh = cw.H298
+    cw.on_pushRefs()
+    d = cw.dialog_refs
+    d.table.item(1, 3).setText('-1.95')  # an entered static energy for Li, kept in the file
+    d.save_table('refs.csv')
+    rows = Path('refs.csv').read_text().splitlines()
+    assert rows[2].split(',') == at.REF_TABLE_COLUMNS
+    assert any(r.startswith('Al,,') and ',run,Slater,' in r for r in rows)
+    assert any(r.startswith('Li,-1.95,') for r in rows)
+    d.reject()
+    at.REFERENCES.__init__()  # new session
+    mw, cw, _ = run_cp(qapp, msgs, 'Al3Li_L12', 'Al3Li', m)
+    assert cw.H298_kind == 'static Ef'
+    cw.on_pushRefs()
+    d = cw.dialog_refs
+    d.load_table('refs.csv')
+    assert 'Press OK to apply' in texts(msgs)
+    d.on_ok()
+    assert cw.H298_kind == 'DH298' and cw.H298 == pytest.approx(dh, rel=1e-12)
+    assert at.REFERENCES.edited == {'Li': -1.95} and set(at.REFERENCES.h298_runs) == {'Al', 'Li'}
+    Path('bad.csv').write_text('POTCAR,E_ref_eV_atom,H298_J_mol_atom,H298_from,Debye_model,source\nAl,abc,,,,\n')
+    msgs.clear()
+    cw.on_pushRefs()
+    cw.dialog_refs.load_table('bad.csv')
+    assert 'line 2' in texts(msgs)
+
+
 # ------------------------------------------------------------------------------------------- start window (G15)
 def test_mean_mass_switch(qapp, msgs):
     from debyetools.tpropsgui.start_window import StartWindow

@@ -3,14 +3,16 @@
 One row per element of the formula: POTCAR name (read from an OUTCAR / POTCAR or typed), static reference energy
 in eV/atom (from atomtools.atom_energy for that exact POTCAR name, or typed), H at 298.15 K in J/mol-atom (from a
 pure-element run of this session, or typed) and where they come from. Changes are kept for the current session
-only (atomtools.REFERENCES), not written to disk.
+(atomtools.REFERENCES); 'Save table...' / 'Load table...' write and read them as a CSV file, so element runs and
+entered values carry over between sessions.
 """
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QDialog, QFileDialog, QHBoxLayout, QHeaderView, QLabel, QMessageBox, QPushButton,
                                QTableWidget, QTableWidgetItem, QVBoxLayout)
 
-from debyetools.tpropsgui.atomtools import REFERENCES, REF_FUNCTIONAL, atom_energy, element_of
+from debyetools.tpropsgui.atomtools import (REFERENCES, REF_FUNCTIONAL, atom_energy, element_of,
+                                            save_reference_table, load_reference_table)
 
 COL_EL, COL_X, COL_POT, COL_E, COL_H, COL_SRC = range(6)
 EDITABLE = (COL_POT, COL_E, COL_H)
@@ -40,6 +42,10 @@ class dialogRefEnergies(QDialog):
 
         self.button_outcar = QPushButton('Read POTCAR names from OUTCAR...', self)
         self.button_outcar.clicked.connect(self.on_read_outcar)
+        self.button_save = QPushButton('Save table...', self)
+        self.button_save.clicked.connect(self.on_save)
+        self.button_load = QPushButton('Load table...', self)
+        self.button_load.clicked.connect(self.on_load)
         self.button_ok = QPushButton('OK', self)
         self.button_ok.clicked.connect(self.on_ok)
         self.button_cancel = QPushButton('Cancel', self)
@@ -47,6 +53,8 @@ class dialogRefEnergies(QDialog):
 
         buttons = QHBoxLayout()
         buttons.addWidget(self.button_outcar)
+        buttons.addWidget(self.button_save)
+        buttons.addWidget(self.button_load)
         buttons.addStretch(1)
         buttons.addWidget(self.button_ok)
         buttons.addWidget(self.button_cancel)
@@ -61,6 +69,7 @@ class dialogRefEnergies(QDialog):
         self.sources = {el: REFERENCES.sources.get(el, 'assumed (no OUTCAR read)') for el in self.elements}
         self.edited = dict(REFERENCES.edited)
         self.h298_edited = dict(REFERENCES.h298_edited)
+        self.h298_runs = dict(REFERENCES.h298_runs)
         self.functional = REFERENCES.functional
         self.fill()
 
@@ -71,15 +80,15 @@ class dialogRefEnergies(QDialog):
     def h298(self, potential):
         if potential in self.h298_edited:
             return float(self.h298_edited[potential])
-        if potential in REFERENCES.h298_runs:
-            return float(REFERENCES.h298_runs[potential][0])
+        if potential in self.h298_runs:
+            return float(self.h298_runs[potential][0])
         return None
 
     def h298_source(self, potential):
         if potential in self.h298_edited:
             return 'entered'
-        if potential in REFERENCES.h298_runs:
-            return REFERENCES.h298_runs[potential][1]
+        if potential in self.h298_runs:
+            return self.h298_runs[potential][1]
         return 'none: H298 exported as static Ef'
 
     def fill(self):
@@ -190,6 +199,53 @@ class dialogRefEnergies(QDialog):
             QMessageBox.information(self, 'Warning', '\n'.join(notes), QMessageBox.Ok)
         self.fill()
 
+    def on_save(self):
+        path, _ = QFileDialog.getSaveFileName(self, 'Save the reference table',
+                                              REFERENCES.table_path or 'debyetools_references.csv',
+                                              'CSV files (*.csv);;All files (*)')
+        if path:
+            self.save_table(path)
+
+    def save_table(self, path):
+        """Write every reference of the session (all POTCARs, not only this formula), including unapplied edits."""
+        try:
+            n = save_reference_table(path, self.edited, self.h298_runs, self.h298_edited)
+        except Exception as e:
+            QMessageBox.information(self, 'Error', 'Could not save the reference table:\n%s' % e, QMessageBox.Ok)
+            return
+        REFERENCES.table_path = path
+        QMessageBox.information(self, 'Reference table', '%d POTCAR(s) saved to\n%s' % (n, path), QMessageBox.Ok)
+
+    def on_load(self):
+        path, _ = QFileDialog.getOpenFileName(self, 'Load a reference table', REFERENCES.table_path or '',
+                                              'CSV files (*.csv);;All files (*)')
+        if path:
+            self.load_table(path)
+
+    def load_table(self, path):
+        """Merge a saved table into the dialog (values from the file replace those of the session for the same
+        POTCAR); applied to the session with OK."""
+        try:
+            edited, h298_runs, h298_edited = load_reference_table(path)
+        except Exception as e:
+            QMessageBox.information(self, 'Error', 'Could not read the reference table:\n%s' % e, QMessageBox.Ok)
+            return
+        replaced = sorted(p for p in set(edited) | set(h298_runs) | set(h298_edited)
+                          if self.h298(p) is not None or p in self.edited)
+        self.edited.update(edited)
+        for pot, value in h298_runs.items():
+            self.h298_runs[pot] = value
+            self.h298_edited.pop(pot, None)  # the file says this H298 comes from a run
+        for pot, value in h298_edited.items():
+            self.h298_edited[pot] = value
+        REFERENCES.table_path = path
+        n = len(set(edited) | set(h298_runs) | set(h298_edited))
+        msg = '%d POTCAR(s) read from\n%s' % (n, path)
+        if replaced:
+            msg += '\nReplaced session values for: %s' % ', '.join(replaced)
+        QMessageBox.information(self, 'Reference table', msg + '\nPress OK to apply.', QMessageBox.Ok)
+        self.fill()
+
     def on_ok(self):
         for el in self.elements:
             if not self.sources[el].startswith('assumed'):
@@ -197,6 +253,7 @@ class dialogRefEnergies(QDialog):
                 REFERENCES.sources[el] = self.sources[el]
         REFERENCES.edited = dict(self.edited)
         REFERENCES.h298_edited = dict(self.h298_edited)
+        REFERENCES.h298_runs = dict(self.h298_runs)
         if self.functional is not None:
             REFERENCES.functional = self.functional
         self.accept()

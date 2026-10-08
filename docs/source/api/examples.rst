@@ -14,7 +14,8 @@ Al\ :sub:`3`\ Li L1\ :sub:`2`\  thermodynamic properties
 
 To calculate the thermodynamic properties of an element or compound, we first parametrize the function that
 describes its internal energy. Here the third-order Birch-Murnaghan equation of state (``BM``) is fitted to the
-DFT energy-volume data loaded with ``load_V_E``. The module ``potentials`` holds all the implemented EOS; ``fitEOS``
+DFT energy-volume data loaded with ``load_V_E`` (the VASP energies extrapolated to zero smearing, ``E0=``; see
+:ref:`fileformats`). The module ``potentials`` holds all the implemented EOS; ``fitEOS``
 fits the parameters to (volume, energy) data and returns them (E0, V0, K0, K0'). All quantities are SI per mole
 of atoms. The VASP results for Al\ :sub:`3`\ Li L1\ :sub:`2`\  are shipped with the package:
 
@@ -30,7 +31,7 @@ Loading the energy curve and fitting the Birch-Murnaghan EOS:
 >>> eos_BM = potentials.BM()
 >>> p_EOS = eos_BM.fitEOS(V_DFT, E_DFT)
 >>> print(', '.join('%.4e' % p for p in p_EOS))
--3.2655e+05, 9.8245e-06, 6.3150e+10, 4.3106e+00
+-3.2645e+05, 9.8233e-06, 6.3223e+10, 4.3026e+00
 
 The electronic contribution uses the density of states at the Fermi level. The DOSCAR of each volume of
 ``V_DFT`` (same order) is read with ``load_doscar`` (total DOS, spins summed, per atom) and N(E\ :sub:`F`) is
@@ -80,18 +81,18 @@ which returns a dictionary of arrays:
 >>> tprops_dict = ndeb_BM.eval_props(T, V, P=0)
 >>> for Ti, Vi, Cpi in zip(T, V, tprops_dict['Cp']):
 ...     print('%7.2f K  V = %.4e  Cp = %6.2f' % (Ti, Vi, Cpi))
-   0.10 K  V = 9.9920e-06  Cp =   0.00
- 100.09 K  V = 1.0000e-05  Cp =   8.14
- 200.08 K  V = 1.0047e-05  Cp =  18.43
- 298.15 K  V = 1.0117e-05  Cp =  22.62
- 300.07 K  V = 1.0119e-05  Cp =  22.67
- 400.06 K  V = 1.0203e-05  Cp =  24.87
- 500.05 K  V = 1.0297e-05  Cp =  26.36
- 600.04 K  V = 1.0399e-05  Cp =  27.62
- 700.03 K  V = 1.0510e-05  Cp =  28.85
- 800.02 K  V = 1.0631e-05  Cp =  30.18
- 900.01 K  V = 1.0765e-05  Cp =  31.72
-1000.00 K  V = 1.0914e-05  Cp =  33.63
+   0.10 K  V = 9.9903e-06  Cp =   0.00
+ 100.09 K  V = 9.9986e-06  Cp =   8.13
+ 200.08 K  V = 1.0046e-05  Cp =  18.41
+ 298.15 K  V = 1.0115e-05  Cp =  22.61
+ 300.07 K  V = 1.0117e-05  Cp =  22.66
+ 400.06 K  V = 1.0201e-05  Cp =  24.85
+ 500.05 K  V = 1.0294e-05  Cp =  26.34
+ 600.04 K  V = 1.0395e-05  Cp =  27.60
+ 700.03 K  V = 1.0506e-05  Cp =  28.82
+ 800.02 K  V = 1.0626e-05  Cp =  30.13
+ 900.01 K  V = 1.0759e-05  Cp =  31.65
+1000.00 K  V = 1.0907e-05  Cp =  33.53
 
 To plot them (the figures use 101 temperatures, ``gen_Ts(0.1, 1000, 101)``):
 
@@ -116,10 +117,10 @@ a dictionary; see :ref:`fsdb`):
 >>> FS_db_params = fit_FS(tprops_dict, 298.15, 1000)
 >>> for key, values in FS_db_params.items():
 ...     print(key, ', '.join('%.3e' % v for v in values))
-Cp 7.911e+01, -4.592e-02, 3.387e+05, 2.684e-05, -8.461e+02, 0.000e+00
-a -1.012e-04, 1.823e-07, 7.455e-02, -1.117e+01
-1/Ks 1.600e-11, 3.506e-15, -9.520e-19, 2.404e-21
-Ksp 4.488e+00, 1.206e-03
+Cp 7.748e+01, -4.441e-02, 3.195e+05, 2.609e-05, -8.210e+02, 0.000e+00
+a -9.658e-05, 1.783e-07, 7.247e-02, -1.088e+01
+1/Ks 1.598e-11, 3.446e-15, -8.719e-19, 2.328e-21
+Ksp 4.479e+00, 1.188e-03
 
 The fitted polynomial against the calculated heat capacity:
 

@@ -63,8 +63,13 @@ Energy-volume series (SUMMARY)
 ==============================
 
 One line per fixed-volume calculation of the same cell: column 1 is the isotropic linear strain d relative to the
-reference cell (V = V\ :sub:`ref` (1 + d)\ :sup:`3`) and column 4 the energy of the cell in eV (the value after
-``F=``, VASP's free energy TOTEN). Duplicate lines are read once.
+reference cell (V = V\ :sub:`ref` (1 + d)\ :sup:`3`), followed by the last OSZICAR line of that run. The energy of
+the cell (eV) is the value after ``E0=``, the energy extrapolated to zero smearing (σ → 0). The value after ``F=``
+(VASP's free energy TOTEN, E − σS of the smeared electrons) contains an electronic entropy at the artificial
+temperature σ/k\ :sub:`B`; ``nDeb`` adds the electronic free energy separately from the DOS, so it is not used by
+default. ``load_V_E(..., energy='F')`` reads it and reproduces the results of debyetools 2.8.3 and earlier. A line
+without a usable ``E0=`` value (no label, or ``E0= 0`` written as a placeholder) is read from ``F=``, and a line
+without the requested label is read positionally (column 4); both give a warning. Duplicate lines are read once.
 
 .. code-block:: text
 

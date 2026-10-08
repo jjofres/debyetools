@@ -57,7 +57,7 @@ from debyetools.ndeb import nDeb
 
 # EOS parameters (E0 in J/mol-at, V0 in m^3/mol-at, K0 in Pa, K0'), used as given (fit=False)
 # =========================
-EOS_parameters = [-3.607729e+05, 9.932807e-06, 7.7265e+10, 4.6044]
+EOS_parameters = [-3.605783e+05, 9.931760e-06, 7.7683e+10, 4.5802]
 EOS = potentials.BM()
 EOS.fitEOS([EOS_parameters[1]], [EOS_parameters[0]], initial_parameters=EOS_parameters, fit=False)
 

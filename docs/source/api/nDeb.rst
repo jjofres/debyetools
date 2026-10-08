@@ -158,7 +158,7 @@ the individual contributions (``'Fvib'``, ``'Fel'``, ``'Fdef'``, ``'Fa'``, ``'Fx
 >>> i = list(T).index(298.15)
 >>> print('tD = %.1f K, g = %.3f, Kt = %.3e Pa, a = %.3e 1/K, Cp = %.3f, S = %.3f J/mol-at/K'
 ...       % tuple(tprops[k][i] for k in ('tD', 'g', 'Kt', 'a', 'Cp', 'S')))
-tD = 402.0 K, g = 2.197, Kt = 6.931e+10 Pa, a = 7.109e-05 1/K, Cp = 23.878, S = 26.902 J/mol-at/K
+tD = 403.4 K, g = 2.184, Kt = 6.983e+10 Pa, a = 7.011e-05 1/K, Cp = 23.842, S = 26.820 J/mol-at/K
 
 Source code
 -----------

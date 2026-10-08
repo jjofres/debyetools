@@ -101,7 +101,7 @@ parametrization. The analytic EOS need no initial parameters; ``fitEOS`` returns
 >>> eos = potentials.BM()
 >>> p_EOS = eos.fitEOS(V_data, E_data)
 >>> print('E0 = %.4e J/mol-at, V0 = %.4e m3/mol-at, K0 = %.4e Pa, K0p = %.3f' % tuple(p_EOS))
-E0 = -3.6077e+05 J/mol-at, V0 = 9.9328e-06 m3/mol-at, K0 = 7.7265e+10 Pa, K0p = 4.604
+E0 = -3.6058e+05 J/mol-at, V0 = 9.9318e-06 m3/mol-at, K0 = 7.7683e+10 Pa, K0p = 4.580
 
 The internal energy can also be described with an interatomic potential (Morse, EAM) built from the crystal
 structure; for Morse the parameters are (D, a, r0) per pair type:
@@ -110,7 +110,7 @@ structure; for Morse the parameters are (D, a, r0) per pair type:
 >>> morse = potentials.MP(formula, cell, basis, 5, 3)
 >>> p_MP = morse.fitEOS(V_data, E_data, initial_parameters=[0.35, 1, 3.2])
 >>> print('D = %.4f, a = %.4f, r0 = %.4f; V0 = %.4e m3/mol-at' % (*p_MP, morse.V0))
-D = 0.3511, a = 1.0082, r0 = 3.2385; V0 = 9.9646e-06 m3/mol-at
+D = 0.3517, a = 1.0114, r0 = 3.2359; V0 = 9.9608e-06 m3/mol-at
 
 Electronic contribution: the total DOS at the Fermi level of each DOSCAR (one per volume, in the order of
 ``V_data``) fitted to a cubic polynomial in V:
@@ -144,18 +144,18 @@ Evaluation of the thermodynamic properties (a dictionary of arrays, e.g. ``'Cp'`
 >>> tprops = ndeb.eval_props(T, V, P=0)
 >>> for Ti, Vi, Cpi in zip(T, V, tprops['Cp']):
 ...     print('%7.2f K  V = %.4e  Cp = %6.2f' % (Ti, Vi, Cpi))
-   0.10 K  V = 1.0043e-05  Cp =   0.00
- 100.09 K  V = 1.0056e-05  Cp =  12.31
- 200.08 K  V = 1.0107e-05  Cp =  21.21
- 298.15 K  V = 1.0174e-05  Cp =  24.22
- 300.07 K  V = 1.0176e-05  Cp =  24.26
- 400.06 K  V = 1.0253e-05  Cp =  25.89
- 500.05 K  V = 1.0337e-05  Cp =  27.11
- 600.04 K  V = 1.0428e-05  Cp =  28.27
- 700.03 K  V = 1.0527e-05  Cp =  29.58
- 800.02 K  V = 1.0636e-05  Cp =  31.28
- 900.01 K  V = 1.0758e-05  Cp =  33.68
-1000.00 K  V = 1.0898e-05  Cp =  37.16
+   0.10 K  V = 1.0041e-05  Cp =   0.00
+ 100.09 K  V = 1.0054e-05  Cp =  12.26
+ 200.08 K  V = 1.0104e-05  Cp =  21.17
+ 298.15 K  V = 1.0170e-05  Cp =  24.19
+ 300.07 K  V = 1.0172e-05  Cp =  24.23
+ 400.06 K  V = 1.0248e-05  Cp =  25.85
+ 500.05 K  V = 1.0331e-05  Cp =  27.05
+ 600.04 K  V = 1.0420e-05  Cp =  28.19
+ 700.03 K  V = 1.0518e-05  Cp =  29.47
+ 800.02 K  V = 1.0624e-05  Cp =  31.12
+ 900.01 K  V = 1.0743e-05  Cp =  33.44
+1000.00 K  V = 1.0879e-05  Cp =  36.79
 
 FactSage compound-database parameters (heat capacity Cp = c0 + c1 T + c2 T\ :sup:`-2` + c3 T\ :sup:`2` +
 c4 T\ :sup:`-1/2` + c5 T\ :sup:`-3`; c5 = 0 unless ``cp_T3=True``):
@@ -163,7 +163,7 @@ c4 T\ :sup:`-1/2` + c5 T\ :sup:`-3`; c5 = 0 unless ``cp_T3=True``):
 >>> from debyetools.fs_compound_db import fit_FS
 >>> FS_db_params = fit_FS(tprops, 298.15, 1000)
 >>> print(', '.join('%.3e' % c for c in FS_db_params['Cp']))
-1.886e+02, -1.505e-01, 1.662e+06, 7.652e-05, -2.504e+03, 0.000e+00
+1.803e+02, -1.429e-01, 1.564e+06, 7.288e-05, -2.376e+03, 0.000e+00
 
 .. toctree::
    :maxdepth: 2

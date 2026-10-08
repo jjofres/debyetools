@@ -30,4 +30,4 @@ def test_readme_example():
     with warnings.catch_warnings(), contextlib.redirect_stdout(out):
         warnings.simplefilter('ignore')
         exec(compile(code, 'README.md', 'exec'), {})
-    assert 'Cp(298.15 K) = 24.22 J/mol-at/K' in out.getvalue()
+    assert 'Cp(298.15 K) = 24.19 J/mol-at/K' in out.getvalue()

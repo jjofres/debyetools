@@ -36,10 +36,10 @@ by the number of atoms of the formula for a FactSage compound entry. Example for
 >>> FS_db_params = fit_FS(tprops, 298.15, 1000)
 >>> for key, values in FS_db_params.items():
 ...     print(key, ', '.join('%.3e' % v for v in values))
-Cp 5.253e+01, -2.276e-02, 1.237e+05, 1.526e-05, -4.250e+02, 0.000e+00
-a -3.316e-05, 1.133e-07, 4.169e-02, -6.173e+00
-1/Ks 1.302e-11, 2.531e-15, -1.887e-19, 1.168e-21
-Ksp 4.788e+00, 1.024e-03
+Cp 4.989e+01, -2.029e-02, 9.287e+04, 1.395e-05, -3.847e+02, 0.000e+00
+a -2.534e-05, 1.056e-07, 3.807e-02, -5.672e+00
+1/Ks 1.295e-11, 2.419e-15, -8.245e-20, 1.046e-21
+Ksp 4.760e+00, 9.759e-04
 
 Source code
 -----------

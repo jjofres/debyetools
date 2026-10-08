@@ -54,8 +54,8 @@ class EOSFitRestartTestCase(unittest.TestCase):
         with self.assertWarns(UserWarning):
             eos.fitEOS(V, E, initial_parameters=np.array([0.35, 1, 3.5]))
         rms = np.sqrt(np.mean((eos.E0(V) - E) ** 2))
-        self.assertLess(rms, 30.)                 # J/mol; the good fit has 25.5 J/mol
-        self.assertAlmostEqual(eos.V0 / 8.1182e-6, 1, delta=1e-3)
+        self.assertLess(rms, 35.)                 # J/mol; the good fit has 33.0 J/mol (25.5 with the F= energies)
+        self.assertAlmostEqual(eos.V0 / 8.1129e-6, 1, delta=1e-3)
 
     def test_failure_raises_or_warns(self):
         d, V, E = data('Al_fcc')

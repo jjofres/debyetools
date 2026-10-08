@@ -1,3 +1,4 @@
+import warnings
 from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox
 from debyetools.tpropsgui.ui_dialog_loadEOS import Ui_Dialog as Ui_loadEOS
 # from atomtools import atomic_mass
@@ -54,10 +55,14 @@ class dialogLoadEOS(QDialog):
         self.summarypath = self.ui.summarypath.text()
         self.poscarpath = self.ui.poscarpath.text()
         try:
-            V, E = dt_load_V_E(self.summarypath, self.poscarpath)
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter('always')
+                V, E = dt_load_V_E(self.summarypath, self.poscarpath)  # energy: E0= (sigma -> 0), C-DOC3
         except Exception as e:
             QMessageBox.information(self, 'Error', 'Could not read the energy-volume data:\n%s' % e, QMessageBox.Ok)
             return
+        if caught:
+            QMessageBox.information(self, 'Note', '\n'.join(str(w.message) for w in caught), QMessageBox.Ok)
         txt2paste = '#V\tE\n'
         for v, e in zip(V, E):
             txt2paste = txt2paste + '%.6e\t%.6e'%(v, e)+'\n'

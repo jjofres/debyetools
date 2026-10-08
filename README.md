@@ -1,6 +1,6 @@
 # debyetools
 
-Implementation of a tool for calculating self-consistent thermodynamic properties that can take into account all kinds of contributions to the free energy inluding explicit anharmonicity. The software presented here is based in the Debye approximation within the QHA using the crystal internal energetics parametrized at ground-state to project the thermodynamics properties at high temperatures. 
+Implementation of a tool for calculating self-consistent thermodynamic properties that can take into account all kinds of contributions to the free energy including explicit anharmonicity. The software presented here is based in the Debye approximation within the QHA using the crystal internal energetics parametrized at ground-state to project the thermodynamics properties at high temperatures. 
 
 Made by Javier Jofre: javier.jofre@polymtl.ca
 If you use  ``debyetools`` in a publication, please refer to the `source code`.  If you use the implemented method for the calculation of the thermodynamic properties, please cite the following publication:
@@ -21,15 +21,10 @@ Jofre, J., Gheribi, A. E., & Harvey, J.-P. Development of a flexible quasi-harmo
    }
 ```
 
-### Requirements for Python module:
-- numpy
-- mpmath
-- scipy
-
-### Requirements for Interface:
-For the interface it will also be necesary:
-- matplotlib
-- PySide6
+### Requirements
+- Python 3.10 – 3.12
+- numpy (1.26 or 2.x), scipy (≥ 1.11)
+- for the graphical interface also: matplotlib, PySide6
 
 ### Installation
 ```
@@ -38,53 +33,55 @@ pip install --upgrade debyetools
 
 ### Get started
 
-To start getting familiar with the interface you can download `examples input files`.
-The GUI can be launched by executing the interface script from the debyetools repository main folder:
+Example input files (VASP outputs) are in `debyetools/examples` and `tests/inpt_files`.
+The GUI can be launched from the debyetools repository main folder:
 
 ```
-python interface.py
+python dtgui.py
 ```
 
-Or you can launch  inside python:
+or inside Python:
 ```
-from debyetools.tpropsgui.gui import interface
-interface()
+from debyetools.tpropsgui.gui import dtgui
+dtgui()
 ```
 
-Debye tools can also be used as a library. Example: heat capacity of Al fcc using 3rd order Birch-Murnaghan EOS
+`debyetools` can also be used as a library. All inputs and outputs are SI per mole of atoms (V in m³/mol-at,
+energies in J/mol-at, pressures in Pa, mass in kg/mol-at). Example: heat capacity of Al fcc with the third-order
+Birch-Murnaghan EOS (parameters fitted to the VASP data in `debyetools/examples/Al_fcc`):
 
 ```Python
 import numpy as np
 import debyetools.potentials as potentials
 from debyetools.ndeb import nDeb
 
-# EOS parametrization
+# EOS parameters (E0 in J/mol-at, V0 in m^3/mol-at, K0 in Pa, K0'), used as given (fit=False)
 # =========================
-EOS_parameters = [-3.607736520e+05, 9.929277050e-06, 7.729289055e+10, 4.604381753e+00]
+EOS_parameters = [-3.607729e+05, 9.932807e-06, 7.7265e+10, 4.6044]
 EOS = potentials.BM()
-EOS.fitEOS([0], [0], initial_parameters=EOS_parameters, fit=False)
+EOS.fitEOS([EOS_parameters[1]], [EOS_parameters[0]], initial_parameters=EOS_parameters, fit=False)
 
-# Other Contributions parametrization
+# Other contributions
 # =========================
-p_electronic = [3.8027342892e-01, -1.8875015171e-02, 5.3071034596e-04, -7.0100707467e-06]
-mass = 0.026981500000000002
+p_electronic = [4.27703e+00, -6.12439e+05, 3.46101e+09, 1.95140e+15]  # N(E_F)(V) = q0 + q1 V + q2 V^2 + q3 V^3
+mass = 0.0269815385                    # kg/mol-at
 Tmelting = 933
-p_defects = 8.46, 1.69, Tmelting, 0.1
-p_anharmonicity = 0, 1
-p_XS = 0, 0, 0
-poissonsratio = 0.37
+p_defects = 8.46, 1.69, Tmelting, 0.1  # vacancies: E = 8.46 kB Tm, S = 1.69 kB
+p_intanh = 0, 1                        # intrinsic anharmonicity (a0, m0): none
+p_anh = 0, 0, 0                        # explicit anharmonicity (s0, s1, s2): none
+poissonsratio = 0.337
 
-# F minimization using Slater approximaiton
+# G minimization (Slater approximation for the Debye temperature)
 # =========================
-ndeb = nDeb(poissonsratio, mass, p_anharmonicity, EOS, p_electronic, p_defects, p_XS, mode='jjsl')
-T_initial, T_final= 0.1, 1000
-T = np.arange(T_initial, T_final, 10)
+ndeb = nDeb(poissonsratio, mass, p_intanh, EOS, p_electronic, p_defects, p_anh, mode='jjsl')
+T = np.arange(0.1, 1000, 10)
 Pressure = 0
-T, V = ndeb.min_G(T, EOS_parameters[0] * .9, P=Pressure)
+T, V = ndeb.min_G(T, EOS.V0, P=Pressure)   # starting volume: the EOS V0
 
-# Evaluation of thermodynamic properties
+# Evaluation of the thermodynamic properties
 # =========================
 tprops_dict = ndeb.eval_props(T, V, P=Pressure)
+print('Cp(298.15 K) = %.2f J/mol-at/K' % np.interp(298.15, T, tprops_dict['Cp']))
 ```
 
 To Do's:

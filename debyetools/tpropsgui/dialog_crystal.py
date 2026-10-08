@@ -79,7 +79,7 @@ class dialogCrystal(QDialog):
         self.plot_cell()
 
 
-        cutoff = int(self.ui.lineEditCutoff.text())
+        cutoff = float(self.ui.lineEditCutoff.text())  # was int(): 4.5 A became 4 A (G9)
         self.molecule.run_pa(cutoff)
 #        print('bkp1')
 
@@ -101,8 +101,9 @@ class dialogCrystal(QDialog):
                         1.49e-01, 5.22e-02]*len(cts)+[2.26e+00,
                         6.61e-02, 3.01e-01, 5.31e-05]*int(ntypes)
 
-        params = ', '.join([str(pi) for pi in params])
-        self.params_interatomic = ', '.join([params for _ in range(len(cts))])
+        # one set of parameters per pair type (and per element type for EAM); the list used to be repeated
+        # len(cts) times more, i.e. 3 n^2 Morse parameters instead of 3 n (G9)
+        self.params_interatomic = ', '.join([str(pi) for pi in params])
 
         self.ui.lineEditInitialGuess.setText(self.params_interatomic)
 

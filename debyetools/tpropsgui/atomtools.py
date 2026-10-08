@@ -574,7 +574,9 @@ class atomSingle:
         self.position = coords
         self.mass = atomic_mass[type.split('_')[0]]
         self.radii = atomic_radii[type.split('_')[0]]
-        self.energy = atom_energy[check_type_in_energies(type)]
+        # None when no reference energy is tabulated (e.g. O, N): the crystal dialog only plots the atoms and used
+        # to stop with a KeyError for any oxide or nitride (G2)
+        self.energy = atom_energy.get(check_type_in_energies(type))
 
 class atomsPositions:
     def __init__(self, formula, cell, basis):

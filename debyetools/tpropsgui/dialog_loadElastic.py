@@ -2,6 +2,7 @@ from PySide6.QtWidgets import  QDialog, QFileDialog, QMessageBox
 from debyetools.tpropsgui.ui_dialog_loadElastic import Ui_Dialog as Ui_OUTCAR
 from debyetools.aux_functions import load_EM as dt_load_EM
 
+import numpy as np
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QPixmap, QPalette
 
@@ -46,7 +47,11 @@ class dialogLoadElastic(QDialog):
         except Exception as e:
             QMessageBox.information(self, 'Error', 'Could not read the elastic constants:\n%s' % e, QMessageBox.Ok)
             return
-        txt2paste = ''
+        # VASP order (XX YY ZZ XY YZ ZX) -> Voigt order (XX YY ZZ YZ ZX XY): the directional properties
+        # (elastic_props, ELATE) expect Voigt order; nu and the averages do not depend on it (G10)
+        voigt = [0, 1, 2, 4, 5, 3]
+        EM = np.asarray(EM, dtype=float)[np.ix_(voigt, voigt)]
+        txt2paste = '# GPa, Voigt order: XX YY ZZ YZ ZX XY\n'
         for rowi in EM:
             txt2paste=txt2paste+' '.join(['%.2f'%(float(coli)/10) for coli in rowi])+'\n'
         self.elastic_constants.setText(txt2paste)

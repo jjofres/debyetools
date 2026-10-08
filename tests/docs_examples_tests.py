@@ -12,7 +12,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 @pytest.mark.parametrize('page', ['docs/index.rst', 'docs/source/api/nDeb.rst', 'docs/source/api/fsdb.rst',
-                                  'docs/source/api/pairanalysis.rst'])
+                                  'docs/source/api/pairanalysis.rst',
+                                  'docs/source/api/examples.rst'])
 def test_rst_examples(page):
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')

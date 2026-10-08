@@ -35,6 +35,6 @@ setup(
     include_package_data=True,
     install_requires=["numpy", "scipy", "matplotlib", "PySide6"],
     package_data={
-    'debyetools': ['examples/*', 'examples/*/*'],
+    'debyetools': ['examples/*', 'examples/*/*', 'tpropsgui/reference_tables/*'],
 },
 )

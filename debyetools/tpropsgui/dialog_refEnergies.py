@@ -6,6 +6,8 @@ pure-element run of this session, or typed) and where they come from. Changes ar
 (atomtools.REFERENCES); 'Save table...' / 'Load table...' write and read them as a CSV file, so element runs and
 entered values carry over between sessions.
 """
+import os
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (QDialog, QFileDialog, QHBoxLayout, QHeaderView, QLabel, QMessageBox, QPushButton,
@@ -217,7 +219,8 @@ class dialogRefEnergies(QDialog):
         QMessageBox.information(self, 'Reference table', '%d POTCAR(s) saved to\n%s' % (n, path), QMessageBox.Ok)
 
     def on_load(self):
-        path, _ = QFileDialog.getOpenFileName(self, 'Load a reference table', REFERENCES.table_path or '',
+        start = REFERENCES.table_path or os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reference_tables')
+        path, _ = QFileDialog.getOpenFileName(self, 'Load a reference table', start,
                                               'CSV files (*.csv);;All files (*)')
         if path:
             self.load_table(path)

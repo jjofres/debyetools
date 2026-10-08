@@ -129,14 +129,16 @@ The fitted polynomial against the calculated heat capacity:
 Thermodynamic properties with the ``debyetools`` interface
 ===========================================================
 
-The same calculations as the previous example were carried out using `debyetools` GUI.
+.. Screenshots to replace with the current windows (Al3Li L12 with the inputs above).
+
+The same calculations as the previous example can be carried out with the ``debyetools`` :ref:`GUI <gui>`.
 
 .. figure::  ./images/example_main_window_Al_fcc.jpeg
    :align:   center
 
    `debyetools main interface`
 
-The calculated results can be plotted in the viewer window that will pop-up after clicking the button 'calculate'. Note that the number of calculations where modified from default settings to show smoother curves.
+The results are plotted in the results window that opens with **run >**; here the number of temperatures was increased from the default to show smoother curves.
 
 .. figure::  ./images/example_tprops_viewer_Al_fcc.jpeg
    :align:   center
@@ -370,4 +372,4 @@ This can be plotted in a P vs T predominance diagram:
    :align:   center
 
    Phase diagram P versus T for the α, β and γ forms of Mg2SiO4. Symbols are literature data for the phase stability regions
-   boundaries.
+   boundaries.

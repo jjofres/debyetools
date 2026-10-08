@@ -59,7 +59,7 @@ It's possible to couple the Debye model to other algorithms, to :ref:`fit experi
 
    Heat capacity of LiFePO4 calculated with ``debyetools`` and compared to other methods.
 
-The prediciton of :ref:`thermodynamic phase equilibria at high pressure <PvT_example>` can be performed by simultaneous parameter adjusting to experimental heat capacity and thermal expansion at P = 0.
+The prediction of :ref:`thermodynamic phase equilibria at high pressure <PvT_example>` can be performed by simultaneous parameter adjusting to experimental heat capacity and thermal expansion at P = 0.
 
 .. _PvT:
 .. figure::  ./source/api/images/Mg2SiO4_PvT.jpeg
@@ -74,6 +74,7 @@ Using ``debyetools`` through the GUI:
 
 ``debyetools`` is a Python_ library that also comes with a graphical user interface to help perform quick calculations without the need to code scripts.
 
+.. Screenshot to replace with the current results window (gui_cp_window.png, see source/api/gui.rst).
 .. _tProps_prop:
 .. figure::  ./source/api/images/property_interface.jpeg
    :align:   center

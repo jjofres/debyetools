@@ -153,6 +153,24 @@ def test_truncation_and_grids(qapp, msgs):
     assert cw._grid('0 1000 300').tolist() == [0, 300, 600, 900] and cw._grid('5').tolist() == [5]
 
 
+def test_close_pressures_keep_their_own_results(qapp, msgs):
+    """Pressures closer than 0.05 GPa get distinct labels (were merged by '%.1f' and overwrote each other, G17);
+    a pressure without a stable volume is skipped in the plots."""
+    mw, cw, _ = run_cp(qapp, msgs, 'Al_fcc', 'Al', M_AL, T='0.1 600.1 100', P='0 0.1 0.02')
+    keys = list(cw.dict_tp)
+    assert keys == ['0.00', '0.02', '0.04', '0.06', '0.08', '0.10']
+    assert [cw.ui.comboBox.itemText(i) for i in range(cw.ui.comboBox.count())] == keys
+    V298 = [at298(cw.dict_tp[k], 'V') for k in keys]
+    assert np.all(np.diff(V298) < 0)  # one volume per pressure, decreasing with P
+    assert cw.pkey(cw.P_ref) == '0.00' and cw.H298_kind == 'DH298'
+    mw, cw, _ = run_cp(qapp, msgs, 'Al_fcc', 'Al', M_AL, T='0.1 600.1 100', P='0 10 10')
+    assert list(cw.dict_tp) == ['0.0', '10.0']  # usual grids keep one decimal
+    mw, cw, _ = run_cp(qapp, msgs, 'Li_bcc', 'Li', M_LI, T='0.1 300.1 100', P='-3 3 3')
+    assert cw.dict_tp['-3.0'] == '' and isinstance(cw.dict_tp['0.0'], dict)
+    assert len(cw.lines) == 2  # -3 GPa (no stable volume) not plotted
+    assert 'P = -3.0 GPa: no stable volume' in texts(msgs)
+
+
 def test_explicit_anharmonicity_and_excess_boxes(qapp, msgs):
     """Excess polynomial read only when its box is checked; explicit anharmonicity only with its own box (G4)."""
     def g298(setup):

@@ -126,9 +126,9 @@ class dialogCpWindow(QMainWindow):
         if i < 0 or i >= len(self.Ps):
             return
         Pi = self.Ps[i]
-        self.ui.tableWidget.setItem(0, 0, QTableWidgetItem('%.5e' % (self.dict_H298['%.1f' % (Pi / 1e9)])))
-        self.ui.tableWidget.setItem(1, 0, QTableWidgetItem('%.5e' % (self.dict_S298['%.1f' % (Pi / 1e9)])))
-        for ix, p in enumerate(self.dict_FS['%.1f' % (Pi / 1e9)]['Cp']):
+        self.ui.tableWidget.setItem(0, 0, QTableWidgetItem('%.5e' % (self.dict_H298[self.pkey(Pi)])))
+        self.ui.tableWidget.setItem(1, 0, QTableWidgetItem('%.5e' % (self.dict_S298[self.pkey(Pi)])))
+        for ix, p in enumerate(self.dict_FS[self.pkey(Pi)]['Cp']):
             self.ui.tableWidget.setItem(ix + 2, 0, QTableWidgetItem('%.5e' % (p)))
 
     @staticmethod
@@ -149,6 +149,18 @@ class dialogCpWindow(QMainWindow):
         if not np.any(np.abs(T - 298.15) < 1e-6):  # 298.15 K is needed for H298 and S298
             T = np.sort(np.r_[T, [298.15]])
         return T
+
+    @staticmethod
+    def _p_decimals(Ps):
+        """Fewest decimals (at least 1) for which the labels of the pressures Ps (Pa) in GPa are all different."""
+        for d in range(1, 10):
+            if len({'%.*f' % (d, P / 1e9) for P in Ps}) == len(Ps):
+                return d
+        return 9
+
+    def pkey(self, P):
+        """Label of the pressure P (Pa) in GPa, used as the key of the per-pressure results and in the combo box."""
+        return '%.*f' % (getattr(self, 'p_decimals', 1), P / 1e9)
 
     def get_P(self):
         return self._grid(self.ui.lineEdit_2.text())
@@ -239,6 +251,8 @@ class dialogCpWindow(QMainWindow):
         self.lines = []
         for i, Pi_str in enumerate(self.dict_tp.keys()):
             tprops_dict = self.dict_tp[Pi_str]
+            if not isinstance(tprops_dict, dict):  # pressure skipped (no stable volume)
+                continue
 
             X = tprops_dict[str_x]
             Y = tprops_dict[str_y]
@@ -279,7 +293,7 @@ class dialogCpWindow(QMainWindow):
     def store_element_H298(self):
         """A pure-element run at P = 0 stores its H(298.15 K) as the H298 reference of its POTCAR (G14)."""
         elements = list(dict.fromkeys(self.molecule.types))
-        H = self.dict_H298['%.1f' % (self.P_ref / 1e9)]
+        H = self.dict_H298[self.pkey(self.P_ref)]
         if len(elements) != 1 or not np.isfinite(H):
             return []
         if self.P_ref != 0:
@@ -298,7 +312,7 @@ class dialogCpWindow(QMainWindow):
         notes = self.compute_Ef()
         molecule = self.molecule
         elements = list(dict.fromkeys(molecule.types))
-        H_cmp = self.dict_H298['%.1f' % (self.P_ref / 1e9)]
+        H_cmp = self.dict_H298[self.pkey(self.P_ref)]
         missing = [el for el in elements if REFERENCES.h298(REFERENCES.potential(el)) is None]
         if np.isfinite(H_cmp) and not missing:
             H_ref = np.mean([REFERENCES.h298(REFERENCES.potential(ti)) for ti in molecule.types])
@@ -307,7 +321,7 @@ class dialogCpWindow(QMainWindow):
             # the static Ef is not needed for DH298: no note about a missing static reference energy
             notes = [n for n in notes if not n.startswith('No reference energy')]
             if self.P_ref != 0:
-                notes.append('H298: compound enthalpy taken at %.1f GPa (P = 0 not computed).' % (self.P_ref / 1e9))
+                notes.append('H298: compound enthalpy taken at %s GPa (P = 0 not computed).' % self.pkey(self.P_ref))
             other_mode = [el for el in elements if REFERENCES.potential(el) in REFERENCES.h298_runs
                           and REFERENCES.potential(el) not in REFERENCES.h298_edited
                           and REFERENCES.h298_runs[REFERENCES.potential(el)][2] != self.modestr]
@@ -343,7 +357,7 @@ class dialogCpWindow(QMainWindow):
     def build_export(self):
         """One export text, every value per formula unit (H298, S298 and the Cp coefficients) at the reference
         pressure; written to dtoutput4cmpnd now and to export_dtoutput4cmpnd by the Export button (G7, G14)."""
-        key = '%.1f' % (self.P_ref / 1e9)
+        key = self.pkey(self.P_ref)
         nats = self.nats
         txt4output = f'{self.formula}$' + f'{self.H298:.7e}' + f'${self.S298:.7e}$'
         txt4output += '&'.join([f'{p * nats:.7e}' for p in self.dict_FS[key]['Cp']])
@@ -414,7 +428,10 @@ class dialogCpWindow(QMainWindow):
         self.Ps = Ps
         self.FS_Tfrom, self.FS_Tto = self.get_FS_T()
 
-        key = lambda Pi: '%.1f' % (Pi / 1e9)
+        # pressure labels (GPa) with as many decimals as needed to keep them distinct: '%.1f' merged pressures
+        # closer than 0.05 GPa, which then overwrote each other (G17)
+        self.p_decimals = self._p_decimals(Ps)
+        key = self.pkey
         self.dict_tp = {key(Pi): '' for Pi in Ps}
         self.dict_FS = {key(Pi): {'Cp': [np.nan] * 6} for Pi in Ps}
         self.dict_H298 = {key(Pi): np.nan for Pi in Ps}

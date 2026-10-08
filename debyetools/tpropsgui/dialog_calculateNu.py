@@ -110,7 +110,6 @@ class dialogCalcNu(QDialog):
         res, resdata=elastic.run_script(C)
         del resdata
 
-        print(res.expandtabs(8))
 
         # # Assuming a font width of 8 pixels per character for 8 spaces
         # tab_width = 8 * 8  # 8 spaces * approx. 8 pixels per space in typical monospace font

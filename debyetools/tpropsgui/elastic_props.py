@@ -70,23 +70,40 @@ def f1f2(x, Smat, fname):
      funct = getattr(sys.modules[__name__], fname)
      return lambda z: funct([x[0], x[1], z[0]], Smat), lambda z: -funct([x[0], x[1], z[0]], Smat)
 
-def shear2D(x, Smat):
-    ftol = 0.001
-    xtol = 0.01
-    func1, func2 = f1f2([x[0], x[1]], Smat, 'shear')
+def _transverse_extrema(theta, phi, Smat):
+    """Exact extrema over the transverse direction chi of the shear modulus and Poisson's ratio for the
+    direction(s) (theta, phi) (G19). With n = cos(chi) e1 + sin(chi) e2 (e1, e2 = dirVec2(theta, phi, 0 / pi/2)),
+    1/(4G) = n.B.n with B_jl = S_ijkl a_i a_k, and nu = -(n.A.n) / (a.a.S.a.a) with A_kl = S_ijkl a_i a_j:
+    the extrema over chi are the eigenvalues of the 2x2 projections of B and A (was: Powell from chi = pi/2,
+    which can stop at a local optimum).
+    theta, phi: scalars or arrays of the same shape. Returns G_min, G_max, nu_min, nu_max (same shape)."""
+    T = np.asarray(Smat, dtype=float)
+    theta, phi = np.broadcast_arrays(np.asarray(theta, dtype=float), np.asarray(phi, dtype=float))
+    shape = theta.shape
+    t, p = theta.ravel(), phi.ravel()
+    a = np.stack([np.sin(t) * np.cos(p), np.sin(t) * np.sin(p), np.cos(t)], axis=1)
+    e1 = np.stack([np.cos(t) * np.cos(p), np.cos(t) * np.sin(p), -np.sin(t)], axis=1)
+    e2 = np.stack([-np.sin(p), np.cos(p), np.zeros_like(p)], axis=1)
+    P = np.stack([e1, e2], axis=1)  # (n, 2, 3)
+    B = np.einsum('ijkl,ni,nk->njl', T, a, a)
+    A = np.einsum('ijkl,ni,nj->nkl', T, a, a)
+    s = np.einsum('ijkl,ni,nj,nk,nl->n', T, a, a, a, a)
+    lb = np.linalg.eigvalsh(np.einsum('nax,nxy,nby->nab', P, B, P))
+    la = np.linalg.eigvalsh(np.einsum('nax,nxy,nby->nab', P, A, P))
+    G_min, G_max = 1 / (4 * lb[:, 1]), 1 / (4 * lb[:, 0])
+    nu_min, nu_max = -la[:, 1] / s, -la[:, 0] / s
+    return tuple(v.reshape(shape) for v in (G_min, G_max, nu_min, nu_max))
 
-    r1 = optimize.minimize(func1, np.pi/2.0, method = 'Powell', options={"xtol":xtol, "ftol":ftol})
-    r2 = optimize.minimize(func2, np.pi/2.0, method = 'Powell', options={"xtol":xtol, "ftol":ftol})
-    return float(r1.fun), -float(r2.fun)
+def shear2D(x, Smat):
+    """Minimum and maximum shear modulus over the transverse directions, for the direction x = (theta, phi)."""
+    G_min, G_max, _, _ = _transverse_extrema(x[0], x[1], Smat)
+    return float(G_min), float(G_max)
 
 def Poisson2D(x, Smat):
-    ftol = 0.001
-    xtol = 0.01
-    func1, func2 = f1f2([x[0], x[1]], Smat, 'Poisson')
-
-    r1 = optimize.minimize(func1, np.pi/2.0, method = 'Powell', options={"xtol":xtol, "ftol":ftol})
-    r2 = optimize.minimize(func2, np.pi/2.0, method = 'Powell', options={"xtol":xtol, "ftol":ftol})
-    return min(0,float(r1.fun)), max(0,float(r1.fun)), -float(r2.fun)
+    """Poisson's ratio for the direction x = (theta, phi): (min(0, nu_min), max(0, nu_min), nu_max) as floats –
+    the negative part of the minimum, its positive part and the maximum (the three plotted curves)."""
+    _, _, nu_min, nu_max = _transverse_extrema(x[0], x[1], Smat)
+    return min(0.0, float(nu_min)), max(0.0, float(nu_min)), float(nu_max)
 
 def averages(CVoigt):
     SVoigt = np.linalg.inv(CVoigt)
@@ -118,47 +135,46 @@ def check_born_stability(Cmat):
 
 
 
-def get_min_max_directions(Smat, fstr, opt_ix=0):
-    t = np.linspace(0, 2*np.pi, 5)
-    p = np.linspace(0, 2*np.pi, 5)
-    initial_guesses = list(product(t, p))
-    # initial_guesses = [[0,0],[np.pi/2, np.pi], [0, np.pi/3], [0, 2*np.pi/3], [0, 3*np.pi/3], [0, 4*np.pi/3], [0, 5*np.pi/3], [0, 6*np.pi/3],
-    #                 [np.pi/3,0], [np.pi/3, np.pi/3], [np.pi/3, 2*np.pi/3], [np.pi/3, 3*np.pi/3], [np.pi/3, 4*np.pi/3], [np.pi/3, 5*np.pi/3], [np.pi/3, 6*np.pi/3],
-    #                     [2*np.pi/3,0], [2*np.pi/3, np.pi/3], [2*np.pi/3, 2*np.pi/3], [2*np.pi/3, 3*np.pi/3], [2*np.pi/3, 4*np.pi/3], [2*np.pi/3, 5*np.pi/3], [2*np.pi/3, 6*np.pi/3],
-    #                     [3*np.pi/3,0], [3*np.pi/3, np.pi/3], [3*np.pi/3, 2*np.pi/3], [3*np.pi/3, 3*np.pi/3], [3*np.pi/3, 4*np.pi/3], [3*np.pi/3, 5*np.pi/3], [3*np.pi/3, 6*np.pi/3],
-    #                     [4*np.pi/3,0], [4*np.pi/3, np.pi/3], [4*np.pi/3, 2*np.pi/3], [4*np.pi/3, 3*np.pi/3], [4*np.pi/3, 4*np.pi/3], [4*np.pi/3, 5*np.pi/3], [4*np.pi/3, 6*np.pi/3],
-    #                     [5*np.pi/3,0], [5*np.pi/3, np.pi/3], [5*np.pi/3, 2*np.pi/3], [5*np.pi/3, 3*np.pi/3], [5*np.pi/3, 4*np.pi/3], [5*np.pi/3, 5*np.pi/3], [5*np.pi/3, 6*np.pi/3],
-    #                     [6*np.pi/3,0], [6*np.pi/3, np.pi/3], [6*np.pi/3, 2*np.pi/3], [6*np.pi/3, 3*np.pi/3], [6*np.pi/3, 4*np.pi/3], [6*np.pi/3, 5*np.pi/3], [6*np.pi/3, 6*np.pi/3]]
-    minf = 1000
-    maxf = -1000
+def _directional(fstr, opt_ix, theta, phi, Smat):
+    """Directional quantity on arrays of angles: 'Young_tp', 'LinearCompressibility_tp' (signed, TPa^-1 for C in
+    GPa), 'shear2D' (opt_ix 0: min over chi, 1: max over chi), 'Poisson2D' (opt_ix 1: min over chi, signed;
+    2: max over chi; 0: min(0, min over chi))."""
+    T = np.asarray(Smat, dtype=float)
+    t, p = np.asarray(theta, dtype=float), np.asarray(phi, dtype=float)
+    a = np.stack([np.sin(t) * np.cos(p), np.sin(t) * np.sin(p), np.cos(t)], axis=-1)
+    if fstr == 'Young_tp':
+        return 1 / np.einsum('ijkl,...i,...j,...k,...l->...', T, a, a, a, a)
+    if fstr == 'LinearCompressibility_tp':
+        return 1000 * np.einsum('ijkk,...i,...j->...', T, a, a)
+    G_min, G_max, nu_min, nu_max = _transverse_extrema(t, p, Smat)
+    if fstr == 'shear2D':
+        return [G_min, G_max][opt_ix]
+    if fstr == 'Poisson2D':
+        return [np.minimum(0, nu_min), nu_min, nu_max][opt_ix]
+    raise ValueError(fstr)
 
-    funct = getattr(sys.modules[__name__], fstr)
-
-    # Get the number of arguments
-    num_args = funct.__code__.co_argcount
-
-    if num_args == 3:
-        Young_funct = lambda t, p: funct(t, p, Smat)
-        f2min = lambda x: abs(Young_funct(x[0], x[1]))
-        f2max = lambda x: -abs(Young_funct(x[0], x[1]))
-    elif num_args == 2:
-        Young_funct = lambda t: funct(t, Smat)[opt_ix]
-        f2min = lambda x: abs(Young_funct(x))
-        f2max = lambda x: -abs(Young_funct(x))
-    current_direction_min = [0,0]
-    current_direction_max = [0,0]
-    for initial_guess in initial_guesses:
-        result = minimize(f2min, initial_guess, method='BFGS')
-        if result.fun < minf:
-            minf = result.fun
-            current_direction_min = result.x
-        result = minimize(f2max, initial_guess, method='BFGS')
-        if -result.fun > maxf:
-            maxf = - result.fun
-            current_direction_max = result.x
-
-    dir_min = dirVec(current_direction_min[0], current_direction_min[1])
-    dir_max = dirVec(current_direction_max[0], current_direction_max[1])
+def get_min_max_directions(Smat, fstr, opt_ix=0, n_dirs=4000):
+    """Minimum and maximum of a directional quantity over all directions, and the directions (G22): every
+    quantity is even in the direction, so n_dirs quasi-uniform directions of a hemisphere (Fibonacci) are scanned,
+    and the 3 best candidates for the minimum and for the maximum are refined with Nelder-Mead in (theta, phi).
+    Signed values (was: |f|, and BFGS started only from symmetric directions, where it does not move).
+    Returns min, max, direction of the min, direction of the max."""
+    k = np.arange(n_dirs) + 0.5
+    theta = np.arccos(1 - k / n_dirs)  # cos(theta) uniform in (0, 1]
+    phi = np.pi * (1 + 5 ** 0.5) * k
+    vals = _directional(fstr, opt_ix, theta, phi, Smat)
+    f = lambda x: float(_directional(fstr, opt_ix, np.array([x[0]]), np.array([x[1]]), Smat)[0])
+    out = []
+    for sign in (1, -1):
+        best = None
+        for ix in np.argsort(sign * vals)[:3]:
+            r = minimize(lambda x: sign * f(x), [theta[ix], phi[ix]], method='Nelder-Mead',
+                         options={'xatol': 1e-7, 'fatol': 1e-10})
+            cand = (r.fun, r.x) if r.fun <= sign * vals[ix] else (sign * vals[ix], [theta[ix], phi[ix]])
+            if best is None or cand[0] < best[0]:
+                best = cand
+        out.append((sign * best[0], dirVec(best[1][0], best[1][1])))
+    (minf, dir_min), (maxf, dir_max) = out
     return minf, maxf, dir_min, dir_max
 
 def run_script(EM):
@@ -198,9 +214,10 @@ def run_script(EM):
     Smat = calc_Smat(EM)
 
     Voigt, Reuss, Hill = averages(EM)
-    KV, GV, EV, nuV = Voigt
-    KR, GR, ER, nuR = Reuss
-    KH, GH, EH, nuH = Hill
+    # averages() returns [K, E, G, nu] (was unpacked as K, G, E, nu: E and G swapped, A^U and G/K wrong, G21)
+    KV, EV, GV, nuV = Voigt
+    KR, ER, GR, nuR = Reuss
+    KH, EH, GH, nuH = Hill
     resdata['average_properties'] = {'Voigt': Voigt, 'Reuss': Reuss, 'Hill': Hill}
 
     # Print results
@@ -279,8 +296,10 @@ def run_script_plots(axs, EM):
 
     fY = np.vectorize(Young_funct)
     fL = np.vectorize(LinearCompressibility_funct)
-    fS = np.vectorize(Shear2D_funct)
-    fP = np.vectorize(Poisson2D_funct)
+    # explicit float outputs: np.vectorize takes the output type from the first call, and an int 0 there turned
+    # every negative Poisson's ratio into 0 (G18)
+    fS = np.vectorize(Shear2D_funct, otypes=[float, float])
+    fP = np.vectorize(Poisson2D_funct, otypes=[float, float, float])
 
     r_xyY = fY(np.pi / 2, phi)
     r_xzY = fY(-(theta+np.pi/2), 0)
@@ -302,9 +321,12 @@ def run_script_plots(axs, EM):
     axY[1].plot(phi, r_xzY)
     axY[2].plot(phi, r_yzY)
 
-    axL[0].plot(phi, r_xyL)
-    axL[1].plot(phi, r_xzL)
-    axL[2].plot(phi, r_yzL)
+    # polar radius = |value|, origin at 0; negative values (negative linear compressibility, negative Poisson's
+    # ratio) drawn in green as their magnitude (a negative radius moved the origin of the whole plot)
+    for ax, r in zip(axL, [r_xyL, r_xzL, r_yzL]):
+        ax.plot(phi, np.where(r >= 0, r, np.nan))
+        if np.any(r < 0):
+            ax.plot(phi, np.where(r < 0, -r, np.nan), color='g')
 
     axS[0].plot(phi, r_xyS[0], color='b')
     axS[0].plot(phi, r_xyS[1], color='r')
@@ -315,20 +337,20 @@ def run_script_plots(axs, EM):
     axS[2].plot(theta, r_yzS[0], color='b')
     axS[2].plot(theta, r_yzS[1], color='r')
 
-    axP[0].plot(phi, r_xyP[0], color='g')
+    axP[0].plot(phi, -r_xyP[0], color='g')
     axP[0].plot(phi, r_xyP[1], color='r')
     axP[0].plot(phi, r_xyP[2], color='b')
 
-    axP[1].plot(theta, r_xzP[0], color='g')
+    axP[1].plot(theta, -r_xzP[0], color='g')
     axP[1].plot(theta, r_xzP[1], color='r')
-    axP[1].plot(phi, r_xzP[2], color='b')
+    axP[1].plot(theta, r_xzP[2], color='b')
 
-    axP[2].plot(theta, r_yzP[0], color='g')
+    axP[2].plot(theta, -r_yzP[0], color='g')
     axP[2].plot(theta, r_yzP[1], color='r')
     axP[2].plot(theta, r_yzP[2], color='b')
 
     axY[0].text(np.pi*1.1, axY[0].get_rmax() * 2.2, r'$E(\theta, \phi)~[GPa]$', rotation=90)
-    axL[0].text(np.pi*1.1, axL[0].get_rmax() * 2.2, r'$\beta(\theta, \phi)$', rotation=90)
+    axL[0].text(np.pi*1.1, axL[0].get_rmax() * 2.2, r'$\beta(\theta, \phi)~[TPa^{-1}]$', rotation=90)
     axS[0].text(np.pi*1.1, axS[0].get_rmax() * 2.2, r'$G(\theta, \phi, \chi)~[GPa]$', rotation=90)
     axP[0].text(np.pi*1.1, axP[0].get_rmax() * 2.2, r'$\nu(\theta, \phi, \chi)$', rotation=90)
 
@@ -338,6 +360,7 @@ def run_script_plots(axs, EM):
 
     for ax in [axY, axL, axS, axP]:
         for i in range(3):
+            ax[i].set_rmin(0)
             ax[i].tick_params(axis='y', labelsize=8, labelrotation=292.5)
     # plt.show()
 

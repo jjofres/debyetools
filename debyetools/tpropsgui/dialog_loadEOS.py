@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QDialog, QFileDialog
+from PySide6.QtWidgets import QDialog, QFileDialog, QMessageBox
 from debyetools.tpropsgui.ui_dialog_loadEOS import Ui_Dialog as Ui_loadEOS
 # from atomtools import atomic_mass
 from debyetools.aux_functions import load_V_E as dt_load_V_E
@@ -50,27 +50,19 @@ class dialogLoadEOS(QDialog):
         self.poscarpath = poscarpath
 
     def on_pushButton_OK(self):
+        """Read SUMMARY + POSCAR when OK is pressed (not on close) and paste E(V); errors are shown (G11)."""
         self.summarypath = self.ui.summarypath.text()
         self.poscarpath = self.ui.poscarpath.text()
-        self.close()
-
-    def closeEvent(self, event):
-        V, E = dt_load_V_E(self.summarypath, self.poscarpath)
-        with open(self.poscarpath) as f:
-            poscar_lines = f.readlines()
-        elmnts = poscar_lines[5].split()
-        mult = poscar_lines[6].split()
-        elmntsall = []
-        for e, m in zip(elmnts, mult):
-            elmntsall = elmntsall + [e]*int(m)
-        # masses = [float(atomic_mass[e])/1000. for e in elmntsall]
-#        print(elmntsall, masses, log_mean(masses))
+        try:
+            V, E = dt_load_V_E(self.summarypath, self.poscarpath)
+        except Exception as e:
+            QMessageBox.information(self, 'Error', 'Could not read the energy-volume data:\n%s' % e, QMessageBox.Ok)
+            return
         txt2paste = '#V\tE\n'
         for v, e in zip(V, E):
             txt2paste = txt2paste + '%.6e\t%.6e'%(v, e)+'\n'
         self.EvVtext.setPlainText(txt2paste)
-        # self.mass.setText(str(log_mean(masses)))
-#        print('event', event)
+        self.close()
 
     def is_dark_mode(self):
         # Detect if the application is in dark mode using the palette

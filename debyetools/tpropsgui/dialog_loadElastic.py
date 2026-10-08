@@ -1,7 +1,9 @@
-from PySide6.QtWidgets import  QDialog, QFileDialog
+from PySide6.QtWidgets import  QDialog, QFileDialog, QMessageBox
 from debyetools.tpropsgui.ui_dialog_loadElastic import Ui_Dialog as Ui_OUTCAR
 from debyetools.aux_functions import load_EM as dt_load_EM
+from debyetools.tpropsgui.atomtools import REFERENCES
 
+import numpy as np
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QPixmap, QPalette
 
@@ -39,18 +41,26 @@ class dialogLoadElastic(QDialog):
 #        self.ui.poscarpath.setText(poscarpath)
 
     def on_pushButton_OK(self):
+        """Read the OUTCAR when OK is pressed (not on close) and paste the moduli in GPa; errors are shown (G11)."""
         self.outcarpath = self.ui.outcarpath.text()
-#        self.poscarpath = self.ui.poscarpath.text()
-        self.close()
-    def closeEvent(self, event):
-        EM = dt_load_EM(self.outcarpath)
-#        print(EM)
-
-        txt2paste = ''
+        try:
+            EM = dt_load_EM(self.outcarpath)  # kBar, relaxed-ion (D1)
+        except Exception as e:
+            QMessageBox.information(self, 'Error', 'Could not read the elastic constants:\n%s' % e, QMessageBox.Ok)
+            return
+        # VASP order (XX YY ZZ XY YZ ZX) -> Voigt order (XX YY ZZ YZ ZX XY): the directional properties
+        # (elastic_props, ELATE) expect Voigt order; nu and the averages do not depend on it (G10)
+        voigt = [0, 1, 2, 4, 5, 3]
+        EM = np.asarray(EM, dtype=float)[np.ix_(voigt, voigt)]
+        txt2paste = '# GPa, Voigt order: XX YY ZZ YZ ZX XY\n'
         for rowi in EM:
             txt2paste=txt2paste+' '.join(['%.2f'%(float(coli)/10) for coli in rowi])+'\n'
-#        print('event', event)
         self.elastic_constants.setText(txt2paste)
+        try:  # POTCAR names of the elements, used for the reference energies of Ef (G2)
+            REFERENCES.read_outcar(self.outcarpath)
+        except Exception:
+            pass
+        self.close()
 
     def is_dark_mode(self):
         # Detect if the application is in dark mode using the palette

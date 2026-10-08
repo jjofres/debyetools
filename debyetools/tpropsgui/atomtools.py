@@ -1,3 +1,4 @@
+import csv
 import re
 
 import debyetools.potentials as dt_potentials
@@ -418,6 +419,9 @@ atomic_colors = np.array([
 [0.922 ,0.   , 0.149]])
 atomic_color = {k:v for k, v in zip(atomic_symbols, atomic_colors)}
 
+# Elemental reference energies, eV/atom, VASP PAW_PBE, keyed by the exact POTCAR name (e.g. 'Cr' and 'Cr_pv'
+# differ). Removed (G2): Mg_pv = +1.66 and Mg_sv = +10.21 (positive, not a ground-state energy), Sb = Sm = 0
+# (placeholders). Missing potentials are entered by the user in the Reference energies dialog.
 atom_energy = {
 'VA': -0.00001,
 'Ac': -4.04728,
@@ -482,8 +486,6 @@ atom_energy = {
 'Li_sv': -1.9043,
 'Lu': -4.52114,
 'Mg': -1.50604,
-'Mg_pv': 1.65841,
-'Mg_sv': 10.21228,
 'Mn': -8.97821,
 'Mn_pv': -8.99024,
 'Mo': -10.94954,
@@ -517,12 +519,10 @@ atom_energy = {
 'Ru': -9.25325,
 'Ru_pv': -9.2409,
 'Ru_sv': -9.27694,
-'Sb': 0,
 'Sc': -6.20186,
 'Sc_sv': -6.24773,
 'Se': -3.49831,
 'Si': -5.17948,
-'Sm': 0,
 'Sn': -3.82696,
 'Sn_A4': -3.82696,
 'Sn_A5': -3.62817,
@@ -568,13 +568,163 @@ def check_type_in_energies(ti):
     else:
         return ti
 
+REF_FUNCTIONAL = 'PAW_PBE'  # POTCAR set of the atom_energy values
+
+
+def read_potentials(path):
+    """POTCAR names used in a VASP OUTCAR (or POTCAR), in POTCAR order, from the TITEL lines.
+
+    Returns (functional, [potential, ...]), e.g. ('PAW_PBE', ['Li', 'Al']) or ('PAW_PBE', ['Cr_pv']).
+    """
+    functional, potentials = None, []
+    with open(path, 'r', errors='replace') as f:
+        for line in f:
+            if 'TITEL' in line:
+                words = line.split('=', 1)[1].split()
+                functional, potentials = words[0], potentials + [words[1]]
+            elif 'ions per type' in line:  # end of the POTCAR block of an OUTCAR
+                break
+    if not potentials:
+        raise ValueError('no TITEL line (POTCAR name) found in %s' % path)
+    return functional, potentials
+
+
+def element_of(potential):
+    """Element symbol of a POTCAR name: 'Cr_pv' -> 'Cr', 'H.75' -> 'H', 'Ca_sv_GW' -> 'Ca'."""
+    m = re.match('[A-Z][a-z]?', potential)
+    return m.group(0) if m else potential
+
+
+class ReferenceEnergies:
+    """Elemental reference energies for the formation energy, for the current GUI session (G2).
+
+    potentials: element -> POTCAR name, read from an OUTCAR / POTCAR or entered by the user;
+    sources: element -> where the potential came from; edited: POTCAR name -> eV/atom entered by the user
+    (overrides atom_energy, not saved to disk).
+    Enthalpies at 298.15 K for the formation enthalpy DH298 (G14), J/mol-atom on the same energy scale as E0:
+    h298_runs: POTCAR name -> (H298, source, Debye mode) stored by every pure-element run of the session;
+    h298_edited: POTCAR name -> H298 entered by the user (overrides the runs; e.g. gases such as O2).
+    """
+
+    def __init__(self):
+        self.potentials = {}
+        self.sources = {}
+        self.functional = None
+        self.edited = {}
+        self.h298_runs = {}
+        self.h298_edited = {}
+        self.table_path = None  # last reference table saved or loaded
+
+    def read_outcar(self, path):
+        """Set the potential of every element found in an OUTCAR / POTCAR; returns the {element: potential} read."""
+        functional, potentials = read_potentials(path)
+        found = {element_of(p): p for p in potentials}
+        for el, p in found.items():
+            self.potentials[el] = p
+            self.sources[el] = path
+        self.functional = functional
+        return found
+
+    def potential(self, element):
+        """POTCAR name for an element; the plain symbol if none was read or entered (flagged by assumed())."""
+        return self.potentials.get(element, element)
+
+    def assumed(self, element):
+        return element not in self.potentials
+
+    def energy(self, potential):
+        """eV/atom for an exact POTCAR name (no substring matching), None if unknown."""
+        e = self.edited.get(potential, atom_energy.get(potential))
+        return None if e is None else float(e)
+
+    def h298(self, potential):
+        """H at 298.15 K, J/mol-atom, for an exact POTCAR name: entered value, else pure-element run, else None."""
+        if potential in self.h298_edited:
+            return float(self.h298_edited[potential])
+        if potential in self.h298_runs:
+            return float(self.h298_runs[potential][0])
+        return None
+
+
+REFERENCES = ReferenceEnergies()
+
+
+def interatomic_initial_guess(eos_str, n_pair_types):
+    """Default initial parameters of the interatomic potentials for a crystal with n_pair_types pair types
+    (n element types give n(n+1)/2 pair types): Morse 3 per pair type; EAM 6 per pair type (pair and density
+    functions) + 4 per element type (embedding function). None for the analytic EOS."""
+    ntypes = int(round(-0.5 + np.sqrt(0.25 + 2 * n_pair_types)))
+    if eos_str == 'MP':
+        return [0.35, 1, 3.2] * n_pair_types
+    if eos_str == 'EAM':
+        return ([3.65e-03, 1.24e-02, 2.68e-04, 1.03e-02, 1.49e-01, 5.22e-02] * n_pair_types
+                + [2.26e+00, 6.61e-02, 3.01e-01, 5.31e-05] * ntypes)
+    return None
+
+REF_TABLE_COLUMNS = ['POTCAR', 'E_ref_eV_atom', 'H298_J_mol_atom', 'H298_from', 'Debye_model', 'source']
+
+
+def save_reference_table(path, edited, h298_runs, h298_edited):
+    """Write the session references to a CSV file (one row per POTCAR name), so element runs and entered values
+    carry over between sessions. E_ref: only values entered by the user (the tabulated atom_energy values are not
+    repeated); H298: the effective value – entered if there is one, else from a pure-element run (with its Debye
+    model and source). Returns the number of rows written."""
+    pots = sorted(set(edited) | set(h298_runs) | set(h298_edited))
+    with open(path, 'w', newline='') as f:
+        f.write('# debyetools reference energies (GUI). E_ref: static energy, eV/atom; H298: H at 298.15 K, J/mol-atom,\n'
+                '# same energy scale as the E(V) data. Valid only with the same VASP settings (ENCUT, k-points, POTCAR).\n')
+        w = csv.writer(f)
+        w.writerow(REF_TABLE_COLUMNS)
+        for pot in pots:
+            E = '' if pot not in edited else repr(float(edited[pot]))
+            if pot in h298_edited:
+                H, frm, model, src = repr(float(h298_edited[pot])), 'entered', '', 'entered'
+            elif pot in h298_runs:
+                H, src, model = h298_runs[pot]
+                H, frm = repr(float(H)), 'run'
+            else:
+                H, frm, model, src = '', '', '', ''
+            w.writerow([pot, E, H, frm, model, src])
+    return len(pots)
+
+
+def load_reference_table(path):
+    """Read a file written by save_reference_table. Returns (edited, h298_runs, h298_edited) dictionaries
+    (same meaning as in ReferenceEnergies); ValueError with the line number for an unreadable row."""
+    edited, h298_runs, h298_edited = {}, {}, {}
+    with open(path, newline='') as f:
+        rows = [(i + 1, r) for i, r in enumerate(csv.reader(f)) if r and not r[0].lstrip().startswith('#')]
+    if not rows or [c.strip() for c in rows[0][1]] != REF_TABLE_COLUMNS:
+        raise ValueError('%s: not a reference table (header %s expected)' % (path, ', '.join(REF_TABLE_COLUMNS)))
+    for line, r in rows[1:]:
+        r = [c.strip() for c in r] + [''] * (len(REF_TABLE_COLUMNS) - len(r))
+        pot, E, H, frm, model, src = r[:6]
+        try:
+            if not pot:
+                raise ValueError('empty POTCAR name')
+            if E:
+                edited[pot] = float(E)
+            if H:
+                if frm == 'run':
+                    h298_runs[pot] = (float(H), src or 'run (file)', model)
+                elif frm in ('entered', ''):
+                    h298_edited[pot] = float(H)
+                else:
+                    raise ValueError("H298_from must be 'run' or 'entered', not '%s'" % frm)
+        except ValueError as e:
+            raise ValueError('%s, line %d: %s' % (path, line, e))
+    return edited, h298_runs, h298_edited
+
+
 class atomSingle:
     def __init__(self, type, coords):
         self.type = type
         self.position = coords
         self.mass = atomic_mass[type.split('_')[0]]
         self.radii = atomic_radii[type.split('_')[0]]
-        self.energy = atom_energy[check_type_in_energies(type)]
+        # None when no reference energy is tabulated (e.g. O, N): the crystal dialog only plots the atoms and used
+        # to stop with a KeyError for any oxide or nitride (G2)
+        self.energy = atom_energy.get(check_type_in_energies(type))
 
 class atomsPositions:
     def __init__(self, formula, cell, basis):
@@ -590,7 +740,6 @@ class atomsPositions:
 
     def __next__(self):
         if self._current_index < self._nats:
-            print('xxxx', self.types[self._current_index], self.positions[self._current_index])
             type_i = self.types[self._current_index]
             atom = atomSingle(type_i, self.positions[self._current_index])
             self._current_index+=1

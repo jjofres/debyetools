@@ -6,7 +6,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QMainWindow, QMessageBox
 from debyetools.poisson import poisson_ratio as dt_poisson_ratio
 
-from debyetools.tpropsgui.atomtools import dt_potentials, Molecule
+from debyetools.tpropsgui.atomtools import dt_potentials, Molecule, interatomic_initial_guess
 from debyetools.tpropsgui.cp_window import dialogCpWindow
 from debyetools.tpropsgui.ui_main_window_small import Ui_MainWindow
 
@@ -95,16 +95,22 @@ class dialogMainWindow(QMainWindow):
 
         self.molecule = Molecule()
 
+        # EAM was in the EOS dictionaries but never in the list, so it could not be selected (EAM review)
+        if self.ui.comboBox.findText('EAM int. potential') < 0:
+            self.ui.comboBox.addItem('EAM int. potential')
+        self.molecule_from_crystal = None
         self.ui.comboBox.currentIndexChanged.connect(self.selectionchange)
 
         self.check_el, self.check_def, self.check_anh, self.check_xs = self.ui.checkBox, self.ui.checkBox_2, self.ui.checkBox_3, self.ui.checkBox_4
         self.check_xspol = self.ui.checkBox_5
 
-        self.state_el = False
-        self.state_def = False
-        self.state_anh = False
-        self.state_xs = False
-        self.state_xspol = False
+        # start from the check boxes as set in the .ui (the electronic box is checked there; the states used to
+        # start as False, so a checked box was ignored until toggled)
+        self.state_el = self.check_el.isChecked()
+        self.state_def = self.check_def.isChecked()
+        self.state_anh = self.check_anh.isChecked()
+        self.state_xs = self.check_xs.isChecked()
+        self.state_xspol = self.check_xspol.isChecked()
 
         self.check_el.stateChanged.connect(self.on_check_el)
         self.check_def.stateChanged.connect(self.on_check_def)
@@ -166,9 +172,17 @@ class dialogMainWindow(QMainWindow):
         dict_eos = {'Birch-Murnaghan': 'BM', 'Rose-Vinet': 'RV', 'Mie-Gruneisen': 'MG', 'TB-SMA': 'TB',
                     'Murnaghan': 'MU', 'Poirier-Tarantola': 'PT', 'Morse potential': 'MP',
                     'EAM int. potential': 'EAM'}
+        if i < 0:
+            return
         self.eos_str = dict_eos[self.ui.comboBox.itemText(i)]
 
-        self.ui.lineEdit_2.setText('-3e5, 1e-5, 7e10, 4')
+        # interatomic potentials: default start of the selected potential for the crystal of the crystal dialog
+        crystal = self.molecule_from_crystal
+        if self.eos_str in ('MP', 'EAM') and getattr(crystal, 'combs_types', None) is not None:
+            guess = interatomic_initial_guess(self.eos_str, len(crystal.combs_types))
+            self.ui.lineEdit_2.setText(', '.join(str(p) for p in guess))
+        else:
+            self.ui.lineEdit_2.setText('-3e5, 1e-5, 7e10, 4')
 
     def get_C(self):
         txt = self.ui.elastic_constants.toPlainText().replace('XX', ' ').replace('YY', ' ').replace('ZZ', ' ').replace(
@@ -181,6 +195,14 @@ class dialogMainWindow(QMainWindow):
         data = np.array(data_lst)
 
         return data
+
+    @staticmethod
+    def get_coefficients(line_edit, n):
+        """Up to n comma- or space-separated numbers from a line edit, padded with zeros to n values."""
+        values = [float(si) for si in line_edit.text().replace(',', ' ').split()]
+        if len(values) > n:
+            raise ValueError('expected at most %d coefficients, got %d: %s' % (n, len(values), line_edit.text()))
+        return values + [0.0] * (n - len(values))
 
     def on_check_el(self):
         self.state_el = self.check_el.isChecked()
@@ -227,7 +249,7 @@ class dialogMainWindow(QMainWindow):
         # print('CI', self.ui.comboBox.currentIndex())
         self.dialogFitEOS.ui.comboBox_2.setCurrentText(list_items_in_combox[self.ui.comboBox.currentIndex()])
         self.dialogFitEOS.molecule = self.molecule
-        if self.eos_str == 'MP':
+        if self.eos_str in ('MP', 'EAM'):
             self.dialogFitEOS.molecule_from_crystal = self.molecule_from_crystal
 
 
@@ -244,7 +266,9 @@ class dialogMainWindow(QMainWindow):
         error_msg = ''
         try:
             formula_comp = self.ui.lineEdit_11.text()
-            self.molecule.r = len(set(re.findall(pattern, formula_comp)))
+            # all GUI inputs (E(V), V, mass, DOS) are per mol-atom, so r = 1 (review D5b); the number of element
+            # types used to be passed here, which scaled F_vib and F_def by r for every compound (G1)
+            self.molecule.r = 1
             self.molecule.nu = float(self.ui.lineEdit_3.text())
             self.molecule.mass = float(self.ui.lineEdit.text())
 
@@ -258,13 +282,13 @@ class dialogMainWindow(QMainWindow):
                                                                                                                   1,
                                                                                                                   1000,
                                                                                                                   0.1]
-            self.molecule.p_xs = [float(si) for si in
-                                  self.ui.lineEdit_xs.text().replace(',', ' ').split()] if self.state_xs else [0, 0, 0]
+            # explicit anharmonicity (s0, s1, s2) and excess polynomial (xs0 ... xs5): 0 unless their box is checked;
+            # missing trailing coefficients are 0 (G4)
+            self.molecule.p_xs = self.get_coefficients(self.ui.lineEdit_xs, 3) if self.state_xs else [0, 0, 0]
 
             self.molecule.initial_params = [float(si) for si in self.ui.lineEdit_2.text().replace(',', ' ').split()]
 
-            self.molecule.xsparams = [float(si) for si in
-            self.ui.lineEdit_xspol.text().replace(',', ' ').split()] if self.state_xs else [0, 0, 0, 0, 0, 0]
+            self.molecule.xsparams = self.get_coefficients(self.ui.lineEdit_xspol, 6) if self.state_xspol else [0, 0, 0, 0, 0, 0]
 
             if self.eos_str in ['MP', 'EAM']:
 
@@ -310,15 +334,10 @@ class dialogMainWindow(QMainWindow):
             QMessageBox.information(self, 'Error', error_msg, QMessageBox.Ok)
 
     def on_pushDoscar(self):
-        status = 0
-        try:
-            self.dialogDoscar.Vdata = self.dialogFitEOS.Vdata
-            status =1
-        except AttributeError:
-            QMessageBox.information(self, 'Warning', 'The volume data was not loaded!\n Please make sure you run the EOS fitting first.', QMessageBox.Ok)
-        if status == 1:
-            self.dialogDoscar.external_iparams = self.ui.lineEdit_el
-            self.dialogDoscar.show()
+        # the volumes come from the DOSCARs themselves; the E(V) volumes, if loaded, are a cross-check only (G5)
+        self.dialogDoscar.Vdata = getattr(self.dialogFitEOS, 'Vdata', None)
+        self.dialogDoscar.external_iparams = self.ui.lineEdit_el
+        self.dialogDoscar.show()
 
     def on_text_changed(self, line_edit):
         # Call the reusable highlight function

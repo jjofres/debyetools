@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import  QDialog, QFileDialog
+from PySide6.QtWidgets import  QDialog, QFileDialog, QMessageBox
 from debyetools.tpropsgui.ui_dialog_doscar import Ui_Dialog as Ui_DOSCAR
 
 from debyetools.aux_functions import load_doscar as dt_load_doscar
@@ -21,6 +21,13 @@ def highlight_line_edit(line_edit, color="purple", duration=100):
     timer.start(duration)
 
 
+
+
+def doscar_volume(path: str) -> float:
+    """Volume per atom (A^3) written by VASP as the first number of line 2 of a DOSCAR."""
+    with open(path) as f:
+        f.readline()
+        return float(f.readline().split()[0])
 
 
 class dialogDoscar(QDialog):
@@ -63,19 +70,37 @@ class dialogDoscar(QDialog):
         return  [float(ti) for ti in txt.replace(' ','').split(',')]
 
     def on_pushCalc(self):
-        # Vdata, Edata = self.get_EvV()
-        status  = 0
+        """
+        Fit N(E_F)(V) to the selected DOSCARs. Each DOS is paired with the volume written in its own file
+        (line 2, A^3/atom), so the file order does not matter (G5); the E(V) volumes of the EOS fit, when
+        loaded, are only used as a cross-check.
+        """
+        files = list(getattr(self, 'filepath_list', None) or [])
+        if not files:
+            QMessageBox.information(self, 'Error', 'Select the DOSCAR files first.', QMessageBox.Ok)
+            return
         try:
-            print(self.Vdata)
-            status = 1
-        except:
-            print('error: Energy curve probably not loaded yet.')
-
-        if status == 1:
-            E, N, Ef = dt_load_doscar('', list_filetags = self.filepath_list)
-            p_el_initial = self.get_el_params()
-            p_electronic = dt_fit_electronic(self.Vdata, p_el_initial,E,N,Ef)
-            self.ui.lineEdit_el.setText(', '.join(['%.9e' % (p) for p in p_electronic]))
+            vols_A3 = [doscar_volume(fi) for fi in files]
+            order = sorted(range(len(files)), key=lambda i: vols_A3[i])
+            files = [files[i] for i in order]
+            Vs = np.array([vols_A3[i] for i in order]) * A3_ATOM_TO_M3_MOL
+            E, N, Ef = dt_load_doscar('', list_filetags=files)
+            p_electronic = dt_fit_electronic(Vs, None, E, N, Ef)
+        except Exception as e:
+            QMessageBox.information(self, 'Error', 'The electronic fit failed:\n%s' % e, QMessageBox.Ok)
+            return
+        self.ui.lineEdit_el.setText(', '.join(['%.9e' % (p) for p in p_electronic]))
+        Vdata = getattr(self, 'Vdata', None)
+        if Vdata is not None and len(Vdata) > 0:
+            Vd = np.sort(np.asarray(Vdata, dtype=float))
+            if len(Vd) != len(Vs):
+                note = '%d DOSCAR files but %d E(V) points.' % (len(Vs), len(Vd))
+            else:
+                dev = float(np.max(np.abs(Vd / Vs - 1)))
+                note = '' if dev < 1e-3 else 'DOSCAR volumes differ from the E(V) volumes by up to %.2g %% (check the units of the E(V) data).' % (100 * dev)
+            if note:
+                QMessageBox.information(self, 'Warning', 'Fit done with the volumes written in the DOSCARs.\n' + note,
+                                        QMessageBox.Ok)
 
 
     def getfiles(self):
@@ -89,11 +114,10 @@ class dialogDoscar(QDialog):
             options=options
         )
 
-        files.sort()
-        if files:
-            print("Selected files:")
-            for file in files:
-                print(file)
+        try:  # list the files in order of volume (the order used by the fit), not alphabetically
+            files = sorted(files, key=doscar_volume)
+        except Exception:
+            files = sorted(files)
         filepath = '; '.join(files)
         #filepath = QFileDialog.getExistingDirectory(self, caption='Select a folder')
         self.ui.filepath.setText(filepath)

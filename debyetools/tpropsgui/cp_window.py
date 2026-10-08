@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QMainWindow, QTableWidgetItem, QMenu, QMessageBox, QApplication
 from debyetools.fs_compound_db import fit_FS as dt_fit_FS
@@ -91,22 +92,12 @@ class dialogCpWindow(QMainWindow):
            # Trigger No action
 
     def on_pushExport(self):
-        txt4output = f'{self.formula}$'
-
-        txt4output += f'{self.Ef:.7e}'
-
-        txt4output += f'${self.S298:7e}$'
-
-        lst4output = []
-        rcount = self.ui.tableWidget.rowCount()
-        for ix in range(2, rcount):
-            p = self.ui.tableWidget.item(ix, 0).text()
-            lst4output.append(f'{p}')
-        txt4output += '&'.join(lst4output)
-        txt4output += '$'
-        t4out = [f'{p:.2e}' for p in [self.FS_Tfrom, self.FS_Tto]]
-        txt4output += '&'.join(t4out)
-
+        # same content as dtoutput4cmpnd: Ef, S298 and Cp coefficients all per formula unit, at the reference
+        # pressure (was: Cp coefficients per mol-atom from the table next to Ef, S298 per formula unit, G7)
+        txt4output = getattr(self, 'txt4output', None)
+        if txt4output is None:
+            QMessageBox.information(self, 'Warning', 'Nothing to export yet.', QMessageBox.Ok)
+            return
         with open('export_dtoutput4cmpnd', 'w') as f:
             f.write(txt4output)
 
@@ -120,29 +111,35 @@ class dialogCpWindow(QMainWindow):
         self.plot_prop('T', self.proplist[i])
 
     def selectionchange(self, i):
+        if i < 0 or i >= len(self.Ps):
+            return
         Pi = self.Ps[i]
         self.ui.tableWidget.setItem(0, 0, QTableWidgetItem('%.5e' % (self.dict_H298['%.1f' % (Pi / 1e9)])))
         self.ui.tableWidget.setItem(1, 0, QTableWidgetItem('%.5e' % (self.dict_S298['%.1f' % (Pi / 1e9)])))
         for ix, p in enumerate(self.dict_FS['%.1f' % (Pi / 1e9)]['Cp']):
             self.ui.tableWidget.setItem(ix + 2, 0, QTableWidgetItem('%.5e' % (p)))
 
-    def get_T(self):
-        T_initial, T_final, Tstep = (float(sti) for sti in self.ui.lineEdit.text().split())
-        T = np.arange(T_initial, T_final + Tstep, Tstep)
-        T = np.r_[T, [298.15]]
-        T.sort()
+    @staticmethod
+    def _grid(txt):
+        """'x0 x1 step' -> x0, x0 + step, ... up to x1 (never beyond, G12); a single number -> that number."""
+        vals = [float(sti) for sti in txt.split()]
+        if len(vals) == 1:
+            return np.array(vals)
+        x0, x1, step = vals
+        if step <= 0 or x1 < x0:
+            raise ValueError('expected "start end step" with step > 0 and end >= start, got %r' % txt)
+        n = int(np.floor((x1 - x0) / step + 1e-9)) + 1
+        return x0 + step * np.arange(n)
 
+    def get_T(self):
+        T = self._grid(self.ui.lineEdit.text())
+        T = np.unique(np.where(T <= 0, 0.1, T))  # min_G needs T > 0: a start at 0 K is computed at 0.1 K
+        if not np.any(np.abs(T - 298.15) < 1e-6):  # 298.15 K is needed for H298 and S298
+            T = np.sort(np.r_[T, [298.15]])
         return T
 
     def get_P(self):
-        Ps = self.ui.lineEdit_2.text().split()
-        if len(Ps) == 1:
-            return np.array([float(sti) for sti in Ps])
-        T_initial, T_final, Tstep = (float(sti) for sti in self.ui.lineEdit_2.text().split())
-        T = np.arange(T_initial, T_final + Tstep, Tstep)
-        T.sort()
-
-        return T
+        return self._grid(self.ui.lineEdit_2.text())
 
     def get_FS_T(self):
         return float(self.ui.lineEdit_3.text()), float(self.ui.lineEdit_4.text())
@@ -261,7 +258,6 @@ class dialogCpWindow(QMainWindow):
 
     def debye_run(self, molecule, ui_progress, formula):
         self.formula = formula
-        txt4output = f'{formula}$'
         if self.ui.radioButton.isChecked():
             mode = 'jjsl'
             self.modestr = 'Slater'
@@ -280,67 +276,83 @@ class dialogCpWindow(QMainWindow):
         T = self.get_T()
         Ps = self.get_P() * 1e9
         self.Ps = Ps
+        self.FS_Tfrom, self.FS_Tto = self.get_FS_T()
 
-        self.dict_tp = {'%.1f' % (Pi / 1e9): '' for Pi in Ps}
-        self.dict_FS = {'%.1f' % (Pi / 1e9): {'Cp': [0]} for Pi in Ps}
-        self.dict_H298 = {'%.1f' % (Pi / 1e9): 0 for Pi in Ps}
-        self.dict_S298 = {'%.1f' % (Pi / 1e9): -1 for Pi in Ps}
+        key = lambda Pi: '%.1f' % (Pi / 1e9)
+        self.dict_tp = {key(Pi): '' for Pi in Ps}
+        self.dict_FS = {key(Pi): {'Cp': [np.nan] * 6} for Pi in Ps}
+        self.dict_H298 = {key(Pi): np.nan for Pi in Ps}
+        self.dict_S298 = {key(Pi): np.nan for Pi in Ps}
+        notes = []
 
         lP = len(Ps)
-        progress = (0) / lP
-        ui_progress.setValue(progress * 100)
+        ui_progress.setValue(0)
         for ix, P in enumerate(Ps):
+            self.ui.comboBox.addItem(key(P))
 
-            self.ui.comboBox.addItem('%.1f' % (P / 1e9))
-
-            molecule.min_G(T, P)
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter('always')
+                molecule.min_G(T, P)
+            # min_G truncation (D10) is reported instead of only printed to the console (G6)
+            notes += ['P = %s GPa: %s' % (key(P), w.message) for w in caught if 'min_G' in str(w.message)]
+            if len(molecule.T) == 0:
+                notes.append('P = %s GPa: no stable volume at any temperature; nothing computed.' % key(P))
+                continue
 
             molecule.eval_props()
+            ui_progress.setValue(int((ix + 1) / lP * 100))
+            tp = molecule.tprops_dict
+            self.dict_tp[key(P)] = tp
 
-            progress = (ix + 1) / lP
-            ui_progress.setValue(progress * 100)
+            # FactSage Cp fit only inside the computed temperature range
+            Tmax = float(tp['T'][-1])
+            if Tmax < self.FS_Tto - 1e-6:
+                notes.append('P = %s GPa: FactSage Cp fit limited to %.1f K (last stable temperature).' % (key(P), Tmax))
+            if np.sum((tp['T'] >= self.FS_Tfrom) & (tp['T'] <= self.FS_Tto)) >= 6:
+                self.dict_FS[key(P)] = dt_fit_FS(tp, self.FS_Tfrom, min(self.FS_Tto, Tmax))
+            else:
+                notes.append('P = %s GPa: fewer than 6 temperatures between %.2f and %.2f K; no FactSage fit.'
+                             % (key(P), self.FS_Tfrom, self.FS_Tto))
 
-            self.dict_tp['%.1f' % (P / 1e9)] = molecule.tprops_dict
+            ix_T0 = np.where(np.abs(tp['T'] - 298.15) < 1e-6)[0]
+            if len(ix_T0):
+                i0 = ix_T0[0]
+                self.dict_H298[key(P)] = tp['G'][i0] + tp['T'][i0] * tp['S'][i0]
+                self.dict_S298[key(P)] = tp['S'][i0]
+            else:
+                notes.append('P = %s GPa: 298.15 K was not reached; H298 and S298 not available.' % key(P))
 
-            self.FS_Tfrom, self.FS_Tto = self.get_FS_T()
+        computed = [Pi for Pi in Ps if isinstance(self.dict_tp[key(Pi)], dict)]
+        if not computed:
+            QMessageBox.information(self, 'Warning', '\n'.join(notes) or 'Nothing was computed.', QMessageBox.Ok)
+            return
 
-            self.dict_FS['%.1f' % (P / 1e9)] = dt_fit_FS(molecule.tprops_dict, self.FS_Tfrom, self.FS_Tto)
+        # reference pressure for the table and the export: P = 0 if computed, otherwise the lowest pressure (G7)
+        self.P_ref = min(computed, key=abs)
+        nats = len(molecule.types)
+        self.nats = nats
+        try:
+            Ef = molecule.eos.E0(molecule.eos.V0) - sum([atom_energy[self.check_type_in_energies(ti)] for ti in molecule.types]) * (
+                        EV_ATOM_TO_J_MOL) / len(molecule.types)
+            self.Ef = Ef * nats
+        except KeyError as e:
+            self.Ef = np.nan
+            notes.append('No elemental reference energy for %s: the formation energy is not computed.' % e)
+        self.S298 = self.dict_S298[key(self.P_ref)] * nats
 
-            ix_T0 = np.where(np.round(molecule.tprops_dict['T'], 2) == np.round(298.15, 2))[0][0]
-
-            self.dict_H298['%.1f' % (P / 1e9)] = molecule.tprops_dict['G'][ix_T0] + molecule.tprops_dict['T'][ix_T0] * \
-                                                 molecule.tprops_dict['S'][ix_T0]
-            self.dict_S298['%.1f' % (P / 1e9)] = molecule.tprops_dict['S'][ix_T0]
-
-            #            self.plot_Cp(self.dict_tp['%.1f'%(P/1e9)], self.dict_FS['%.1f'%(P/1e9)])
-            nats = len(molecule.types)
-            if P == 0:
-                # print(molecule.__dict__.keys())
-                Ef = molecule.eos.E0(molecule.eos.V0) - sum([atom_energy[self.check_type_in_energies(ti)] for ti in molecule.types]) * (
-                            EV_ATOM_TO_J_MOL) / len(molecule.types)
-                self.Ef = Ef*nats
-                txt4output += f'{Ef * nats:.7e}'
-        self.S298 = self.dict_S298['%.1f' % (0 / 1e9)] * nats
-        txt4output += f'${self.S298:.7e}$'  # was a nested-quote f-string: SyntaxError before Python 3.12 (G3)
-
-        self.ui.tableWidget.setItem(0, 0, QTableWidgetItem('%.5e' % (self.dict_H298['%.1f' % (0 / 1e9)])))
-        self.ui.tableWidget.setItem(1, 0, QTableWidgetItem('%.5e' % (self.dict_S298['%.1f' % (0 / 1e9)])))
-
-        lst4output = []
-        for ix, p in enumerate(self.dict_FS['%.1f' % (0 / 1e9)]['Cp']):
-            lst4output.append(f'{p * nats:.7e}')
-            self.ui.tableWidget.setItem(ix + 2, 0, QTableWidgetItem('%.5e' % (p)))
-        txt4output += '&'.join(lst4output)
-        txt4output += '$'
-        t4out = [f'{p:.2e}' for p in [self.FS_Tfrom, self.FS_Tto]]
-        txt4output += '&'.join(t4out)
-
+        # one export text, every value per formula unit (Ef, S298 and the Cp coefficients); written to
+        # dtoutput4cmpnd now and to export_dtoutput4cmpnd by the Export button (G7)
+        txt4output = f'{formula}$' + f'{self.Ef:.7e}' + f'${self.S298:.7e}$'
+        txt4output += '&'.join([f'{p * nats:.7e}' for p in self.dict_FS[key(self.P_ref)]['Cp']])
+        txt4output += '$' + '&'.join([f'{p:.2e}' for p in [self.FS_Tfrom, self.FS_Tto]])
+        self.txt4output = txt4output
         with open('dtoutput4cmpnd', 'w') as f:
             f.write(txt4output)
-        #            self._ax.text(Y[-1],X[-1],'P=')
 
-        #        print('xxxx', list(self.dict_tp[list(self.dict_tp.keys())[0]].keys()))
-        self.proplist = list(self.dict_tp[list(self.dict_tp.keys())[0]].keys())
+        self.ui.comboBox.setCurrentText(key(self.P_ref))
+        self.selectionchange(self.ui.comboBox.currentIndex())
+
+        self.proplist = list(self.dict_tp[key(self.P_ref)].keys())
         current_plot = self.current_plot
         self.ui.comboBox_2.clear()
 
@@ -352,9 +364,8 @@ class dialogCpWindow(QMainWindow):
 
         self.plot_prop('T', self.proplist[self.current_plot])
 
-    #        handles_1, labels_1 = self._ax.get_legend_handles_labels()
-    #        by_label_1 = dict(zip(labels_1, handles_1))
-    #        self._ax.legend(by_label_1.values(), by_label_1.keys())
+        if notes:
+            QMessageBox.information(self, 'Warning', '\n'.join(notes), QMessageBox.Ok)
 
     def right_menu(self, pos):
         menu = QMenu()

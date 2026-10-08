@@ -1,3 +1,5 @@
+..  _contributions:
+
 ================================
 Contributions to the free energy
 ================================
@@ -10,8 +12,10 @@ Contributions to the free energy
 Anharmonicity
 =============
 
-The anharmonicity can be included in the calculations as an excess contribution which is called just 'anharmonicity'.
-The temperature dependence of the phonon frequencies con be introduced using what its called 'intrinsic anharmonicity'.
+Two anharmonic terms are available. The explicit anharmonicity (``p_anh = (s0, s1, s2)`` in ``nDeb``) adds
+:math:`F_{anh}=-\frac{1}{2}A(V)T^2` with :math:`A(V)=s_0+s_1V+s_2V^2`. The intrinsic anharmonicity
+(``p_intanh = (a0, m0)``) makes the Debye temperature depend on temperature,
+:math:`\theta_D(T,V)=\theta_D(V)\exp(a(V)T/2)` with :math:`a(V)=a_0(V/V_0)^{m_0}`; ``(0, 1)`` switches it off.
 
 Source code
 -----------
@@ -22,7 +26,10 @@ Source code
 Defects
 =======
 
-The defects due to mono-vacancies can be taken into account if the parameters are provided.
+The defects due to mono-vacancies can be taken into account if the parameters are provided
+(``p_defects = (Evac00, Svac00, Tm, a)``: formation energy :math:`E_{vac}=Evac00\,k_BT_m`, entropy
+:math:`S_{vac}=Svac00\,k_B`, melting temperature :math:`T_m` in K, and a dimensionless coefficient of the volume
+dependence of :math:`E_{vac}`). A very large ``Evac00`` (e.g. ``1e10``) switches the term off.
 
 Source code
 -----------
@@ -41,11 +48,28 @@ Source code
 .. automodule:: debyetools.electronic
     :members:
 
+Excess contribution
+===================
+
+An excess term in the form of a FactSage-like polynomial (``xsparams`` in ``nDeb``, default all zero),
+:math:`F_{xs}=A_0+A_1T+A_2T^2+A_3T^3+A_4T\ln T+A_5T^{-2}` in J/mol-at. Each coefficient is a number
+(volume-independent, the usual case) or a sequence of polynomial coefficients in V (lowest order first), which
+makes the term contribute to the pressure, bulk modulus and thermal expansion.
+
+Source code
+-----------
+
+.. automodule:: debyetools.XS
+    :members:
+
 Vibrational
 ===========
 
-The evaluation of the thermal behavior of compounds  are  calculating using the Debye approximation.
-The mass of the compound and the Poisson's ration must be entered as input parameters. The information about the internal energy is passed as an ``potential.EOS`` object.
+The vibrational free energy is calculated with the Debye model. The mean atomic mass (kg/mol-at) and the
+Poisson's ratio are input parameters; the internal energy is passed as an EOS object (``debyetools.potentials``).
+The Debye temperature follows from the EOS and the Poisson's ratio; its volume dependence is set by ``mode``:
+``'jjsl'`` (Slater, default), ``'jjdm'`` (Dugdale-MacDonald), ``'jjfv'`` (free volume), and ``'Sl'``, ``'DM'``,
+``'VZ'``, ``'mfv'`` (Grüneisen parameter from the EOS with a fixed reference volume).
 
 Source code
 -----------

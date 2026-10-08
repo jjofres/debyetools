@@ -9,9 +9,9 @@ def neighbor_list(size: np.ndarray, basis: np.ndarray, cell: np.ndarray, cutoff:
 
     All image cells that can hold a neighbour within the cut-off are included:
     for an atom pair in image cell n, the fractional component i of the pair
-    vector is n_i + (f_j - f_i), and |r . b_i| <= cutoff*|b_i| (b_i reciprocal
-    vectors, a_i . b_j = delta_ij, 1/|b_i| = interplanar spacing). Hence
-    |n_i| <= cutoff*|b_i| + span_i, with span_i the spread of the basis in
+    vector is n_i + (f_j - f_i), and ``abs(r . b_i) <= cutoff*norm(b_i)`` (b_i reciprocal
+    vectors, a_i . b_j = delta_ij, 1/norm(b_i) = interplanar spacing). Hence
+    ``abs(n_i) <= cutoff*norm(b_i) + span_i``, with span_i the spread of the basis in
     fractional coordinate i. This holds for any cell shape and any cut-off.
 
     :param np.ndarray size: Number of times we are replicating the primitive cel

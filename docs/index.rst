@@ -172,6 +172,7 @@ c4 T\ :sup:`-1/2` + c5 T\ :sup:`-3`; c5 = 0 unless ``cp_T3=True``):
    source/api/gui
    source/api/examples
    source/api/nDeb
+   source/api/utilities
    source/api/contributions
    source/api/fsdb
    source/api/pairanalysis

@@ -195,7 +195,7 @@ def load_V_E(energy_dir_summary: str, energy_dir_contcar: str, units: str = 'eV/
     """
     Loads Energy curve as function of volume from VASP outputs.
 
-    The reference volume per atom is the cell volume of the POSCAR/CONTCAR (|det| of the lattice
+    The reference volume per atom is the cell volume of the POSCAR/CONTCAR (absolute determinant of the lattice
     matrix, scale factor applied) divided by the number of atoms. Each SUMMARY line is read as
     "d  ...  ...  E": column 1 is the isotropic linear strain d of that calculation relative to the
     POSCAR/CONTCAR cell (V = V_ref (1 + d)^3), column 4 the total energy of the cell in eV.
@@ -438,4 +438,4 @@ def load_cell(filename_contcar: str) -> tuple[str, np.ndarray, np.ndarray]:
 #     #     print(e)
 #     vdata.EM = EM
 #
-#     return vdata
+#     return vdata

@@ -11,12 +11,14 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def test_index_rst_examples():
+@pytest.mark.parametrize('page', ['docs/index.rst', 'docs/source/api/nDeb.rst', 'docs/source/api/fsdb.rst',
+                                  'docs/source/api/pairanalysis.rst'])
+def test_rst_examples(page):
     with warnings.catch_warnings():
         warnings.simplefilter('ignore')
-        result = doctest.testfile(str(ROOT / 'docs' / 'index.rst'), module_relative=False,
+        result = doctest.testfile(str(ROOT / page), module_relative=False,
                                   optionflags=doctest.NORMALIZE_WHITESPACE, verbose=False)
-    assert result.attempted > 10
+    assert result.attempted > 3
     assert result.failed == 0
 
 

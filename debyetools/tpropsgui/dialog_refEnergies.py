@@ -1,8 +1,9 @@
-"""Editable table of the elemental reference energies used for the formation energy (G2).
+"""Editable table of the elemental references used for the formation energy (G2) and enthalpy (G14).
 
-One row per element of the formula: POTCAR name (read from an OUTCAR / POTCAR or typed), reference energy in
-eV/atom (from atomtools.atom_energy for that exact POTCAR name, or typed) and where both come from. Changes are
-kept for the current session only (atomtools.REFERENCES), not written to disk.
+One row per element of the formula: POTCAR name (read from an OUTCAR / POTCAR or typed), static reference energy
+in eV/atom (from atomtools.atom_energy for that exact POTCAR name, or typed), H at 298.15 K in J/mol-atom (from a
+pure-element run of this session, or typed) and where they come from. Changes are kept for the current session
+only (atomtools.REFERENCES), not written to disk.
 """
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
@@ -11,7 +12,8 @@ from PySide6.QtWidgets import (QDialog, QFileDialog, QHBoxLayout, QHeaderView, Q
 
 from debyetools.tpropsgui.atomtools import REFERENCES, REF_FUNCTIONAL, atom_energy, element_of
 
-COL_EL, COL_X, COL_POT, COL_E, COL_SRC = range(5)
+COL_EL, COL_X, COL_POT, COL_E, COL_H, COL_SRC = range(6)
+EDITABLE = (COL_POT, COL_E, COL_H)
 
 
 class dialogRefEnergies(QDialog):
@@ -25,8 +27,9 @@ class dialogRefEnergies(QDialog):
         self.counts = {el: types.count(el) for el in self.elements}
         self._filling = False
 
-        self.table = QTableWidget(len(self.elements), 5, self)
-        self.table.setHorizontalHeaderLabels(['element', 'atoms', 'POTCAR', 'E ref (eV/atom)', 'source'])
+        self.table = QTableWidget(len(self.elements), 6, self)
+        self.table.setHorizontalHeaderLabels(['element', 'atoms', 'POTCAR', 'E ref (eV/atom)',
+                                              'H298 ref (J/mol-atom)', 'source'])
         self.table.verticalHeader().setVisible(False)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setStretchLastSection(True)
@@ -51,18 +54,33 @@ class dialogRefEnergies(QDialog):
         layout.addWidget(self.table)
         layout.addWidget(self.label)
         layout.addLayout(buttons)
-        self.resize(560, 140 + 30 * len(self.elements))
+        self.resize(760, 160 + 30 * len(self.elements))
 
         # session values are copied and only written back on OK
         self.potentials = {el: REFERENCES.potential(el) for el in self.elements}
         self.sources = {el: REFERENCES.sources.get(el, 'assumed (no OUTCAR read)') for el in self.elements}
         self.edited = dict(REFERENCES.edited)
+        self.h298_edited = dict(REFERENCES.h298_edited)
         self.functional = REFERENCES.functional
         self.fill()
 
     def energy(self, potential):
         e = self.edited.get(potential, atom_energy.get(potential))
         return None if e is None else float(e)
+
+    def h298(self, potential):
+        if potential in self.h298_edited:
+            return float(self.h298_edited[potential])
+        if potential in REFERENCES.h298_runs:
+            return float(REFERENCES.h298_runs[potential][0])
+        return None
+
+    def h298_source(self, potential):
+        if potential in self.h298_edited:
+            return 'entered'
+        if potential in REFERENCES.h298_runs:
+            return REFERENCES.h298_runs[potential][1]
+        return 'none: H298 exported as static Ef'
 
     def fill(self):
         self._filling = True
@@ -75,14 +93,18 @@ class dialogRefEnergies(QDialog):
                 e_src = 'entered'
             else:
                 e_src = 'table'
+            h = self.h298(pot)
             values = [el, str(self.counts[el]), pot, '' if e is None else '%.5f' % e,
-                      'POTCAR: %s; E: %s' % (self.sources[el], e_src)]
+                      '' if h is None else '%.6e' % h,
+                      'POTCAR: %s; E: %s; H298: %s' % (self.sources[el], e_src, self.h298_source(pot))]
             for j, v in enumerate(values):
                 item = QTableWidgetItem(v)
-                if j not in (COL_POT, COL_E):
+                if j not in EDITABLE:
                     item.setFlags(item.flags() & ~Qt.ItemIsEditable)
                 if e is None and j in (COL_POT, COL_E):
                     item.setBackground(QColor('#e8a0a0'))
+                if h is None and j == COL_H:
+                    item.setBackground(QColor('#ecd59a'))
                 self.table.setItem(i, j, item)
         self._filling = False
         self.update_label()
@@ -94,6 +116,11 @@ class dialogRefEnergies(QDialog):
         if missing:
             txt.append('No reference energy for %s: the formation energy is not computed until a value is entered.'
                        % ', '.join('%s (%s)' % (el, self.potentials[el]) for el in missing))
+        no_h = [el for el in self.elements if self.h298(self.potentials[el]) is None]
+        if no_h:
+            txt.append('No H298 reference for %s: the exported H298 is the static Ef (no zero-point or thermal part). '
+                       'Run the pure element in this session (same POTCAR and settings, P = 0) or enter its H298; '
+                       'for a gas (O2, N2, ...) enter H298 per mol of atoms.' % ', '.join(no_h))
         if assumed:
             txt.append('POTCAR not read from an OUTCAR for %s: check that it is the one used in the calculations.'
                        % ', '.join(assumed))
@@ -121,6 +148,15 @@ class dialogRefEnergies(QDialog):
             else:
                 try:
                     self.edited[pot] = float(text)
+                except ValueError:
+                    QMessageBox.information(self, 'Warning', "'%s' is not a number." % text, QMessageBox.Ok)
+        elif col == COL_H:
+            pot = self.potentials[el]
+            if text == '':
+                self.h298_edited.pop(pot, None)
+            else:
+                try:
+                    self.h298_edited[pot] = float(text)
                 except ValueError:
                     QMessageBox.information(self, 'Warning', "'%s' is not a number." % text, QMessageBox.Ok)
         self.fill()
@@ -160,6 +196,7 @@ class dialogRefEnergies(QDialog):
                 REFERENCES.potentials[el] = self.potentials[el]
                 REFERENCES.sources[el] = self.sources[el]
         REFERENCES.edited = dict(self.edited)
+        REFERENCES.h298_edited = dict(self.h298_edited)
         if self.functional is not None:
             REFERENCES.functional = self.functional
         self.accept()

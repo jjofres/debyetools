@@ -269,12 +269,76 @@ class dialogCpWindow(QMainWindow):
             self.Ef = (molecule.eos.E0(molecule.eos.V0) - E_ref) * len(molecule.types)
         return notes
 
+    def store_element_H298(self):
+        """A pure-element run at P = 0 stores its H(298.15 K) as the H298 reference of its POTCAR (G14)."""
+        elements = list(dict.fromkeys(self.molecule.types))
+        H = self.dict_H298['%.1f' % (self.P_ref / 1e9)]
+        if len(elements) != 1 or not np.isfinite(H):
+            return []
+        if self.P_ref != 0:
+            return ['H298 of %s not stored as a reference: the run does not include P = 0.' % elements[0]]
+        pot = REFERENCES.potential(elements[0])
+        source = 'run %s (%s, %s)' % (self.formula, type(self.molecule.eos).__name__, self.modestr)
+        REFERENCES.h298_runs[pot] = (float(H), source, self.modestr)
+        return []
+
+    def compute_H298(self):
+        """H298 for the FactSage Compound module (G14): formation enthalpy per formula unit,
+        DH298 = nats * (H_cmp(298.15) - mean_i H_i(298.15)), with H = G + TS of the compound run (J/mol-atom, at the
+        reference pressure) and H_i the H298 reference of the POTCAR of element i (pure-element run of this session
+        or entered). Without all H_i: the static Ef (no zero-point or thermal part), with a note.
+        Sets self.Ef and self.H298, self.H298_kind ('DH298' or 'static Ef'); returns the notes for the user."""
+        notes = self.compute_Ef()
+        molecule = self.molecule
+        elements = list(dict.fromkeys(molecule.types))
+        H_cmp = self.dict_H298['%.1f' % (self.P_ref / 1e9)]
+        missing = [el for el in elements if REFERENCES.h298(REFERENCES.potential(el)) is None]
+        if np.isfinite(H_cmp) and not missing:
+            H_ref = np.mean([REFERENCES.h298(REFERENCES.potential(ti)) for ti in molecule.types])
+            self.H298 = (H_cmp - H_ref) * len(molecule.types)
+            self.H298_kind = 'DH298'
+            # the static Ef is not needed for DH298: no note about a missing static reference energy
+            notes = [n for n in notes if not n.startswith('No reference energy')]
+            if self.P_ref != 0:
+                notes.append('H298: compound enthalpy taken at %.1f GPa (P = 0 not computed).' % (self.P_ref / 1e9))
+            other_mode = [el for el in elements if REFERENCES.potential(el) in REFERENCES.h298_runs
+                          and REFERENCES.potential(el) not in REFERENCES.h298_edited
+                          and REFERENCES.h298_runs[REFERENCES.potential(el)][2] != self.modestr]
+            if other_mode:
+                notes.append('H298 reference of %s computed with another Debye model than this run (%s).'
+                             % (', '.join(other_mode), self.modestr))
+        else:
+            self.H298 = self.Ef
+            self.H298_kind = 'static Ef'
+            if not np.isfinite(H_cmp):
+                notes.append('298.15 K not reached: the exported H298 is the static Ef.')
+            if missing:
+                notes.append('No H298 reference for %s: the exported H298 is the static Ef (no zero-point or thermal '
+                             'part). Run the pure element(s) in this session (same POTCAR and settings, P = 0) or '
+                             'enter the value with "Reference energies...".'
+                             % ', '.join('%s (%s)' % (el, REFERENCES.potential(el)) for el in missing))
+        return notes
+
+    def show_export_rows(self):
+        """Two rows below the per-pressure values: the exported H298 and S298, per formula unit (G14)."""
+        table = self.ui.tableWidget
+        if table.rowCount() < 10:
+            table.setRowCount(10)
+        rows = [('H298 export (%s)' % self.H298_kind, self.H298, 'J/mol-formula'),
+                ('S298 export', self.S298, 'J/K/mol-formula')]
+        for i, (label, value, unit) in enumerate(rows):
+            table.setVerticalHeaderItem(8 + i, QTableWidgetItem(label))
+            for j, txt in enumerate(['%.5e' % value, unit]):
+                item = QTableWidgetItem(txt)
+                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                table.setItem(8 + i, j, item)
+
     def build_export(self):
-        """One export text, every value per formula unit (Ef, S298 and the Cp coefficients) at the reference
-        pressure; written to dtoutput4cmpnd now and to export_dtoutput4cmpnd by the Export button (G7)."""
+        """One export text, every value per formula unit (H298, S298 and the Cp coefficients) at the reference
+        pressure; written to dtoutput4cmpnd now and to export_dtoutput4cmpnd by the Export button (G7, G14)."""
         key = '%.1f' % (self.P_ref / 1e9)
         nats = self.nats
-        txt4output = f'{self.formula}$' + f'{self.Ef:.7e}' + f'${self.S298:.7e}$'
+        txt4output = f'{self.formula}$' + f'{self.H298:.7e}' + f'${self.S298:.7e}$'
         txt4output += '&'.join([f'{p * nats:.7e}' for p in self.dict_FS[key]['Cp']])
         txt4output += '$' + '&'.join([f'{p:.2e}' for p in [self.FS_Tfrom, self.FS_Tto]])
         self.txt4output = txt4output
@@ -289,10 +353,12 @@ class dialogCpWindow(QMainWindow):
         self.dialog_refs.show()
 
     def on_refs_applied(self):
-        notes = self.compute_Ef()
+        notes = self.compute_H298()
         self.build_export()
-        msg = 'Ef = %.6e J/mol per formula unit (static: E0(V0) - sum of the reference energies).' % self.Ef
-        QMessageBox.information(self, 'Formation energy', '\n'.join(notes + [msg]), QMessageBox.Ok)
+        self.show_export_rows()
+        msg = ['Exported H298 = %.6e J/mol per formula unit (%s).' % (self.H298, self.H298_kind),
+               'Static Ef = %.6e J/mol per formula unit.' % self.Ef]
+        QMessageBox.information(self, 'Formation enthalpy', '\n'.join(notes + msg), QMessageBox.Ok)
 
     def debye_run(self, molecule, ui_progress, formula):
         self.formula = formula
@@ -369,9 +435,11 @@ class dialogCpWindow(QMainWindow):
         self.P_ref = min(computed, key=abs)
         nats = len(molecule.types)
         self.nats = nats
-        notes += self.compute_Ef()
+        notes += self.store_element_H298()
+        notes += self.compute_H298()
         self.S298 = self.dict_S298[key(self.P_ref)] * nats
         self.build_export()
+        self.show_export_rows()
 
         self.ui.comboBox.setCurrentText(key(self.P_ref))
         self.selectionchange(self.ui.comboBox.currentIndex())

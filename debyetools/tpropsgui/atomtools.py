@@ -600,6 +600,9 @@ class ReferenceEnergies:
     potentials: element -> POTCAR name, read from an OUTCAR / POTCAR or entered by the user;
     sources: element -> where the potential came from; edited: POTCAR name -> eV/atom entered by the user
     (overrides atom_energy, not saved to disk).
+    Enthalpies at 298.15 K for the formation enthalpy DH298 (G14), J/mol-atom on the same energy scale as E0:
+    h298_runs: POTCAR name -> (H298, source, Debye mode) stored by every pure-element run of the session;
+    h298_edited: POTCAR name -> H298 entered by the user (overrides the runs; e.g. gases such as O2).
     """
 
     def __init__(self):
@@ -607,6 +610,8 @@ class ReferenceEnergies:
         self.sources = {}
         self.functional = None
         self.edited = {}
+        self.h298_runs = {}
+        self.h298_edited = {}
 
     def read_outcar(self, path):
         """Set the potential of every element found in an OUTCAR / POTCAR; returns the {element: potential} read."""
@@ -629,6 +634,14 @@ class ReferenceEnergies:
         """eV/atom for an exact POTCAR name (no substring matching), None if unknown."""
         e = self.edited.get(potential, atom_energy.get(potential))
         return None if e is None else float(e)
+
+    def h298(self, potential):
+        """H at 298.15 K, J/mol-atom, for an exact POTCAR name: entered value, else pure-element run, else None."""
+        if potential in self.h298_edited:
+            return float(self.h298_edited[potential])
+        if potential in self.h298_runs:
+            return float(self.h298_runs[potential][0])
+        return None
 
 
 REFERENCES = ReferenceEnergies()

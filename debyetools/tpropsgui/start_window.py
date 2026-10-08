@@ -106,8 +106,11 @@ class StartWindow(QMainWindow):
             self.dialogmainwindow.ui.lineEdit_11.setText(self.ui.lineEdit_compoundname.text())
 
             self.show_hidden_comboboxitems()
-            self.removed_items = { 6: self.dialogmainwindow.ui.comboBox.itemText(6)}
-            self.dialogmainwindow.ui.comboBox.removeItem(6)
+            # without a crystal the interatomic potentials (Morse, EAM) cannot be used
+            combo = self.dialogmainwindow.ui.comboBox
+            self.removed_items = {i: combo.itemText(i) for i in range(6, combo.count())}
+            for i in range(combo.count() - 1, 5, -1):
+                combo.removeItem(i)
             self.dialogmainwindow.show()
 
 

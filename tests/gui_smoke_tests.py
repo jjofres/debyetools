@@ -403,6 +403,79 @@ def test_crystal_dialog_cutoff_and_initial_guess(qapp, msgs):
     assert len(dc.ui.lineEditInitialGuess.text().split(',')) == 3 * len(dc.molecule.combs_types) == 9
 
 
+# ------------------------------------------------------------------------------- interatomic potentials (Morse, EAM)
+def crystal_path(qapp, box, mat, name, mass, eos_text):
+    """Start window with the crystal option -> crystal dialog (CONTCAR) -> main window -> EOS fit dialog -> Cp."""
+    import re
+    from PySide6.QtWidgets import QTableWidgetItem
+    from debyetools.tpropsgui.start_window import StartWindow
+    from debyetools.aux_functions import load_cell, load_V_E
+    sw = StartWindow()
+    sw.app = qapp
+    sw.ui.lineEdit_compoundname.setText(name)
+    sw.ui.lineEdit_mass.setText(str(mass))
+    sw.ui.checkBox.setChecked(True)
+    sw.showDialogNext()
+    dc = sw.dialogcrystal
+    f, c, b = load_cell(str(TI / mat / 'CONTCAR.5'))
+    types = [el for el, n in re.findall(r'([A-Z][a-z]?)(\d*)', f) for _ in range(int(n or 1))]
+    for i in range(3):
+        for j in range(3):
+            dc.ui.tableCell.setItem(i, j, QTableWidgetItem(str(c[i, j])))
+    dc.ui.tableBasis.setRowCount(len(b) + 1)
+    for i, (row, t) in enumerate(zip(b, types)):
+        for j in range(3):
+            dc.ui.tableBasis.setItem(i, j, QTableWidgetItem(str(row[j])))
+        dc.ui.tableBasis.setItem(i, 3, QTableWidgetItem(t))
+    dc.ui.lineEditNnn.setText('3')
+    dc.ui.lineEditCutoff.setText('5')
+    with contextlib.redirect_stdout(io.StringIO()):
+        dc.on_pushButton_create_cell_clicked()
+    dc.on_pushButton_goto_main()
+    mw = sw.dialogmainwindow
+    mw.ui.comboBox.setCurrentText(eos_text)
+    mw.on_pushFitEOS()
+    fd = mw.dialogFitEOS
+    V, E = load_V_E(summary(mat), str(TI / mat / 'CONTCAR.5'))
+    fd.ui.EvVText_2.setPlainText('#V E\n' + '\n'.join('%.6e %.6e' % (v, e) for v, e in zip(V, E)))
+    box.clear()
+    with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        fd.on_pushButton_fitEOS()
+    assert fd.ui.progress_3.value() == 100, texts(box)
+    fd.on_pushSave()
+    mw.ui.lineEdit_3.setText('%.4f' % nu_of(mat))
+    mw.ui.lineEdit_T.setText('0.1 600.1 100')
+    mw.ui.lineEdit_P.setText('0')
+    with contextlib.redirect_stdout(io.StringIO()), warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        mw.on_pushButton_Cp()
+    return mw, fd
+
+
+def test_eos_list_without_crystal(qapp, msgs):
+    """Without the crystal option only the analytic EOS are offered (Morse and EAM need the structure)."""
+    mw, cw, _ = run_cp(qapp, msgs, 'Al_fcc', 'Al', M_AL)
+    items = [mw.ui.comboBox.itemText(i) for i in range(mw.ui.comboBox.count())]
+    assert items == ['Birch-Murnaghan', 'Rose-Vinet', 'Mie-Gruneisen', 'TB-SMA', 'Murnaghan', 'Poirier-Tarantola']
+
+
+@pytest.mark.parametrize('eos', ['Morse potential', 'EAM int. potential'])
+def test_interatomic_potentials_end_to_end(qapp, msgs, eos):
+    """Al fcc through the crystal dialog: Morse and EAM offered, start of the selected potential, fit, Cp run."""
+    mw, fd = crystal_path(qapp, msgs, 'Al_fcc', 'Al', M_AL, eos)
+    items = [mw.ui.comboBox.itemText(i) for i in range(mw.ui.comboBox.count())]
+    assert items == ['Morse potential', 'EAM int. potential']
+    n = len(mw.ui.lineEdit_2.text().split(','))
+    assert n == {'Morse potential': 3, 'EAM int. potential': 10}[eos]  # 1 pair type, 1 element type
+    assert mw.eos_str == {'Morse potential': 'MP', 'EAM int. potential': 'EAM'}[eos]
+    assert type(mw.molecule.eos).__name__ == mw.eos_str
+    cw = mw.cp_window
+    tp = cw.dict_tp['0.0']
+    assert at298(tp, 'Cp') == pytest.approx(23.9, rel=0.03)  # BM: 23.88 J/mol-atom/K
+    assert mw.molecule.eos.V0 == pytest.approx(9.93e-6, rel=0.01) and cw.H298 == 0.0
+
+
 # ------------------------------------------------------------------------------------ elastic properties (G10, G18-G23)
 _IDX = {(0, 0): 0, (1, 1): 1, (2, 2): 2, (1, 2): 3, (2, 1): 3, (0, 2): 4, (2, 0): 4, (0, 1): 5, (1, 0): 5}
 

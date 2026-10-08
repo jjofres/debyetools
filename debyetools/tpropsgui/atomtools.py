@@ -648,6 +648,19 @@ class ReferenceEnergies:
 
 REFERENCES = ReferenceEnergies()
 
+
+def interatomic_initial_guess(eos_str, n_pair_types):
+    """Default initial parameters of the interatomic potentials for a crystal with n_pair_types pair types
+    (n element types give n(n+1)/2 pair types): Morse 3 per pair type; EAM 6 per pair type (pair and density
+    functions) + 4 per element type (embedding function). None for the analytic EOS."""
+    ntypes = int(round(-0.5 + np.sqrt(0.25 + 2 * n_pair_types)))
+    if eos_str == 'MP':
+        return [0.35, 1, 3.2] * n_pair_types
+    if eos_str == 'EAM':
+        return ([3.65e-03, 1.24e-02, 2.68e-04, 1.03e-02, 1.49e-01, 5.22e-02] * n_pair_types
+                + [2.26e+00, 6.61e-02, 3.01e-01, 5.31e-05] * ntypes)
+    return None
+
 REF_TABLE_COLUMNS = ['POTCAR', 'E_ref_eV_atom', 'H298_J_mol_atom', 'H298_from', 'Debye_model', 'source']
 
 

@@ -7,7 +7,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 import numpy as np
 
 import debyetools.tpropsgui.get_functions as get
-from debyetools.tpropsgui.atomtools import atomic_color, atomic_radii, atomsPositions
+from debyetools.tpropsgui.atomtools import atomic_color, atomic_radii, atomsPositions, interatomic_initial_guess
 from PySide6.QtGui import QPixmap, QPalette
 from PySide6.QtCore import Qt, QTimer
 
@@ -92,14 +92,7 @@ class dialogCrystal(QDialog):
         for d, n in zip(ds, ns):
             print_to_box(self.ui.plainPairAnalysis,'%.6f  '%(d)+' | ' + ' '.join(['%.2f' for _ in n])%tuple(n)+'\n')
 
-        a, b, c = 0.5, 0.5, -len(cts)
-        ntypes =(-b+np.sqrt(b**2-4*a*c))/(2*a)
-        if self.eos_str == 'MP':
-            params = [0.35, 1, 3.2]*len(cts)
-        elif self.eos_str == 'EAM':
-            params = [3.65e-03, 1.24e-02, 2.68e-04, 1.03e-02,
-                        1.49e-01, 5.22e-02]*len(cts)+[2.26e+00,
-                        6.61e-02, 3.01e-01, 5.31e-05]*int(ntypes)
+        params = interatomic_initial_guess(self.eos_str, len(cts))
 
         # one set of parameters per pair type (and per element type for EAM); the list used to be repeated
         # len(cts) times more, i.e. 3 n^2 Morse parameters instead of 3 n (G9)

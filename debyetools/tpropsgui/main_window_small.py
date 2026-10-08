@@ -6,7 +6,7 @@ from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QMainWindow, QMessageBox
 from debyetools.poisson import poisson_ratio as dt_poisson_ratio
 
-from debyetools.tpropsgui.atomtools import dt_potentials, Molecule
+from debyetools.tpropsgui.atomtools import dt_potentials, Molecule, interatomic_initial_guess
 from debyetools.tpropsgui.cp_window import dialogCpWindow
 from debyetools.tpropsgui.ui_main_window_small import Ui_MainWindow
 
@@ -95,6 +95,10 @@ class dialogMainWindow(QMainWindow):
 
         self.molecule = Molecule()
 
+        # EAM was in the EOS dictionaries but never in the list, so it could not be selected (EAM review)
+        if self.ui.comboBox.findText('EAM int. potential') < 0:
+            self.ui.comboBox.addItem('EAM int. potential')
+        self.molecule_from_crystal = None
         self.ui.comboBox.currentIndexChanged.connect(self.selectionchange)
 
         self.check_el, self.check_def, self.check_anh, self.check_xs = self.ui.checkBox, self.ui.checkBox_2, self.ui.checkBox_3, self.ui.checkBox_4
@@ -168,9 +172,17 @@ class dialogMainWindow(QMainWindow):
         dict_eos = {'Birch-Murnaghan': 'BM', 'Rose-Vinet': 'RV', 'Mie-Gruneisen': 'MG', 'TB-SMA': 'TB',
                     'Murnaghan': 'MU', 'Poirier-Tarantola': 'PT', 'Morse potential': 'MP',
                     'EAM int. potential': 'EAM'}
+        if i < 0:
+            return
         self.eos_str = dict_eos[self.ui.comboBox.itemText(i)]
 
-        self.ui.lineEdit_2.setText('-3e5, 1e-5, 7e10, 4')
+        # interatomic potentials: default start of the selected potential for the crystal of the crystal dialog
+        crystal = self.molecule_from_crystal
+        if self.eos_str in ('MP', 'EAM') and getattr(crystal, 'combs_types', None) is not None:
+            guess = interatomic_initial_guess(self.eos_str, len(crystal.combs_types))
+            self.ui.lineEdit_2.setText(', '.join(str(p) for p in guess))
+        else:
+            self.ui.lineEdit_2.setText('-3e5, 1e-5, 7e10, 4')
 
     def get_C(self):
         txt = self.ui.elastic_constants.toPlainText().replace('XX', ' ').replace('YY', ' ').replace('ZZ', ' ').replace(
@@ -237,7 +249,7 @@ class dialogMainWindow(QMainWindow):
         # print('CI', self.ui.comboBox.currentIndex())
         self.dialogFitEOS.ui.comboBox_2.setCurrentText(list_items_in_combox[self.ui.comboBox.currentIndex()])
         self.dialogFitEOS.molecule = self.molecule
-        if self.eos_str == 'MP':
+        if self.eos_str in ('MP', 'EAM'):
             self.dialogFitEOS.molecule_from_crystal = self.molecule_from_crystal
 
 

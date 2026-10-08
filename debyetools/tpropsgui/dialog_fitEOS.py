@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QDialog, QMessageBox
 
 from debyetools.tpropsgui.ui_dialog_fitEOS import Ui_Form as Ui_iparams
 
-from debyetools.tpropsgui.atomtools import dt_potentials
+from debyetools.tpropsgui.atomtools import dt_potentials, interatomic_initial_guess
 
 import numpy as np
 import warnings
@@ -101,6 +101,8 @@ class dialogFitEOS(QDialog):
             return None
         if self.eos_str == 'MP' and len(p) != 3 * np.shape(self.eos.npair)[1]:
             return None
+        if self.eos_str == 'EAM' and len(p) != 6 * len(self.eos.comb_types) + 4 * self.eos.ntypes:
+            return None
         return p
 
     def on_pushloadEvV(self):
@@ -125,7 +127,12 @@ class dialogFitEOS(QDialog):
 
         self.ui.progress_3.setValue(33)
         args = (None,)
-        if self.eos_str == 'MP':
+        if self.eos_str in ('MP', 'EAM'):
+            if getattr(self, 'molecule_from_crystal', None) is None:
+                QMessageBox.information(self, 'Error', 'Interatomic potentials need the crystal structure: tick the '
+                                        'crystal option in the start window.', QMessageBox.Ok)
+                self.ui.progress_3.setValue(0)
+                return
             self.molecule.formula, self.molecule.cell, self.molecule.basis, self.molecule.cutoff, self.molecule.number_of_NNs = self.molecule_from_crystal.formula, self.molecule_from_crystal.cell, self.molecule_from_crystal.basis, self.molecule_from_crystal.cutoff, self.molecule_from_crystal.number_of_NNs
             args = self.molecule.formula, self.molecule.cell, self.molecule.basis, self.molecule.cutoff, self.molecule.number_of_NNs
         self.eos = getattr(dt_potentials, self.eos_str)(*args)  # *self.ipotparamsdialog.args)
@@ -144,10 +151,12 @@ class dialogFitEOS(QDialog):
         self.Edata = Edata
 
         initial_guess = self.get_EOS_params()
+        start_note = []
         if self.eos_str == 'EAM' and initial_guess is None:
-            QMessageBox.information(self, 'Error', 'EAM needs initial parameters.', QMessageBox.Ok)
-            self.ui.progress_3.setValue(0)
-            return
+            # EAM has no data-based start: use the default parameters for this crystal
+            initial_guess = interatomic_initial_guess('EAM', len(self.eos.comb_types))
+            start_note = ['EAM: the initial parameters were missing or had the wrong number of values (%d expected); '
+                          'the default start was used.' % len(initial_guess)]
         try:
             with warnings.catch_warnings(record=True) as caught:
                 warnings.simplefilter('always')
@@ -174,7 +183,7 @@ class dialogFitEOS(QDialog):
 
         self.ui.lineEdit_3.setText(', '.join(['%.9e' % (p) for p in self.eos.pEOS]))
         self.ui.progress_3.setValue(100)
-        notes = [str(w.message) for w in caught if issubclass(w.category, UserWarning)]
+        notes = start_note + [str(w.message) for w in caught if issubclass(w.category, UserWarning)]
         if notes:
             QMessageBox.information(self, 'EOS fit', '\n\n'.join(notes), QMessageBox.Ok)
 

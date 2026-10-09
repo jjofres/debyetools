@@ -1,4 +1,4 @@
-"""The examples in README.md and docs/index.rst run against the current code and print what the docs show."""
+"""The examples in README.md and the docs pages run against the current code and print what the docs show."""
 import doctest
 import io
 import re
@@ -11,7 +11,7 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 
 
-@pytest.mark.parametrize('page', ['docs/index.rst', 'docs/source/api/nDeb.rst', 'docs/source/api/fsdb.rst',
+@pytest.mark.parametrize('page', ['docs/source/api/overview.rst', 'docs/source/api/nDeb.rst', 'docs/source/api/fsdb.rst',
                                   'docs/source/api/pairanalysis.rst',
                                   'docs/source/api/examples.rst'])
 def test_rst_examples(page):

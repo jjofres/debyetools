@@ -35,6 +35,21 @@ def potcar_name(symbol):
     return words[1] if len(words) > 1 else words[0]
 
 
+def entry_potcar(entry):
+    """POTCAR name of a pure-element entry, or None. MP has stored it as parameters['potcar_symbols']
+    (['PBE Mg_pv']) and as parameters['potcar_spec'] ([{'titel': 'PAW_PBE Mg_pv 06Sep2000', ...}])."""
+    params = entry.parameters or {}
+    cands = list(params.get('potcar_symbols') or [])
+    cands += [s for s in (params.get('potcar_spec') or [])]
+    for c in cands:
+        if isinstance(c, dict):
+            c = c.get('titel') or c.get('symbol') or ''
+        name = potcar_name(str(c)) if str(c).strip() else ''
+        if re.fullmatch(r'[A-Z][a-z]?(_[A-Za-z0-9]+)*', name):
+            return name
+    return None
+
+
 def best_gga_entry(element, entries):
     """Lowest uncorrected energy per atom among the plain-PBE entries made only of `element`.
     entries: objects with .composition (pymatgen), .uncorrected_energy_per_atom, .parameters, .entry_id."""
@@ -55,8 +70,11 @@ def rows_for(elements, get_entries):
         if entry is None:
             print('%s: no plain-PBE entry in the Materials Project, skipped' % el, file=sys.stderr)
             continue
-        pots = entry.parameters.get('potcar_symbols') or ['?']
-        pot = potcar_name(pots[0])
+        pot = entry_potcar(entry)
+        if pot is None:
+            print('%s: no POTCAR name in %s (parameters: %s), skipped'
+                  % (el, entry.entry_id, ', '.join(sorted(entry.parameters or {}))), file=sys.stderr)
+            continue
         if re.match('[A-Z][a-z]?', pot).group(0) != el:
             print('%s: unexpected POTCAR %r, skipped' % (el, pot), file=sys.stderr)
             continue

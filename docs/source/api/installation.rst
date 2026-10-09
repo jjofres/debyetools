@@ -29,6 +29,9 @@ The simplest way to install ``debyetools`` is to use pip_ which will automatical
 
     $ pip install --upgrade debyetools
 
+Version 3.0.0 gives different results than 2.8.3 for the same inputs (corrected formulas and changed defaults);
+the list of changes, and the arguments that restore the old behaviour where possible, are in the CHANGELOG_.
+
 .. _Python: https://www.python.org/
 .. _NumPy: https://docs.scipy.org/doc/numpy/reference/
 .. _PyPI: https://pypi.org/project/debyetools/
@@ -38,3 +41,4 @@ The simplest way to install ``debyetools`` is to use pip_ which will automatical
 .. _PySide6: https://pypi.org/project/PySide6/
 .. _pytest: https://docs.pytest.org/
 .. _GitHub: https://github.com/jjofres/debyetools
+.. _CHANGELOG: https://github.com/jjofres/debyetools/blob/main/CHANGELOG.md

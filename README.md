@@ -31,6 +31,9 @@ Jofre, J., Gheribi, A. E., & Harvey, J.-P. Development of a flexible quasi-harmo
 pip install --upgrade debyetools
 ```
 
+Version 3.0.0 gives different results than 2.8.3 for the same inputs (corrected formulas and changed
+defaults): see [CHANGELOG.md](CHANGELOG.md) before comparing with older results.
+
 ### Get started
 
 Example input files (VASP outputs) are in `debyetools/examples` and `tests/inpt_files`.

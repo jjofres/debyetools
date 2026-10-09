@@ -15,7 +15,7 @@ with open(path.join(HERE, 'README.md'), encoding='utf-8') as f:
 # This call to setup() does all the work
 setup(
     name="debyetools",
-    version="2.8.3",
+    version="3.0.0",
     description="Debye approximation implementation for the calculation of thermodynamic properties from ground-state atomistic simulations.",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -28,11 +28,13 @@ setup(
         "License :: OSI Approved :: GNU Affero General Public License v3",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Operating System :: OS Independent"
     ],
     packages=["debyetools", "debyetools.tpropsgui", "debyetools.examples"],
     include_package_data=True,
+    python_requires=">=3.10",
     install_requires=["numpy", "scipy", "matplotlib", "PySide6"],
     package_data={
     'debyetools': ['examples/*', 'examples/*/*', 'tpropsgui/reference_tables/*'],

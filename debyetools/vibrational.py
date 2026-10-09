@@ -110,7 +110,8 @@ class Vibrational:
             self.lam = 1
 
         else:
-            raise Exception('This is an error message')
+            raise ValueError("Vibrational: unknown mode %r; valid modes: 'jjsl', 'jjdm', 'jjfv', 'Sl', 'DM', 'VZ', "
+                             "'mfv'" % (mode,))
 
     def set_int_anh(self, T: float, V: float) -> None:
         """

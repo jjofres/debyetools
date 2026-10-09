@@ -10,14 +10,17 @@ All the code is in ``debyetools`` repository on GitHub_.
 Requirements
 ============
 
-* Python_ 3.10 or newer
-* NumPy_ (base N-dimensional array package)
-* SciPy_ (fundamental algorithms for scientific computing in Python)
+* Python_ 3.10, 3.11 or 3.12
+* NumPy_ 1.26 or 2.x (base N-dimensional array package)
+* SciPy_ 1.11 or newer (fundamental algorithms for scientific computing in Python)
 
-Other recommended packages:
+For the graphical interface and plotting:
 
-* Matplotlib_ (for plotting,  a comprehensive library for visualizations in Python)
-* PySide6_ (for the GUI, PySide6 is the official Python module from the Qt for Python project)
+* Matplotlib_ (plots in the GUI and in the examples)
+* PySide6_ (the GUI; PySide6 is the official Python module from the Qt for Python project)
+
+Running the tests needs pytest_ (``python -m pytest`` from the repository folder); the GUI tests run headless
+(``QT_QPA_PLATFORM=offscreen``) and are skipped when PySide6 cannot be loaded.
 
 Installation using pip
 ======================
@@ -33,4 +36,5 @@ The simplest way to install ``debyetools`` is to use pip_ which will automatical
 .. _PIP: https://pip.pypa.io/en/stable/
 .. _Matplotlib: https://matplotlib.org/
 .. _PySide6: https://pypi.org/project/PySide6/
+.. _pytest: https://docs.pytest.org/
 .. _GitHub: https://github.com/jjofres/debyetools

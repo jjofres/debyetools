@@ -42,7 +42,12 @@ TOL_PREFIX = {"fit/get_EM/": dict(rtol=1e-5, atol=1e-12),
               # (scaled condition number ~2e4), so its coefficients get a slightly wider tolerance.
               "pipe/fit_FS_T3/": dict(rtol=1e-5, atol=1e-12)}
 # per-suffix overrides: pipe/*/P is the pressure residual of min_G (target 0 Pa, |P| < 1e-3 Pa since B12)
-TOL_SUFFIX = {("pipe", "/P"): dict(rtol=0, atol=1.0)}
+# eval/*/dE0dV_T and eval/*/Pcold: at V = V0 the cold pressure is a cancellation of terms of ~1e10-1e11 Pa, so its
+# value is round-off (|value| up to 2e-4 Pa) and changes with the numpy/BLAS version (TB: 5.4e-6 Pa with numpy 1.26,
+# 1.1e-5 Pa with numpy 2.5); a relative tolerance is meaningless there. atol = 1e-2 Pa is ~1e-12 of the scale.
+TOL_SUFFIX = {("pipe", "/P"): dict(rtol=0, atol=1.0),
+              ("eval", "/dE0dV_T"): dict(rtol=1e-11, atol=1e-2),
+              ("eval", "/Pcold"): dict(rtol=1e-11, atol=1e-2)}
 
 AL = "tests/inpt_files/Al_fcc"
 AL_TAGS = ["%02da" % i for i in range(1, 22)]

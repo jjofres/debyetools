@@ -191,15 +191,27 @@ def _read_poscar(filename: str) -> dict:
             'volume': abs(np.linalg.det(cell)), 'selective': selective}
 
 
-def load_V_E(energy_dir_summary: str, energy_dir_contcar: str, units: str = 'eV/atom') -> tuple[np.ndarray, np.ndarray]:
+_SUMMARY_LABELS = {'E0': re.compile(r'(?<![\w])E0=\s*(\S+)'), 'F': re.compile(r'(?<![\w])F=\s*(\S+)')}
+
+
+def load_V_E(energy_dir_summary: str, energy_dir_contcar: str, units: str = 'eV/atom',
+             energy: str = 'E0') -> tuple[np.ndarray, np.ndarray]:
     """
     Loads Energy curve as function of volume from VASP outputs.
 
-    The reference volume per atom is the cell volume of the POSCAR/CONTCAR (|det| of the lattice
-    matrix, scale factor applied) divided by the number of atoms. Each SUMMARY line is read as
-    "d  ...  ...  E": column 1 is the isotropic linear strain d of that calculation relative to the
-    POSCAR/CONTCAR cell (V = V_ref (1 + d)^3), column 4 the total energy of the cell in eV.
+    The reference volume per atom is the cell volume of the POSCAR/CONTCAR (absolute determinant of the lattice
+    matrix, scale factor applied) divided by the number of atoms. Each SUMMARY line holds the isotropic linear
+    strain d of that calculation relative to the POSCAR/CONTCAR cell in column 1 (V = V_ref (1 + d)^3), followed
+    by the last OSZICAR line of the run, e.g. "d  1 F= -.1284E+02 E0= -.1283E+02  d E =...  mag=...".
     Exact duplicate lines are read once.
+
+    The energy is the value after the label 'E0=' (energy extrapolated to zero smearing, sigma -> 0) by default.
+    'F=' is the free energy of the smeared electrons (E - sigma S_el), which contains an electronic entropy term at
+    the artificial electronic temperature sigma/kB; since the electronic free energy is added separately from the
+    DOS (Electronic), E0 is the static lattice energy that belongs in the EOS. energy='F' reproduces the results of
+    debyetools 2.8.3 and earlier. A line without a usable E0 value (no 'E0=' label, or 'E0= 0' written as a
+    placeholder) is read from 'F='; a line without the requested label is read positionally (column 4, the F value of
+    the standard layout). Both cases give a warning.
 
     :param energy_dir_summary: Summary file path.
     :type energy_dir_summary: str
@@ -207,34 +219,54 @@ def load_V_E(energy_dir_summary: str, energy_dir_contcar: str, units: str = 'eV/
     :type energy_dir_contcar: str
     :param units: 'eV/atom' (V in A^3/atom, E in eV/atom) or 'J/mol' (m^3/mol-at, J/mol-at).
     :type units: str
+    :param energy: 'E0' (default, energy at sigma -> 0) or 'F' (free energy TOTEN of the smeared electrons).
+    :type energy: str
     :return: Energy as function of volume
     :rtype: tuple[np.ndarray,np.ndarray]
     """
+    if energy not in _SUMMARY_LABELS:
+        raise ValueError("load_V_E: energy must be 'E0' or 'F'")
+    if units not in ('J/mol', 'eV/atom'):
+        raise ValueError("load_V_E: units must be 'eV/atom' or 'J/mol'")
     pos = _read_poscar(energy_dir_contcar)
     nat = sum(pos['counts'])
     V_ref = pos['volume'] / nat
+    label = _SUMMARY_LABELS[energy]
     with open(energy_dir_summary) as f_summary:
         f_summary_lines = f_summary.readlines()
-        f_summary_lines = list(dict.fromkeys(f_summary_lines))
-        ds = []
-        E = []
-        for l in f_summary_lines:
-            l_lst = l.split()
-            if not l_lst:
-                continue
-            ds.append(float(l_lst[0]))
-            E.append(float(l_lst[3]) / nat)
+    f_summary_lines = list(dict.fromkeys(f_summary_lines))
+    ds = []
+    E = []
+    n_F, n_positional = 0, 0
+    for l in f_summary_lines:
+        l_lst = l.split()
+        if not l_lst:
+            continue
+        ds.append(float(l_lst[0]))
+        m = label.search(l)
+        e = float(m.group(1)) if m else None
+        if energy == 'E0' and not e:  # no E0= field, or E0= 0 (placeholder): use F=
+            mF = _SUMMARY_LABELS['F'].search(l)
+            e = float(mF.group(1)) if mF else None
+            n_F += mF is not None
+        if e is None:
+            e = float(l_lst[3])
+            n_positional += 1
+        E.append(e / nat)
+    if n_F:
+        warnings.warn("load_V_E: %d of %d lines of %s have no usable 'E0=' value (missing or 0); the 'F=' value "
+                      "was read instead" % (n_F, len(ds), energy_dir_summary), stacklevel=2)
+    if n_positional:
+        warnings.warn("load_V_E: %d of %d lines of %s have no '%s=' field; column 4 was read instead"
+                      % (n_positional, len(ds), energy_dir_summary, energy), stacklevel=2)
 
     V = [V_ref * (1 + di) ** 3 for di in ds]
 
-    uconvV, uconvE = None, None
     if units == 'J/mol':
         uconvE = EV_ATOM_TO_J_MOL
         uconvV = A3_ATOM_TO_M3_MOL
-    elif units == 'eV/atom':
-        uconvE, uconvV = 1, 1
     else:
-        raise ValueError("load_V_E: units must be 'eV/atom' or 'J/mol'")
+        uconvE, uconvV = 1, 1
     return np.array(V).T * uconvV, np.array(E).T * uconvE
 
 
@@ -438,4 +470,4 @@ def load_cell(filename_contcar: str) -> tuple[str, np.ndarray, np.ndarray]:
 #     #     print(e)
 #     vdata.EM = EM
 #
-#     return vdata
+#     return vdata

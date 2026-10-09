@@ -223,7 +223,7 @@ class BM:
             self.pEOS = parameters[:4]
             self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> np.ndarray:
         """
         Parameters fitting.
 
@@ -252,7 +252,7 @@ class BM:
 
         self.V0 = float(self.pEOS[1])  # the fitted V0 parameter is the minimum of E0 (was a bounded minimize, finding 3.10)
 
-        # return self.pEOS
+        return self.pEOS  # was commented out: BM.fitEOS returned None, unlike every other EOS (docs review C-DOC1)
 
     def E04min(self, V: float, pEOS: np.ndarray) -> float:
         """
@@ -382,7 +382,7 @@ class RV:  # Rose-Vinet
             self.pEOS = parameters[:4]
             self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> np.ndarray:
         """
         Parameters fitting.
 
@@ -568,7 +568,7 @@ class MG:  # Mie-Gruneisen
             self.pEOS = parameters[:4]
             self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> np.ndarray:
         """
         Parameters fitting.
 
@@ -947,7 +947,7 @@ class MP:  # Morse
         r_nn = float(self.ndist[0]) * (Vmin / self.mult_V / self.Vstar) ** (1 / 3)
         return np.tile([0.5, 1.5, r_nn], int(np.shape(self.npair)[1]))
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> np.ndarray:
         """
         Parameters fitting.
 
@@ -1205,7 +1205,7 @@ class MU:  # Murnaghan
             self.pEOS = parameters[:4]
             self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> np.ndarray:
         """
         Parameters fitting.
 
@@ -1376,7 +1376,7 @@ class PT:  # Poirier-Tarantola
             self.pEOS = parameters[:4]
             self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> np.ndarray:
         """
         Parameters fitting.
 
@@ -2267,7 +2267,7 @@ class EAM:  #
         self.params_pair_type(pEOS_pt)
         self.params_elmt_type(pEOS_et)
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> np.ndarray:
         """
         Parameters fitting.
 

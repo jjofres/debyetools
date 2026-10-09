@@ -18,8 +18,14 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'DebyeTools'
-copyright = '2023, Javier Jofre'
+copyright = '2023-2026, Javier Jofre'
 author = 'Javier Jofre'
+
+# version shown in the docs: the package version from setup.py
+import re as _re
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'setup.py')) as _f:
+    release = _re.search(r'version\s*=\s*["\']([^"\']+)', _f.read()).group(1)
+version = '.'.join(release.split('.')[:2])
 
 
 # -- General configuration ---------------------------------------------------
@@ -50,7 +56,10 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
-html_theme_path = ["_themes", ]
+
+# PDF (Read the Docs 'formats: all'): xelatex handles the Unicode characters of the text (α, σ, Δ, −, ...),
+# which stop pdflatex; one chapter per page of the toctree.
+latex_engine = 'xelatex'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".

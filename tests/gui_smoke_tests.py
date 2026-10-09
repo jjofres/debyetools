@@ -122,7 +122,7 @@ def test_cp_window_element_export(qapp, msgs):
     """Al: full run, H298 of a pure element = 0 (DH298), S298, export button = dtoutput4cmpnd (G6, G7, G14)."""
     mw, cw, _ = run_cp(qapp, msgs, 'Al_fcc', 'Al', M_AL, P='0 10 10')
     assert cw.H298_kind == 'DH298' and cw.H298 == 0.0
-    assert cw.S298 == pytest.approx(26.8999, rel=1e-4)
+    assert cw.S298 == pytest.approx(26.8184, rel=1e-4)  # E0= energies (C-DOC3); 26.8999 with F=
     out = Path('dtoutput4cmpnd').read_text()
     cw.on_pushExport()
     assert Path('export_dtoutput4cmpnd').read_text() == out
@@ -207,13 +207,13 @@ def test_formation_enthalpy_from_element_runs(qapp, msgs):
     """Al3Li L12: static Ef alone; DH298 after Al and Li runs in the same session (G2, G14)."""
     m = (3 * M_AL + M_LI) / 4
     mw, cw, _ = run_cp(qapp, msgs, 'Al3Li_L12', 'Al3Li', m)
-    assert cw.H298_kind == 'static Ef' and cw.H298 == pytest.approx(-38477.5, abs=1)
+    assert cw.H298_kind == 'static Ef' and cw.H298 == pytest.approx(-38062.1, abs=1)
     assert 'No H298 reference for Al (Al), Li (Li)' in texts(msgs)
     run_cp(qapp, msgs, 'Al_fcc', 'Al', M_AL)
     run_cp(qapp, msgs, 'Li_bcc', 'Li', M_LI)
     mw, cw, _ = run_cp(qapp, msgs, 'Al3Li_L12', 'Al3Li', m)
-    assert cw.H298_kind == 'DH298' and cw.H298 == pytest.approx(-38015.1, abs=1)
-    assert cw.S298 == pytest.approx(83.250, abs=1e-3)
+    assert cw.H298_kind == 'DH298' and cw.H298 == pytest.approx(-38343.0, abs=1)  # -38015.1 with F=
+    assert cw.S298 == pytest.approx(83.176, abs=1e-3)
     assert Path('dtoutput4cmpnd').read_text().split('$')[1] == '%.7e' % cw.H298
 
 
@@ -362,8 +362,16 @@ def test_load_dialogs_read_on_ok(qapp, msgs):
     le.show()
     le.ui.summarypath.setText(summary('Al_fcc'))
     le.ui.poscarpath.setText(str(TI / 'Al_fcc' / 'CONTCAR.5'))
+    msgs.clear()
     le.on_pushButton_OK()
-    assert not le.isVisible() and len(le.EvVtext.toPlainText().splitlines()) > 5
+    assert not le.isVisible() and len(le.EvVtext.toPlainText().splitlines()) > 5 and not msgs
+    E_txt = float(le.EvVtext.toPlainText().splitlines()[1].split()[1])
+    assert E_txt == pytest.approx(-.12831042E+02 / 4, abs=1e-6)  # E0= of the first line (C-DOC3)
+    le.show()
+    le.ui.summarypath.setText(summary('CaO_Fm3m'))  # 'E0= 0' placeholders: F= read, with a note
+    le.ui.poscarpath.setText(str(TI / 'CaO_Fm3m' / 'CONTCAR.5'))
+    le.on_pushButton_OK()
+    assert not le.isVisible() and "no usable 'E0=' value" in texts(msgs)
     lE = dialogLoadElastic()
     lE.elastic_constants = QTextEdit()
     lE.show()

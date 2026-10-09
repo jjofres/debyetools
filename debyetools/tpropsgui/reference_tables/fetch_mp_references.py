@@ -10,7 +10,8 @@ These are placeholders: they come from MP's settings (520 eV cutoff, MP POTCAR c
 for O, N, H, F, Cl, Br, I a molecular crystal, not the isolated molecule). Replace them with your own calculations
 done with the same settings as the compound (see README.md in this folder).
 
-Usage (needs an MP API key, https://next-gen.materialsproject.org/api, and `pip install mp-api`):
+Usage (needs an MP API key, https://next-gen.materialsproject.org/api, and recent packages:
+`pip install -U mp-api pymatgen`; an older pymatgen fails with "No module named 'pymatgen.core.entries'"):
 
     python fetch_mp_references.py --api-key YOUR_KEY            # or set MP_API_KEY
     python fetch_mp_references.py --elements O N Sb --out my.csv
@@ -34,6 +35,21 @@ def potcar_name(symbol):
     return words[1] if len(words) > 1 else words[0]
 
 
+def entry_potcar(entry):
+    """POTCAR name of a pure-element entry, or None. MP has stored it as parameters['potcar_symbols']
+    (['PBE Mg_pv']) and as parameters['potcar_spec'] ([{'titel': 'PAW_PBE Mg_pv 06Sep2000', ...}])."""
+    params = entry.parameters or {}
+    cands = list(params.get('potcar_symbols') or [])
+    cands += [s for s in (params.get('potcar_spec') or [])]
+    for c in cands:
+        if isinstance(c, dict):
+            c = c.get('titel') or c.get('symbol') or ''
+        name = potcar_name(str(c)) if str(c).strip() else ''
+        if re.fullmatch(r'[A-Z][a-z]?(_[A-Za-z0-9]+)*', name):
+            return name
+    return None
+
+
 def best_gga_entry(element, entries):
     """Lowest uncorrected energy per atom among the plain-PBE entries made only of `element`.
     entries: objects with .composition (pymatgen), .uncorrected_energy_per_atom, .parameters, .entry_id."""
@@ -54,8 +70,11 @@ def rows_for(elements, get_entries):
         if entry is None:
             print('%s: no plain-PBE entry in the Materials Project, skipped' % el, file=sys.stderr)
             continue
-        pots = entry.parameters.get('potcar_symbols') or ['?']
-        pot = potcar_name(pots[0])
+        pot = entry_potcar(entry)
+        if pot is None:
+            print('%s: no POTCAR name in %s (parameters: %s), skipped'
+                  % (el, entry.entry_id, ', '.join(sorted(entry.parameters or {}))), file=sys.stderr)
+            continue
         if re.match('[A-Z][a-z]?', pot).group(0) != el:
             print('%s: unexpected POTCAR %r, skipped' % (el, pot), file=sys.stderr)
             continue
@@ -86,7 +105,13 @@ def main(argv=None):
     with MPRester(a.api_key) as mpr:
         def get_entries(el):
             return mpr.get_entries(el, compatible_only=False, additional_criteria={'thermo_types': ['GGA_GGA+U']})
-        rows = rows_for(a.elements, get_entries)
+        try:
+            rows = rows_for(a.elements, get_entries)
+        except ModuleNotFoundError as e:
+            if 'pymatgen' not in str(e):
+                raise
+            sys.exit('%s\nThe Materials Project server sends classes that this pymatgen does not have; update both '
+                     'packages:  pip install -U pymatgen mp-api' % e)
     write_table(a.out, rows)
     print('%d element(s) written to %s' % (len(rows), a.out))
     for r in rows:

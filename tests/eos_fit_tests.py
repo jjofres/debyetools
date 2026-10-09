@@ -54,8 +54,8 @@ class EOSFitRestartTestCase(unittest.TestCase):
         with self.assertWarns(UserWarning):
             eos.fitEOS(V, E, initial_parameters=np.array([0.35, 1, 3.5]))
         rms = np.sqrt(np.mean((eos.E0(V) - E) ** 2))
-        self.assertLess(rms, 30.)                 # J/mol; the good fit has 25.5 J/mol
-        self.assertAlmostEqual(eos.V0 / 8.1182e-6, 1, delta=1e-3)
+        self.assertLess(rms, 35.)                 # J/mol; the good fit has 33.0 J/mol (25.5 with the F= energies)
+        self.assertAlmostEqual(eos.V0 / 8.1129e-6, 1, delta=1e-3)
 
     def test_failure_raises_or_warns(self):
         d, V, E = data('Al_fcc')
@@ -71,3 +71,27 @@ class EOSFitRestartTestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class DocsReviewTestCase(unittest.TestCase):
+    """Docs review: fitEOS returns the parameters for every EOS (BM returned None); invalid Debye mode message."""
+
+    def test_fitEOS_returns_parameters(self):
+        d, V, E = data('Al_fcc')
+        for name in ['BM', 'RV', 'MG', 'TB', 'MU', 'PT']:
+            eos = getattr(pot, name)()
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                p = eos.fitEOS(V, E)
+                q = eos.fitEOS(V, E, initial_parameters=eos.pEOS, fit=False)
+            self.assertIsNotNone(p, name)
+            np.testing.assert_array_equal(np.asarray(p), np.asarray(eos.pEOS), err_msg=name)
+            np.testing.assert_array_equal(np.asarray(q), np.asarray(eos.pEOS), err_msg=name)
+
+    def test_invalid_mode_names_the_valid_ones(self):
+        from debyetools.ndeb import nDeb
+        d, V, E = data('Al_fcc')
+        eos = pot.BM()
+        eos.fitEOS(V, E)
+        with self.assertRaisesRegex(ValueError, "unknown mode 'jj'.*'jjsl'.*'jjdm'"):
+            nDeb(0.3, 0.027, (0, 1), eos, (0, 0, 0, 0), (1e10, 0, 933, 0.1), (0, 0, 0), mode='jj')

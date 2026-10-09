@@ -44,3 +44,14 @@ def test_mp_placeholder_rows_pick_lowest_plain_pbe(tmp_path):
     fmp.write_table(str(p), rows)
     edited, runs, entered = load_reference_table(str(p))
     assert edited == {'O': -4.95, 'Mg_pv': -1.6} and runs == {} and entered == {}
+
+
+def test_mp_potcar_from_spec_or_missing(capsys):
+    """Newer MP entries give the POTCAR as potcar_spec titles; an entry without a POTCAR name is skipped, not a crash."""
+    spec = _entry(['N'], -8.3, mid='mp-n')
+    spec.parameters = {'run_type': 'GGA', 'potcar_spec': [{'titel': 'PAW_PBE N 08Apr2002', 'hash': 'x'}]}
+    none = _entry(['H'], -3.4, mid='mp-h')
+    none.parameters = {'run_type': 'GGA', 'potcar_symbols': ['?']}
+    rows = fmp.rows_for(['N', 'H'], lambda el: {'N': [spec], 'H': [none]}[el])
+    assert [r[:2] for r in rows] == [['N', '-8.3']]
+    assert 'H: no POTCAR name in mp-h' in capsys.readouterr().err

@@ -8,7 +8,10 @@ The Cp window computes
   `H298` (J/mol-atom, same energy scale as the E(V) data).
 
 Built-in values: `atomtools.atom_energy` (copy of `examples/Nb/calculations/elements_energies.out`; PBE PAW,
-ground-state structure of each POTCAR; Al agrees with the Materials Project value to 1 meV/atom). Missing there:
+ground-state structure of each POTCAR; Al agrees with the Materials Project value to 1 meV/atom). The values are
+consistent with VASP's `E0=` (energy at σ → 0), the energy `load_V_E` reads: the E0 fits of the V_sv, Cu and
+Li_sv test sets agree to about 1 meV/atom, the `F=` fits differ by up to 8 meV/atom (V). Values added by hand
+should also be E0 (σ → 0). Missing there:
 H, N, O, F, P, S, Cl, Br, I, Sb, Sm, Mg_pv, Mg_sv, Th, Pa, U, Np, Ra, Fr, Po, At, noble gases.
 
 Any value can be added or overridden for a session in **Reference energies…** and kept in a CSV file with
@@ -17,7 +20,16 @@ Any value can be added or overridden for a session in **Reference energies…** 
 | File | Content |
 |------|---------|
 | `fetch_mp_references.py` | writes `mp_placeholders_PBE.csv`: lowest-energy plain-PBE (GGA) entry of each missing element in the Materials Project, *uncorrected* energy per atom and its POTCAR. Placeholders only (MP settings). Needs `pip install mp-api` and an MP API key. |
-| `mp_placeholders_PBE.csv` | output of the script (once run). |
+| `mp_placeholders_PBE.csv` | output of the script, retrieved 2026-10-09: H, N, O, F, Cl (molecular crystals H₂, N₂, O₂, F₂, Cl₂), P, S, Br, I, Sb, Sm_3 (f electrons in the core), Mg_pv, Th, Pa, U, Np. Not in MP as plain PBE: Mg_sv, Ra, Fr, Po, At. |
+
+## Gas references (open)
+
+The H, N, O, F and Cl values are *uncorrected* PBE energies of the molecular crystals. PBE overbinds O₂, so
+formation energies of oxides referred to it are too negative by roughly 0.7 eV per O atom (the other gases show
+smaller errors of the same kind). The Materials Project corrects this with fitted per-anion energy shifts; another
+option is to use experimental formation enthalpies for the gas-phase elements (as in FactSage). Which correction to
+apply, if any, is not decided yet: the values are used as they are, so ΔH298 of oxides, nitrides, hydrides,
+fluorides and chlorides computed with them should be treated with care.
 
 ## CSV format
 

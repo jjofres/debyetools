@@ -93,8 +93,9 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
         eos_Morse.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters)
 
-        # B4: least-squares fit (finding 3.5); rms 257.6 J/mol (was 268.0 with the old objective)
-        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([0.35106063, 1.00824164, 3.23853085]))
+        # B4: least-squares fit (finding 3.5); E0= energies (C-DOC3): rms 239.9 J/mol
+        # (F= energies: [0.35106063, 1.00824164, 3.23853085], rms 257.6 J/mol)
+        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([0.35165943, 1.01142837, 3.23587268]))
 
 if __name__=='__main__':
     unittest.main()

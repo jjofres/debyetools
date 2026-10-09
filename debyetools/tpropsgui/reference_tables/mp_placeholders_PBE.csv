@@ -1,0 +1,19 @@
+# debyetools reference energies (GUI). E_ref: static energy, eV/atom; H298: H at 298.15 K, J/mol-atom,
+# PLACEHOLDERS from the Materials Project (fetch_mp_references.py): MP settings, not yours.
+POTCAR,E_ref_eV_atom,H298_J_mol_atom,H298_from,Debye_model,source
+H,-3.392726,,,,"placeholder: Materials Project mp-24504-GGA H2, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"
+N,-8.336495,,,,"placeholder: Materials Project mp-25-GGA N2, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"
+O,-4.947961,,,,"placeholder: Materials Project mp-12957-GGA O2, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"
+F,-1.914577,,,,"placeholder: Materials Project mp-1525632-GGA F2, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"
+P,-5.413303,,,,"placeholder: Materials Project mp-1198724-GGA P, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"
+S,-4.13645,,,,"placeholder: Materials Project mp-96-GGA S, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"
+Cl,-1.848537,,,,"placeholder: Materials Project mp-22848-GGA Cl2, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"
+Br,-1.636947,,,,"placeholder: Materials Project mp-23154-GGA Br, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"
+I,-1.524013,,,,"placeholder: Materials Project mp-23153-GGA I, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"
+Sb,-4.129001,,,,"placeholder: Materials Project mp-104-GGA Sb, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"
+Sm_3,-4.718586,,,,"placeholder: Materials Project mp-69-GGA Sm, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"
+Mg_pv,-1.60028,,,,"placeholder: Materials Project mp-1056702-GGA Mg, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"
+Th,-7.413858,,,,"placeholder: Materials Project mp-37-GGA Th, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"
+Pa,-9.514665,,,,"placeholder: Materials Project mp-10740-GGA Pa, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"
+U,-11.29141,,,,"placeholder: Materials Project mp-44-GGA U, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"
+Np,-12.94778,,,,"placeholder: Materials Project mp-11534-GGA Np, PBE (GGA) uncorrected, 520 eV, retrieved 2026-10-09"

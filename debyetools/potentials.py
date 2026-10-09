@@ -3,6 +3,11 @@ from scipy.optimize import least_squares, minimize
 
 import numpy as np
 import re
+import warnings
+from debyetools.constants import A3_ATOM_TO_M3_MOL, EV_ATOM_TO_J_MOL
+
+# bounds for the 4-parameter analytic EOS fits (E0, V0, B0, B0'): V0 > 0 and B0 > 0 (review finding 3.8)
+EOS4_BOUNDS = ([-np.inf, 0.0, 0.0, -np.inf], [np.inf, np.inf, np.inf, np.inf])
 import itertools as it
 import debyetools.pairanalysis as pairanalysis
 
@@ -25,6 +30,187 @@ def calculate_volume(aa, bb, cc):
     return volume
 
 
+def _V0_from_dE0dV(eos, Vdata) -> float:
+    """
+    Equilibrium volume of an EOS without a V0 parameter (MP, EAM): root of dE0/dV = 0.
+
+    The search starts at the data point with the lowest energy model value (mean of Vdata if only one
+    point) and widens geometrically until dE0/dV changes sign from - to +; it is not limited to the data
+    range. A UserWarning is issued if the minimum lies outside [min(Vdata), max(Vdata)] (more than one
+    data volume), a ValueError if no minimum is found within a factor 3 of the start.
+    """
+    from scipy.optimize import brentq
+    Vd = np.atleast_1d(np.asarray(Vdata, dtype=float))
+    Vc = float(Vd[np.argmin([eos.E0(v) for v in Vd])]) if len(Vd) > 1 else float(Vd[0])
+    lo = hi = Vc
+    for _ in range(25):
+        if eos.dE0dV_T(lo) < 0:
+            break
+        lo /= 1.05
+    for _ in range(25):
+        if eos.dE0dV_T(hi) > 0:
+            break
+        hi *= 1.05
+    if not (eos.dE0dV_T(lo) < 0 < eos.dE0dV_T(hi)):
+        raise ValueError('fitEOS: no minimum of E0(V) found between %.4g and %.4g.' % (lo, hi))
+    V0 = brentq(eos.dE0dV_T, lo, hi, xtol=1e-15 * Vc, rtol=4 * np.finfo(float).eps)
+    if len(Vd) > 1 and not (Vd.min() <= V0 <= Vd.max()):
+        warnings.warn('fitEOS: the minimum of E0(V), V0 = %.6g, lies outside the data range [%.6g, %.6g].'
+                      % (V0, Vd.min(), Vd.max()), UserWarning, stacklevel=3)
+    return V0
+
+
+class EOSFitError(RuntimeError):
+    """Raised by fitEOS when no starting point gives an acceptable fit (see _fit_with_restarts)."""
+
+
+def _analytic_start_from_data(Vdata, Edata):
+    """
+    Starting point (E0, V0, B0, B0') for the 4-parameter analytic EOS from the data alone: a cubic in
+    x = V/V_m - 1 fitted to E(V), its minimum gives E0 and V0, V0 E2 gives B0 and -1 - V0 E3/E2 (E2, E3: 2nd and 3rd derivatives) gives
+    B0' (clipped to [2, 8]). Falls back to the lowest data point, 100 GPa and 4.5 when the cubic has no
+    minimum in the data range.
+    """
+    V = np.asarray(Vdata, dtype=float); E = np.asarray(Edata, dtype=float)
+    i = int(np.argmin(E))
+    fallback = np.array([E[i], V[i], 1e11, 4.5])
+    if len(V) < 4:
+        return fallback
+    Vm = V.mean()
+    P = np.polynomial.Polynomial.fit(V / Vm - 1, E, 3).convert()
+    d1, d2, d3 = P.deriv(1), P.deriv(2), P.deriv(3)
+    xs = [x.real for x in d1.roots() if abs(x.imag) < 1e-12 and d2(x.real) > 0]
+    xs = [x for x in xs if V.min() <= Vm * (1 + x) <= V.max()]
+    if not xs:
+        return fallback
+    x0 = min(xs, key=lambda x: P(x))
+    V0 = Vm * (1 + x0)
+    E2 = d2(x0) / Vm ** 2
+    E3 = d3(x0) / Vm ** 3
+    B0 = V0 * E2
+    Bp = float(np.clip(-1 - V0 * E3 / E2, 2.0, 8.0))
+    if not (np.isfinite(B0) and B0 > 0):
+        return fallback
+    return np.array([P(x0), V0, B0, Bp])
+
+
+def _clip_into(p, bounds):
+    """Starting point moved inside the bounds (a value on or below a finite lower bound is set just above it)."""
+    lb, ub = (np.broadcast_to(np.asarray(b, dtype=float), np.shape(p)) for b in bounds)
+    q = np.clip(np.array(p, dtype=float), lb, ub)
+    eps_l = 1e-9 * np.where(np.isfinite(lb) & (lb != 0), np.abs(lb), 1.0)
+    eps_u = 1e-9 * np.where(np.isfinite(ub) & (ub != 0), np.abs(ub), 1.0)
+    q = np.where(np.isfinite(lb) & (q <= lb), lb + eps_l, q)
+    q = np.where(np.isfinite(ub) & (q >= ub), ub - eps_u, q)
+    return q
+
+
+def _fit_check(eos, popt, Vdata, Edata, kind, rel_tol):
+    """Set the parameters and judge the fit: finite, minimum found with B0 > 0, V0 within a factor 2 of the
+    data range, rms of the residuals below rel_tol times the energy range of the data."""
+    V = np.asarray(Vdata, dtype=float); E = np.asarray(Edata, dtype=float)
+    info = {'params': np.array(popt, dtype=float)}
+    if not np.all(np.isfinite(popt)):
+        info['reason'] = 'non-finite parameters'; return False, info
+    if hasattr(eos, '_set_fit_params'):
+        eos._set_fit_params(popt)
+    else:
+        eos.pEOS = np.array(popt, dtype=float)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore')
+        try:
+            res = np.asarray(eos.E0(V), dtype=float) - E
+            V0 = float(popt[1]) if kind == 'analytic' else _V0_from_dE0dV(eos, V)
+            B0 = V0 * float(eos.d2E0dV2_T(V0))
+        except Exception as e:  # no minimum, overflow, ...
+            info['reason'] = 'no minimum of E0(V) (%s)' % e; return False, info
+    erange = max(float(E.max() - E.min()), 1e-300)
+    info.update(rms=float(np.sqrt(np.mean(res ** 2))), V0=V0, B0=B0)
+    info['rel_rms'] = info['rms'] / erange if len(E) > 1 else 0.0
+    if not (np.isfinite(info['rms']) and np.isfinite(B0)):
+        info['reason'] = 'non-finite energies'; return False, info
+    if B0 <= 0:
+        info['reason'] = 'B0 = V0 E0\'\'(V0) <= 0 (unstable)'; return False, info
+    if len(V) > 1 and not (0.5 * V.min() <= V0 <= 2 * V.max()):
+        info['reason'] = 'V0 = %.4g far outside the data range' % V0; return False, info
+    if info['rel_rms'] > rel_tol:
+        info['reason'] = 'rms %.3g J/mol = %.3g of the energy range > rel_tol %.3g' % (info['rms'], info['rel_rms'], rel_tol)
+        return False, info
+    info['reason'] = 'ok'
+    return True, info
+
+
+def _fit_with_restarts(eos, Vdata, Edata, p0, bounds, kind, rel_tol=0.02, max_starts=12, on_failure='raise',
+                       x_scale='jac'):
+    """
+    Least-squares fit of an EOS with a check of the result and automatic restarts.
+
+    The fit is started from p0 (the user's initial parameters). If the result fails the check (no minimum,
+    B0 <= 0, V0 far from the data, or rms above rel_tol times the energy range of the data) other starting
+    points are tried, one at a time, until one passes: for the analytic EOS (kind='analytic', parameters
+    E0, V0, B0, B0') a start from a cubic fitted to the data and variations of B0 and B0'; for the pair
+    potentials (kind='pair') deterministic random rescalings of p0 by factors 1/3 to 3. Every attempt is
+    recorded in eos.fit_info. If none passes: on_failure='raise' raises EOSFitError (give better initial
+    parameters), on_failure='warn' keeps the best attempt with a UserWarning.
+
+    :return: fitted parameters.
+    """
+    V = np.asarray(Vdata, dtype=float); E = np.asarray(Edata, dtype=float)
+    starts = []
+    if p0 is not None and not (isinstance(p0, str) and p0 == ''):
+        starts.append(('initial_parameters', np.array(p0, dtype=float)))
+    if kind == 'analytic':
+        d = _analytic_start_from_data(V, E)
+        starts.append(('from data', d))
+        for fB, Bp in [(1, 3.0), (1, 6.0), (0.5, 4.5), (2, 4.5), (0.5, 3.0), (2, 6.0), (1, 8.0), (0.25, 4.5), (4, 4.5)]:
+            starts.append(('from data, B0 x %g, B0\' = %g' % (fB, Bp), np.array([d[0], d[1], d[2] * fB, Bp])))
+    else:
+        if not starts:
+            raise ValueError('fitEOS: initial_parameters are required for this potential.')
+        rng = np.random.default_rng(20261007)
+        for k in range(max_starts):
+            f = np.exp(rng.uniform(np.log(1 / 3), np.log(3), size=len(starts[0][1])))
+            starts.append(('initial_parameters x random factors (%d)' % (k + 1), starts[0][1] * f))
+    starts = starts[:max_starts]
+    attempts = []
+    best = None
+    for label, x0 in starts:
+        x0 = _clip_into(x0, bounds)
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                sol = least_squares(eos.error2min, x0, args=(V, E), bounds=bounds, x_scale=x_scale)
+            ok, info = _fit_check(eos, sol.x, V, E, kind, rel_tol)
+        except Exception as e:
+            ok, info = False, {'params': None, 'reason': 'fit failed (%s)' % e}
+            sol = None
+        info.update(start=label, x0=x0)
+        attempts.append(info)
+        if sol is not None and np.isfinite(info.get('rms', np.inf)) and (best is None or info['rms'] < best[1]['rms']):
+            best = (sol, info)
+        if ok:
+            eos.fit_info = {'accepted': label, 'attempts': attempts}
+            if len(attempts) > 1:
+                warnings.warn('fitEOS (%s): the fit from %s was rejected (%s); accepted the fit from %s.'
+                              % (type(eos).__name__, attempts[0]['start'], attempts[0]['reason'], label),
+                              UserWarning, stacklevel=3)
+            eos.eos_residuals = sol.fun
+            return sol.x
+    eos.fit_info = {'accepted': None, 'attempts': attempts}
+    lines = '; '.join('%s: %s' % (a['start'], a['reason']) for a in attempts)
+    if on_failure == 'warn' and best is not None:
+        warnings.warn('fitEOS (%s): no starting point gave an acceptable fit; keeping the best one (%s, %s). '
+                      'Tried: %s' % (type(eos).__name__, best[1]['start'], best[1]['reason'], lines),
+                      UserWarning, stacklevel=3)
+        if hasattr(eos, '_set_fit_params'):
+            eos._set_fit_params(best[0].x)
+        eos.eos_residuals = best[0].fun
+        return best[0].x
+    raise EOSFitError('fitEOS (%s): no starting point gave an acceptable fit. Please provide initial_parameters '
+                      'closer to the solution (or use on_failure="warn" to keep the best attempt). Tried: %s'
+                      % (type(eos).__name__, lines))
+
+
 class BM:
     """
     Third order Birch-Murnaghan EOS and derivatives.
@@ -35,8 +221,9 @@ class BM:
         self.V0 = None
         if list(parameters):
             self.pEOS = parameters[:4]
+            self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> np.ndarray:
         """
         Parameters fitting.
 
@@ -48,21 +235,24 @@ class BM:
         :type initial_parameters: np.ndarray
         :param fit: True to run the fitting. False to just use the input parameters.
         :type fit: bool.
+        :param rel_tol: A fit is accepted when its rms is below rel_tol times the energy range of the data (and it has
+            a minimum with B0 > 0 within a factor 2 of the data volumes); otherwise other starting points are tried.
+        :param max_starts: Maximum number of starting points.
+        :param on_failure: 'raise' (EOSFitError, default) or 'warn' (keep the best attempt) when no start passes.
 
         :return: Optimal parameters.
         :rtype: np.ndarray
         """
         if fit:
-            pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
-            self.pEOS = popt
+            p0 = None if initial_parameters is None or (isinstance(initial_parameters, str) and initial_parameters == '') \
+                else np.asarray(initial_parameters, dtype=float)[:4]
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, p0, EOS4_BOUNDS, 'analytic', rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        mV = minimize(self.E0, np.array([np.mean(Vdata)]), bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-        self.V0 = mV['x'][0]
+        self.V0 = float(self.pEOS[1])  # the fitted V0 parameter is the minimum of E0 (was a bounded minimize, finding 3.10)
 
-        # return self.pEOS
+        return self.pEOS  # was commented out: BM.fitEOS returned None, unlike every other EOS (docs review C-DOC1)
 
     def E04min(self, V: float, pEOS: np.ndarray) -> float:
         """
@@ -178,7 +368,7 @@ class BM:
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
 class RV:  # Rose-Vinet
@@ -190,8 +380,9 @@ class RV:  # Rose-Vinet
     def __init__(self, *args, units='J/mol', parameters=''):
         if list(parameters):
             self.pEOS = parameters[:4]
+            self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> np.ndarray:
         """
         Parameters fitting.
 
@@ -203,19 +394,22 @@ class RV:  # Rose-Vinet
         :type initial_parameters: np.ndarray
         :param fit: True to run the fitting. False to just use the input parameters.
         :type fit: bool.
+        :param rel_tol: A fit is accepted when its rms is below rel_tol times the energy range of the data (and it has
+            a minimum with B0 > 0 within a factor 2 of the data volumes); otherwise other starting points are tried.
+        :param max_starts: Maximum number of starting points.
+        :param on_failure: 'raise' (EOSFitError, default) or 'warn' (keep the best attempt) when no start passes.
 
         :return: Optimal parameters.
         :rtype: np.ndarray
         """
         if fit:
-            pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
-            self.pEOS = popt
+            p0 = None if initial_parameters is None or (isinstance(initial_parameters, str) and initial_parameters == '') \
+                else np.asarray(initial_parameters, dtype=float)[:4]
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, p0, EOS4_BOUNDS, 'analytic', rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-        self.V0 = mV['x'][0]
+        self.V0 = float(self.pEOS[1])  # the fitted V0 parameter is the minimum of E0 (was a bounded minimize, finding 3.10)
 
         return self.pEOS
 
@@ -335,13 +529,17 @@ class RV:  # Rose-Vinet
         :rtype: float|np.ndarray
         """
         E0, V0, B0, Bp0 = self.pEOS
-        return (5 * (3 * Bp0 - 3)) * np.exp((3 * Bp0 - 3) * (V0 - V ** (1 / 3) * V0 ** (2 / 3)) / (2 * V0)) * (
-                    (3 * Bp0 * (1 / 40) - 7 / 8) * (Bp0 - 1) ** 3 * V ** (4 / 3) * V0 ** (2 / 3) - 3 * V0 ** (1 / 3) * (
-                        Bp0 - 1) ** 4 * V ** (5 / 3) * (1 / 40) + 16 * V ** (2 / 3) * (Bp0 - 13 / 6) * (
-                                Bp0 - 1) * V0 ** (4 / 3) * (1 / 3) + (40 * Bp0 * (1 / 3) - 472 / 27) * V ** (
-                                1 / 3) * V0 ** (5 / 3) + V0 * (
-                                Bp0 ** 3 * V - (19 / 3) * Bp0 ** 2 * V + (29 / 3) * Bp0 * V - (13 / 3) * V + (
-                                    352 / 27) * V0)) * B0 / (12 * V ** (16 / 3) * V0 ** (5 / 3))
+        # exact 6th derivative (sympy, finding 3.6); x = (V/V0)^(1/3)
+        x = (V / V0) ** (1 / 3)
+        c0 = 394240
+        c1 = 416640*Bp0 - 533120
+        c2 = Bp0*(181440*Bp0 - 537600) + 356160
+        c3 = Bp0*(Bp0*(41040*Bp0 - 222480) + 321840) - 140400
+        c4 = Bp0*(Bp0*(Bp0*(4860*Bp0 - 47520) + 113400) - 103680) + 32940
+        c5 = Bp0*(Bp0*(Bp0*(Bp0*(243*Bp0 - 5265) + 18630) - 26730) + 17415) - 4293
+        c6 = -243*(Bp0 - 1)**5
+        Q = c0 + x*(c1 + x*(c2 + x*(c3 + x*(c4 + x*(c5 + x*c6)))))
+        return B0 / V0 ** 5 * np.exp(1.5 * (Bp0 - 1) * (1 - x)) * Q / (2592 * x ** 17)
 
     def error2min(self, P: np.ndarray, Vdata: np.ndarray, Edata: np.ndarray) -> np.ndarray:
         """
@@ -357,7 +555,7 @@ class RV:  # Rose-Vinet
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
 class MG:  # Mie-Gruneisen
@@ -368,8 +566,9 @@ class MG:  # Mie-Gruneisen
     def __init__(self, *args, units='J/mol', parameters=''):
         if list(parameters):
             self.pEOS = parameters[:4]
+            self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> np.ndarray:
         """
         Parameters fitting.
 
@@ -381,19 +580,22 @@ class MG:  # Mie-Gruneisen
         :type initial_parameters: np.ndarray
         :param fit: True to run the fitting. False to just use the input parameters.
         :type fit: bool.
+        :param rel_tol: A fit is accepted when its rms is below rel_tol times the energy range of the data (and it has
+            a minimum with B0 > 0 within a factor 2 of the data volumes); otherwise other starting points are tried.
+        :param max_starts: Maximum number of starting points.
+        :param on_failure: 'raise' (EOSFitError, default) or 'warn' (keep the best attempt) when no start passes.
 
         :return: Optimal parameters.
         :rtype: np.ndarray
         """
         if fit:
-            pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
-            self.pEOS = popt
+            p0 = None if initial_parameters is None or (isinstance(initial_parameters, str) and initial_parameters == '') \
+                else np.asarray(initial_parameters, dtype=float)[:4]
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, p0, EOS4_BOUNDS, 'analytic', rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-        self.V0 = mV['x'][0]
+        self.V0 = float(self.pEOS[1])  # the fitted V0 parameter is the minimum of E0 (was a bounded minimize, finding 3.10)
 
         return self.pEOS
 
@@ -524,7 +726,7 @@ class MG:  # Mie-Gruneisen
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
 class TB:  # TB-SMA
@@ -535,8 +737,9 @@ class TB:  # TB-SMA
     def __init__(self, *args, units='J/mol', parameters=''):
         if list(parameters):
             self.pEOS = parameters[:4]
+            self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
+    def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True, rel_tol=0.02, max_starts=12, on_failure='raise'):
         """
         Parameters fitting.
 
@@ -547,14 +750,13 @@ class TB:  # TB-SMA
         :return list_of_floats: Optimal parameters.
         """
         if fit:
-            pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
-            self.pEOS = popt
+            p0 = None if initial_parameters is None or (isinstance(initial_parameters, str) and initial_parameters == '') \
+                else np.asarray(initial_parameters, dtype=float)[:4]
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, p0, EOS4_BOUNDS, 'analytic', rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-        self.V0 = mV['x'][0]
+        self.V0 = float(self.pEOS[1])  # the fitted V0 parameter is the minimum of E0 (was a bounded minimize, finding 3.10)
 
         return self.pEOS
 
@@ -684,7 +886,7 @@ class TB:  # TB-SMA
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
 class MP:  # Morse
@@ -723,8 +925,8 @@ class MP:  # Morse
         self.Vstar = Vstar
 
         if units == 'J/mol':
-            self.mult_V = (1e-30 * 6.02e23)
-            self.mult_E = (0.160218e-18 * 6.02214e23)
+            self.mult_V = A3_ATOM_TO_M3_MOL
+            self.mult_E = EV_ATOM_TO_J_MOL
 
         elif units == 'eV/atom':
             self.mult_V = 1
@@ -735,7 +937,17 @@ class MP:  # Morse
             self.pEOS = parameters
         #### pr0nt('xxx',self.ndist,self.npair,self.Vstar)
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
+    def default_initial_parameters(self, Vdata, Edata) -> np.ndarray:
+        """
+        Starting point when no initial_parameters are given: for every pair type D = 0.5 eV, alpha = 1.5 1/A and
+        r0 = the nearest-neighbour distance at the data volume with the lowest energy.
+        """
+        V = np.asarray(Vdata, dtype=float); E = np.asarray(Edata, dtype=float)
+        Vmin = V[np.argmin(E)] if V.size > 1 else float(np.ravel(V)[0])
+        r_nn = float(self.ndist[0]) * (Vmin / self.mult_V / self.Vstar) ** (1 / 3)
+        return np.tile([0.5, 1.5, r_nn], int(np.shape(self.npair)[1]))
+
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> np.ndarray:
         """
         Parameters fitting.
 
@@ -747,21 +959,23 @@ class MP:  # Morse
         :type initial_parameters: np.ndarray
         :param fit: True to run the fitting. False to just use the input parameters.
         :type fit: bool.
+        :param rel_tol: A fit is accepted when its rms is below rel_tol times the energy range of the data (and it has
+            a minimum with B0 > 0 within a factor 2 of the data volumes); otherwise other starting points are tried.
+        :param max_starts: Maximum number of starting points.
+        :param on_failure: 'raise' (EOSFitError, default) or 'warn' (keep the best attempt) when no start passes.
 
         :return: Optimal parameters.
         :rtype: np.ndarray
         """
         if fit:
-            pEOS = initial_parameters
-            lstsq_sol = least_squares(self.error2min, pEOS, args=(Vdata, Edata), bounds=(0, np.inf))
-            popt = lstsq_sol['x']
-            self.pEOS = popt
-            self.eos_residuals = lstsq_sol['fun']
+            if initial_parameters is None:
+                initial_parameters = self.default_initial_parameters(Vdata, Edata)
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, np.asarray(initial_parameters, dtype=float), (0, np.inf),
+                                           'pair', rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata) * .9, max(Vdata) * 1.1)], tol=1e-10)
-        self.V0 = mV['x'][0]
+        self.V0 = _V0_from_dE0dV(self, Vdata)  # root of dE0/dV (was a bounded minimize, finding 3.10)
 
         return self.pEOS
 
@@ -977,7 +1191,7 @@ class MP:  # Morse
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
 class MU:  # Murnaghan
@@ -989,8 +1203,9 @@ class MU:  # Murnaghan
         self.V0 = None
         if list(parameters):
             self.pEOS = parameters[:4]
+            self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> np.ndarray:
         """
         Parameters fitting.
 
@@ -1002,19 +1217,22 @@ class MU:  # Murnaghan
         :type initial_parameters: np.ndarray
         :param fit: True to run the fitting. False to just use the input parameters.
         :type fit: bool.
+        :param rel_tol: A fit is accepted when its rms is below rel_tol times the energy range of the data (and it has
+            a minimum with B0 > 0 within a factor 2 of the data volumes); otherwise other starting points are tried.
+        :param max_starts: Maximum number of starting points.
+        :param on_failure: 'raise' (EOSFitError, default) or 'warn' (keep the best attempt) when no start passes.
 
         :return: Optimal parameters.
         :rtype: np.ndarray
         """
         if fit:
-            pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata),bounds=([-np.inf, 0, 0, 0], [0, np.inf,np.inf,np.inf]))['x']
-            self.pEOS = popt
+            p0 = None if initial_parameters is None else np.asarray(initial_parameters, dtype=float)[:4]
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, p0, ([-np.inf, 0, 0, 0], [0, np.inf, np.inf, np.inf]),
+                                           'analytic', rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-        self.V0 = mV['x'][0]
+        self.V0 = float(self.pEOS[1])  # the fitted V0 parameter is the minimum of E0 (was a bounded minimize, finding 3.10)
 
         return self.pEOS
 
@@ -1131,172 +1349,21 @@ class MU:  # Murnaghan
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
-class BM3:  # Birch-Murnaghan
+class BM3(BM):  # deprecated alias of BM
     """
-    Third order Birch-Murnaghan EOS and derivatives.
+    Deprecated alias of :class:`BM` (third-order Birch-Murnaghan EOS).
+
+    The former separate BM3 implementation had the same E0 as BM but all its volume derivatives
+    had the wrong sign (debyetools review finding 3.1). BM3 now is BM and emits a DeprecationWarning.
     """
 
-    def __init__(self, *args, units='J/mol', parameters=''):
-        if list(parameters):
-            self.pEOS = parameters[:4]
-
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
-        """
-        Parameters fitting.
-
-        :param Vdata: Input volume data.
-        :type Vdata: np.ndarray
-        :param Edata: Target energy data.
-        :type Edata: np.ndarray
-        :param initial_parameters: Initial guess.
-        :type initial_parameters: np.ndarray
-        :param fit: True to run the fitting. False to just use the input parameters.
-        :type fit: bool.
-
-        :return: Optimal parameters.
-        :rtype: np.ndarray
-        """
-        if fit:
-            pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
-            self.pEOS = popt
-        if not fit:
-            self.pEOS = initial_parameters[:4]
-
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-        self.V0 = mV['x'][0]
-
-        return self.pEOS
-
-    def E04min(self, V: float, pEOS: np.ndarray) -> float:
-        """
-        Energy for minimization.
-
-        :param V: Volume.
-        :type V: float
-        :param pEOS: parameters.
-        :type pEOS: np.ndarray
-        :return: E0.
-        :rtype: float
-        """
-        E0, V0, B0, Bp0 = pEOS
-        if B0<0:
-            return 1
-        P0, P1, P2, P3 = EVBBp_to_BMparams(pEOS)
-        return P0 + P1 / V ** (2 / 3) + P2 / V ** (4 / 3) + P3 * V ** (-6 / 3)
-
-    def E0(self, V: float|np.ndarray) -> float|np.ndarray:
-        """
-        Internal energy.
-
-        :param V: Volume.
-        :type V: float|np.ndarray
-        :return: E0(V)
-        :rtype: float|np.ndarray
-        """
-        return self.E04min(V, self.pEOS)
-
-    def dE0dV_T(self, V: float|np.ndarray) -> float|np.ndarray:
-        """
-        Internal energy volume derivative.
-
-        :param V: Volume.
-        :type V: float|np.ndarray
-        :return: dE0dV_T(V)
-        :rtype: float|np.ndarray
-        """
-        E0, V0, B0, Bp0 = self.pEOS
-        return -9 * V0 ** 2 * B0 * (
-                    V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - (1 / 2) * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) - (
-                        1 / 2) * V * (Bp0 - 16 / 3)) / (4 * (V0 / V) ** (1 / 3) * V ** 3)
-
-    def d2E0dV2_T(self, V: float|np.ndarray) -> float|np.ndarray:
-        """
-        Internal energy second volume derivative.
-
-        :param V: Volume.
-        :type V: float|np.ndarray
-        :return: d2E0dV2_T(V)
-        :rtype: float|np.ndarray
-        """
-        E0, V0, B0, Bp0 = self.pEOS
-        return 21 * V0 ** 2 * (V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - 9 * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) * (
-                    1 / 14) - 5 * V * (Bp0 - 16 / 3) * (1 / 14)) * B0 / (4 * (V0 / V) ** (1 / 3) * V ** 4)
-
-    def d3E0dV3_T(self, V: float|np.ndarray) -> float|np.ndarray:
-        """
-        Internal energy third volume derivative.
-
-        :param V: Volume.
-        :type V: float|np.ndarray
-        :return: d3E0dV3_T(V)
-        :rtype: float|np.ndarray
-        """
-        E0, V0, B0, Bp0 = self.pEOS
-        return -35 * V0 ** 2 * B0 * (
-                    V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - 27 * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) * (
-                        1 / 35) - 2 * V * (Bp0 - 16 / 3) * (1 / 7)) / (2 * (V0 / V) ** (1 / 3) * V ** 5)
-
-    def d4E0dV4_T(self, V: float|np.ndarray) -> float|np.ndarray:
-        """
-        Internal energy fourth volume derivative.
-
-        :param V: Volume.
-        :type V: float|np.ndarray
-        :return: d4E0dV4_T(V)
-        :rtype: float|np.ndarray
-        """
-        E0, V0, B0, Bp0 = self.pEOS
-        return 455 * V0 ** 2 * B0 * (
-                    V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - 81 * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) * (
-                        1 / 91) - 22 * V * (Bp0 - 16 / 3) * (1 / 91)) / (6 * (V0 / V) ** (1 / 3) * V ** 6)
-
-    def d5E0dV5_T(self, V: float|np.ndarray) -> float|np.ndarray:
-        """
-        Internal energy fifth volume derivative.
-
-        :param V: Volume.
-        :type V: float|np.ndarray
-        :return: d5E0dV5_T(V)
-        :rtype: float|np.ndarray
-        """
-        E0, V0, B0, Bp0 = self.pEOS
-        return -3640 * V0 ** 2 * (
-                    V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - 729 * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) * (
-                        1 / 728) - 11 * V * (Bp0 - 16 / 3) * (1 / 52)) * B0 / (9 * (V0 / V) ** (1 / 3) * V ** 7)
-
-    def d6E0dV6_T(self, V: float|np.ndarray) -> float|np.ndarray:
-        """
-        Internal energy sixth volume derivative.
-
-        :param V: Volume.
-        :type V: float|np.ndarray
-        :return: d6E0dV6_T(V)
-        :rtype: float|np.ndarray
-        """
-        E0, V0, B0, Bp0 = self.pEOS
-        return 69160 * V0 ** 2 * B0 * (
-                    V * (Bp0 - 14 / 3) * (V0 / V) ** (2 / 3) - 2187 * V0 * (Bp0 - 4) * (V0 / V) ** (1 / 3) * (
-                        1 / 1976) - 187 * V * (Bp0 - 16 / 3) * (1 / 988)) / (27 * (V0 / V) ** (1 / 3) * V ** 8)
-
-    def error2min(self, P: np.ndarray, Vdata: np.ndarray, Edata: np.ndarray) -> np.ndarray:
-        """
-        Error for minimization.
-
-        :param P: E0 parameters.
-        :type P: np.ndarray
-        :param Vdata: Volume data.
-        :type Vdata: np.ndarray
-        :param Edata: Energy data.
-        :type Edata: np.ndarray
-        :return: Error.
-        :rtype: np.ndarray
-        """
-        Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+    def __init__(self, *args, **kwargs):
+        warnings.warn("BM3 is deprecated: use BM (same third-order Birch-Murnaghan EOS).",
+                      DeprecationWarning, stacklevel=2)
+        super().__init__(*args, **kwargs)
 
 
 class PT:  # Poirier-Tarantola
@@ -1307,8 +1374,9 @@ class PT:  # Poirier-Tarantola
     def __init__(self, *args, units='J/mol', parameters=''):
         if list(parameters):
             self.pEOS = parameters[:4]
+            self.V0 = float(self.pEOS[1])
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> np.ndarray:
         """
         Parameters fitting.
 
@@ -1320,19 +1388,22 @@ class PT:  # Poirier-Tarantola
         :type initial_parameters: np.ndarray
         :param fit: True to run the fitting. False to just use the input parameters.
         :type fit: bool.
+        :param rel_tol: A fit is accepted when its rms is below rel_tol times the energy range of the data (and it has
+            a minimum with B0 > 0 within a factor 2 of the data volumes); otherwise other starting points are tried.
+        :param max_starts: Maximum number of starting points.
+        :param on_failure: 'raise' (EOSFitError, default) or 'warn' (keep the best attempt) when no start passes.
 
         :return: Optimal parameters.
         :rtype: np.ndarray
         """
         if fit:
-            pEOS = initial_parameters[:4]
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']
-            self.pEOS = popt
+            p0 = None if initial_parameters is None or (isinstance(initial_parameters, str) and initial_parameters == '') \
+                else np.asarray(initial_parameters, dtype=float)[:4]
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, p0, EOS4_BOUNDS, 'analytic', rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters[:4]
 
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))], tol=1e-10)
-        self.V0 = mV['x'][0]
+        self.V0 = float(self.pEOS[1])  # the fitted V0 parameter is the minimum of E0 (was a bounded minimize, finding 3.10)
 
         return self.pEOS
 
@@ -1460,15 +1531,17 @@ class PT:  # Poirier-Tarantola
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
-class BM4:  # Poirier-Tarantola
+class BM4:  # 4th-order Birch-Murnaghan (placeholder, not validated)
     """
     Fourth order Birch-Murnaghan EOS and derivatives.
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
+        warnings.warn("BM4 is a placeholder, not validated (debyetools review decision D3). "
+                      "Use BM, RV, MG, TB, MU or PT.", UserWarning, stacklevel=2)
         if list(parameters):
             self.pEOS = parameters[:5]
             self.pEOS[2] = -self.pEOS[2]
@@ -1835,12 +1908,14 @@ class BM4:  # Poirier-Tarantola
         return (Ecalc - Edata)**2
 
 
-class MU2:  # Poirier-Tarantola
+class MU2:  # 2nd-order Murnaghan (placeholder, not validated)
     """
     Second order Murnaghan EOS and derivatives.
     """
 
     def __init__(self, *args, units='J/mol', parameters=''):
+        warnings.warn("MU2 is a placeholder, not validated (debyetools review decision D2). "
+                      "Use BM, RV, MG, TB, MU or PT.", UserWarning, stacklevel=2)
         if list(parameters):
             self.pEOS = parameters[:5]
             # self.pEOS[2] = - self.pEOS[2]
@@ -2126,727 +2201,6 @@ nparams_F = 4
 nparams_rhophi = 6
 
 
-# class EAM:  # Morse
-#     """
-#     EAM potential and derivatives.
-#
-#     :param list args: formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels.
-#     :param list_of_floats parameters: EAM potential parameters.
-#     """
-#
-#     def __init__(self, *args, units='J/mol', parameters=''):
-#         # ### pr0nt('EAMXXX',args)
-#         formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels = [ai for ai in args]
-#
-#         # formula,    primitive_cell,    basis_vectors    = pair_analysis.ReadPOSCAR(ins_atoms_positions_filename)
-#         self.stat = 0
-#         self.nats = len(basis_vectors)
-#         formula_ABCD = ''.join([Chr_fix[i] for i in range(len(re.findall('[A-Z][**A-Z]*', formula)))])
-#         self.formula_ABCD = formula_ABCD
-#         # ## pr0nt(formula_ABCD)
-#
-#         size = np.array([1, 1, 1])
-#         center = np.array([0, 0, 0])
-#         atom_types = self.formula_ABCD * np.prod(size)
-#         neigbor_distances_at_Vstar, number_of_pairs_per_distance, comb_types = pairanalysis.pair_analysis(atom_types,
-#                                                                                                           size, cutoff,
-#                                                                                                           center,
-#                                                                                                           basis_vectors,
-#                                                                                                           primitive_cell)
-#         neigbor_distances_at_Vstar, number_of_pairs_per_distance = neigbor_distances_at_Vstar[
-#                                                                    :number_of_neighbor_levels], number_of_pairs_per_distance[
-#                                                                                                 :number_of_neighbor_levels,
-#                                                                                                 :]
-#
-#         self.comb_type_ABCD = comb_types
-#         Vstar = np.linalg.det(primitive_cell) / len(basis_vectors)
-#
-#         self.ndist = neigbor_distances_at_Vstar
-#         self.ndist = np.reshape(self.ndist, (-1, 1))
-#         self.npair = number_of_pairs_per_distance
-#         self.Vstar = Vstar
-#
-#         if units == 'J/mol':
-#             self.mult_V = (1e-30 * 6.02e23)
-#             self.mult_E = (0.160218e-18 * 6.02214e23)
-#
-#         elif units == 'eV/atom':
-#             self.mult_V = 1
-#             self.mult_E = 1
-#         self.formula = formula
-#         # ## pr0nt('#####',formula, primitive_cell, basis_vectors, cutoff, number_of_neighbor_levels)
-#         self.ntypes_A()
-#
-#         if list(parameters):
-#             self.pEOS = parameters
-#             pEOS_pt, pEOS_et = self.paramos_raw_2_pt_et(self.pEOS)
-#
-#             self.params_pair_type(pEOS_pt)
-#             self.params_elmt_type(pEOS_et)
-#
-#     def fitEOS(self, Vdata, Edata, initial_parameters='', fit=True):
-#         """
-#         Parameters fitting.
-#
-#         :param list_of_floats Vdata: Intput data.
-#         :param list_of_floats Edata: Target data.
-#         :param list_of_floats initial_parameters: initial_parameters.
-#
-#         :return list_of_floats: Optimal parameters.
-#         """
-#         if fit:
-#             pEOS = [1 for _ in initial_parameters]
-#             # ## pr0nt('XXXXXXXX',pEOS)
-#             popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']#, bounds=(0, 1e2))['x']
-#             self.pEOS = popt
-#         if not fit:
-#             self.pEOS = initial_parameters
-#
-#         pEOS_pt, pEOS_et = self.paramos_raw_2_pt_et(self.pEOS)
-#
-#         self.params_pair_type(pEOS_pt)
-#         self.params_elmt_type(pEOS_et)
-#         mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))])
-#         self.V0 = mV['x'][0]
-#         # pr0nt('xxxxx')
-#
-#         return self.pEOS
-#
-#     def phiii(self, r, alpha, beta, r_alpha):
-#         return -alpha * (1 + beta * (r / r_alpha - 1)) * np.exp(-beta * (r / r_alpha - 1))
-#
-#     def dphiii(self, r, alpha, beta, r_alpha):
-#         return -alpha * beta * np.exp(-beta * (r / r_alpha - 1)) / r_alpha + alpha * (
-#                     1 + beta * (r / r_alpha - 1)) * beta * np.exp(-beta * (r / r_alpha - 1)) / r_alpha
-#
-#     def d2phiii(self, r, alpha, beta, r_alpha):
-#         return 2 * alpha * beta ** 2 * np.exp(-beta * (r / r_alpha - 1)) / r_alpha ** 2 - alpha * (
-#                     1 + beta * (r / r_alpha - 1)) * beta ** 2 * np.exp(-beta * (r / r_alpha - 1)) / r_alpha ** 2
-#
-#     def d3phiii(self, r, alpha, beta, r_alpha):
-#         return -3 * alpha * beta ** 3 * np.exp(-beta * (r / r_alpha - 1)) / r_alpha ** 3 + alpha * (
-#                     1 + beta * (r / r_alpha - 1)) * beta ** 3 * np.exp(-beta * (r / r_alpha - 1)) / r_alpha ** 3
-#
-#     def d4phiii(self, r, alpha, beta, r_alpha):
-#         return 4 * alpha * beta ** 4 * np.exp(-beta * (r / r_alpha - 1)) / r_alpha ** 4 - alpha * (
-#                     1 + beta * (r / r_alpha - 1)) * beta ** 4 * np.exp(-beta * (r / r_alpha - 1)) / r_alpha ** 4
-#
-#     def d5phiii(self, r, alpha, beta, r_alpha):
-#         return -5 * alpha * beta ** 5 * np.exp(-beta * (r / r_alpha - 1)) / r_alpha ** 5 + alpha * (
-#                     1 + beta * (r / r_alpha - 1)) * beta ** 5 * np.exp(-beta * (r / r_alpha - 1)) / r_alpha ** 5
-#
-#     def d6phiii(self, r, alpha, beta, r_alpha):
-#         return 6 * alpha * beta ** 6 * np.exp(-beta * (r / r_alpha - 1)) / r_alpha ** 6 - alpha * (
-#                     1 + beta * (r / r_alpha - 1)) * beta ** 6 * np.exp(-beta * (r / r_alpha - 1)) / r_alpha ** 6
-#
-#     def rhoii(self, r, r_e, f_e, x):
-#         return f_e * np.exp(-x * (r - r_e))
-#
-#     def drhoii(self, r, r_e, f_e, x):
-#         return -f_e * x * np.exp(-x * (r - r_e))
-#
-#     def d2rhoii(self, r, r_e, f_e, x):
-#         return f_e * x ** 2 * np.exp(-x * (r - r_e))
-#
-#     def d3rhoii(self, r, r_e, f_e, x):
-#         return -f_e * x ** 3 * np.exp(-x * (r - r_e))
-#
-#     def d4rhoii(self, r, r_e, f_e, x):
-#         return f_e * x ** 4 * np.exp(-x * (r - r_e))
-#
-#     def d5rhoii(self, r, r_e, f_e, x):
-#         return -f_e * x ** 5 * np.exp(-x * (r - r_e))
-#
-#     def d6rhoii(self, r, r_e, f_e, x):
-#         return f_e * x ** 6 * np.exp(-x * (r - r_e))
-#
-#     def F_i(self, rho_i, F0, F1, rho_e, n):
-#         return -F0 * (1 - np.log((rho_i / rho_e) ** n)) * (rho_i / rho_e) ** n + F1 * (rho_i / rho_e)
-#
-#     def dF_i(self, rho_i, F0, F1, rho_e, n):
-#         return (F0 * (rho_i / rho_e) ** n * np.log((rho_i / rho_e) ** n) * n * rho_e + F1 * rho_i) / (rho_i * rho_e)
-#
-#     def d2F_i(self, rho_i, F0, F1, rho_e, n):
-#         return n * F0 * (rho_i / rho_e) ** n * ((n - 1) * np.log((rho_i / rho_e) ** n) + n) / rho_i ** 2
-#
-#     def d3F_i(self, rho_i, F0, F1, rho_e, n):
-#         return ((n ** 2 - 3 * n + 2) * np.log((rho_i / rho_e) ** n) + 2 * n ** 2 - 3 * n) * n * F0 * (
-#                     rho_i / rho_e) ** n / rho_i ** 3
-#
-#     def d4F_i(self, rho_i, F0, F1, rho_e, n):
-#         return n * F0 * (rho_i / rho_e) ** n * ((n ** 3 - 6 * n ** 2 + 11 * n - 6) * np.log(
-#             (rho_i / rho_e) ** n) + 3 * n ** 3 - 12 * n ** 2 + 11 * n) / rho_i ** 4
-#
-#     def d5F_i(self, rho_i, F0, F1, rho_e, n):
-#         return n * F0 * (rho_i / rho_e) ** n * ((n ** 4 - 10 * n ** 3 + 35 * n ** 2 - 50 * n + 24) * np.log(
-#             (rho_i / rho_e) ** n) + 4 * n ** 4 - 30 * n ** 3 + 70 * n ** 2 - 50 * n) / rho_i ** 5
-#
-#     def d6F_i(self, rho_i, F0, F1, rho_e, n):
-#         return n * F0 * (rho_i / rho_e) ** n * (
-#                     (n ** 5 - 15 * n ** 4 + 85 * n ** 3 - 225 * n ** 2 + 274 * n - 120) * np.log(
-#                 (rho_i / rho_e) ** n) + 5 * n ** 5 - 60 * n ** 4 + 255 * n ** 3 - 450 * n ** 2 + 274 * n) / rho_i ** 6
-#
-#     def ab(self, a, b):
-#         # ## pr0nt(a*b)
-#         return a * b
-#
-#     def params_elmt_type(self, pEOS):
-#         # # pr0nt('params_elmt_type')
-#         self.pEOS_et = pEOS
-#
-#     def ntypes_A(self):
-#         # # pr0nt('ntypes_A')
-#         ix = 0
-#         types_list = re.findall('[A-Z][**A-Z]*', self.formula)
-#
-#         types_keys = {}
-#         types_dict = {}
-#         types_new = []
-#         for i in range(len(types_list)):
-#             if i == 0:
-#                 pass
-#             else:
-#                 if types_list[i] != types_list[i - 1]:
-#                     ix = max(types_keys.values()) + 1
-#             try:
-#                 types_keys[types_list[i]]  #### pr0nt(types_list[i],types_keys[types_list[i]])
-#             except:
-#                 types_keys[types_list[i]] = ix
-#             types_dict[chr(65 + i)] = str(ix)
-#             types_new.append(str(ix))
-#
-#         self.types_new = types_new
-#
-#         types = list(set(types_dict.values()))
-#
-#         self.ntypes = len(types)
-#         types.sort()
-#         combs_types = list(it.combinations_with_replacement(types, r=2))
-#         self.comb_types = combs_types
-#         original_pairs = [A[0] + '-' + A[1] for A in combs_types]
-#         types_ABCD = list(set(types_dict.keys()))
-#         types_ABCD.sort()
-#         combs_types_ABCD = list(it.combinations_with_replacement(types_ABCD, r=2))
-#         self.new_pairs = [A[0] + '-' + A[1] for A in combs_types_ABCD]
-#
-#         B_dict = {}
-#         for A in types_dict.keys():
-#             B_dict[A] = []
-#             for AA in self.new_pairs:
-#                 B_dict[A].append(AA.split('-').count(A) * self.nats / 2)
-#
-#         A_dict = {}
-#         for A in types_dict.keys():
-#             # ## pr0nt('JJJJJJJJJJJJ',self.npair, self.new_pairs)
-#             A_dict[A] = 1 * self.ab(np.array([B_dict[A] for _ in self.npair]), self.npair)
-#
-#         self.A = [A_dict[A] for A in types_ABCD]
-#         self.types_dict = types_dict
-#         self.original_pairs = original_pairs
-#
-#     def params_pair_type(self, pEOS):
-#         # # pr0nt('params_pair_type')
-#         p2 = []
-#         for i in range(len(self.new_pairs)):
-#             split_types = self.new_pairs[i].split('-')
-#             p_key = self.types_dict[split_types[0]] + '-' + self.types_dict[split_types[1]]
-#             p2.append(pEOS[:, self.original_pairs.index(p_key)])
-#
-#         self.pEOS_pt_ABCD = np.array(p2).T
-#
-#     def E0(self, V):
-#         """
-#         Internal energy.
-#
-#         :param float V: Volume.
-#
-#         :return float: Energy.
-#         """
-#         if type(V) == np.ndarray:
-#             return np.array([self.E0(Vi) for Vi in V])
-#         V = V / self.mult_V
-#         pEOS_pt = self.pEOS_pt_ABCD.T
-#
-#         phi_arr = []  # np.array([[],[],[]])
-#         rho_arr = []
-#         factor_r = (V / self.Vstar) ** (1 / 3)
-#
-#         for pi in pEOS_pt:
-#             phi_arr.append(self.phiii(self.ndist * factor_r, pi[0], pi[1], pi[2]))
-#             rho_arr.append(self.rhoii(self.ndist * factor_r, pi[3], pi[4], pi[5]))
-#         phi_arr = np.array(phi_arr).T
-#         rho_arr = np.array(rho_arr).T
-#
-#         self.phis = phi_arr
-#         self.rhos = rho_arr
-#         self.rho_is = [np.sum(self.ab(rho_arr, Ai)) for Ai in self.A]
-#
-#         F_is = []
-#         for i, rho_i in zip(self.types_new, self.rho_is):
-#             F0, F1, rho_e, n = self.pEOS_et[:, int(i)]
-#             # ## pr0nt('F0, F1, rho_e, n',F0, F1, rho_e, n)
-#             F_is.append(self.F_i(rho_i, F0, F1, rho_e, n))
-#         self.F_is = F_is
-#         self.Fs = np.sum(F_is)
-#         self.Phis = np.sum(self.ab(phi_arr, self.npair)) * self.nats / 2
-#
-#         # ## pr0nt('Fs:', self.Fs, 'Phis:', self.Phis)
-#         # ## pr0nt('F_is:', self.F_is)
-#         # ## pr0nt('PHI_ARR',phi_arr)
-#         return (self.Fs + self.Phis) * (self.mult_E)
-#
-#     def paramos_raw_2_pt_et(self, params_raw):
-#         # # pr0nt('paramos_raw_2_pt_et')
-#
-#         pEOS_pt = np.reshape(params_raw[:-self.ntypes * nparams_F], (-1, nparams_rhophi)).T
-#         pEOS_et = np.reshape(params_raw[-self.ntypes * nparams_F:], (-1, nparams_F)).T
-#
-#         # ## pr0nt('pEOS_pt, pEOS_et',pEOS_pt, pEOS_et)
-#         return pEOS_pt, pEOS_et
-#
-#     def E04min(self, V, pEOS):
-#
-#         # if type(V)==np.ndarray:
-#         #     return np.array([self.E04min(Vi,pEOS) for Vi in V])
-#
-#         pEOS_pt, pEOS_et = self.paramos_raw_2_pt_et(pEOS)
-#
-#         self.params_pair_type(pEOS_pt)
-#         self.params_elmt_type(pEOS_et)
-#
-#         return self.E0(V)
-#
-#     def dE0dV_T(self, V):
-#         """
-#         (dE0/dV)_T
-#
-#         :param float V: Volume.
-#         """
-#         if type(V) == np.ndarray:
-#             return np.array([self.dE0dV_T(Vi) for Vi in V])
-#         V = V / self.mult_V
-#         pEOS_pt = self.pEOS_pt_ABCD.T
-#
-#         r = self.ndist * (V / self.Vstar) ** (1 / 3)
-#         dr = self.ndist * (V / self.Vstar) ** (-2 / 3) / 3 / self.Vstar
-#
-#         rho_arr = []
-#         drho_arr = []
-#         dphi_arr = []
-#
-#         for pi in pEOS_pt:
-#             rho_arr.append(self.rhoii(r, pi[3], pi[4], pi[5]))
-#             drho_arr.append(self.drhoii(r, pi[3], pi[4], pi[5]) * dr)
-#             dphi_arr.append(self.dphiii(r, pi[0], pi[1], pi[2]) * dr)
-#
-#         dphi_arr = np.array(dphi_arr).T
-#         rho_arr = np.array(rho_arr).T
-#         drho_arr = np.array(drho_arr).T
-#
-#         self.rho_is = [np.sum(self.ab(rho_arr, Ai)) for Ai in self.A]
-#         self.drho_is = [np.sum(self.ab(drho_arr, Ai)) for Ai in self.A]
-#         dF_is = []
-#         for i, rho_i, drho_i in zip(self.types_new, self.rho_is, self.drho_is):
-#             F0, F1, rho_e, n = self.pEOS_et[:, int(i)]
-#             dF_is.append(self.dF_i(rho_i, F0, F1, rho_e, n) * drho_i)
-#
-#         dFdV = np.sum(dF_is)
-#         dPhidV = np.sum(self.ab(dphi_arr, self.npair)) * self.nats / 2
-#
-#         return (dFdV + dPhidV) * (self.mult_E) / (self.mult_V)
-#
-#     def d2E0dV2_T(self, V):
-#         """
-#         (d2E0/dV2)_T
-#
-#         :param float V: Volume.
-#         """
-#         if type(V) == np.ndarray:
-#             return np.array([self.d2E0dV2_T(Vi) for Vi in V])
-#         V = V / self.mult_V
-#         pEOS_pt = self.pEOS_pt_ABCD.T
-#
-#         r = self.ndist * (V / self.Vstar) ** (1 / 3)
-#         dr = self.ndist * (V / self.Vstar) ** (-2 / 3) / 3 / self.Vstar
-#         d2r = -2 * self.ndist * (V / self.Vstar) ** (-5 / 3) / 9 / self.Vstar ** 2
-#
-#         rho_arr = []
-#         drho_arr = []
-#         d2rho_arr = []
-#         d2phi_arr = []
-#
-#         for pi in pEOS_pt:
-#             rho_arr.append(self.rhoii(r, pi[3], pi[4], pi[5]))
-#             drho_arr.append(self.drhoii(r, pi[3], pi[4], pi[5]) * dr)
-#             d2rho_arr.append(self.d2rhoii(r, pi[3], pi[4], pi[5]) * dr ** 2 + self.drhoii(r, pi[3], pi[4], pi[5]) * d2r)
-#             d2phi_arr.append(self.d2phiii(r, pi[0], pi[1], pi[2]) * dr ** 2 + self.dphiii(r, pi[0], pi[1], pi[2]) * d2r)
-#
-#         d2phi_arr = np.array(d2phi_arr).T
-#         rho_arr = np.array(rho_arr).T
-#         drho_arr = np.array(drho_arr).T
-#         d2rho_arr = np.array(d2rho_arr).T
-#
-#         self.rho_is = [np.sum(self.ab(rho_arr, Ai)) for Ai in self.A]
-#         self.drho_is = [np.sum(self.ab(drho_arr, Ai)) for Ai in self.A]
-#         self.d2rho_is = [np.sum(self.ab(d2rho_arr, Ai)) for Ai in self.A]
-#         d2F_is = []
-#         for i, rho_i, drho_i, d2rho_i in zip(self.types_new, self.rho_is, self.drho_is, self.d2rho_is):
-#             F0, F1, rho_e, n = self.pEOS_et[:, int(i)]
-#             d2F_is.append(
-#                 self.d2F_i(rho_i, F0, F1, rho_e, n) * drho_i ** 2 + self.dF_i(rho_i, F0, F1, rho_e, n) * d2rho_i)
-#
-#         d2FdV2 = np.sum(d2F_is)
-#
-#         d2PhidV2 = np.sum(self.ab(d2phi_arr, self.npair)) * self.nats / 2
-#
-#         return (d2FdV2 + d2PhidV2) * (self.mult_E) / (self.mult_V) ** 2
-#
-#     def d3E0dV3_T(self, V):
-#         """
-#         (d3E0/dV3)_T
-#
-#         :param float V: Volume.
-#         """
-#         if type(V) == np.ndarray:
-#             return np.array([self.d3E0dV3_T(Vi) for Vi in V])
-#         V = V / self.mult_V
-#         pEOS_pt = self.pEOS_pt_ABCD.T
-#
-#         r = self.ndist * (V / self.Vstar) ** (1 / 3)
-#         dr = self.ndist * (V / self.Vstar) ** (-2 / 3) / 3 / self.Vstar
-#         d2r = -2 * self.ndist * (V / self.Vstar) ** (-5 / 3) / 9 / self.Vstar ** 2
-#         d3r = 10 * self.ndist * (V / self.Vstar) ** (-8 / 3) / 27 / self.Vstar ** 3
-#
-#         rho_arr = []
-#         drho_arr = []
-#         d2rho_arr = []
-#         d3rho_arr = []
-#         d3phi_arr = []
-#
-#         for pi in pEOS_pt:
-#             rho_arr.append(self.rhoii(r, pi[3], pi[4], pi[5]))
-#             drho_arr.append(self.drhoii(r, pi[3], pi[4], pi[5]) * dr)
-#             d2rho_arr.append(self.d2rhoii(r, pi[3], pi[4], pi[5]) * dr ** 2 + self.drhoii(r, pi[3], pi[4], pi[5]) * d2r)
-#             d3rho_arr.append(self.d3rhoii(r, pi[3], pi[4], pi[5]) * dr ** 3 + 3 * self.d2rhoii(r, pi[3], pi[4], pi[
-#                 5]) * dr * d2r + self.drhoii(r, pi[3], pi[4], pi[5]) * d3r)
-#             d3phi_arr.append(self.d3phiii(r, pi[0], pi[1], pi[2]) * dr ** 3 + 3 * self.d2phiii(r, pi[0], pi[1], pi[
-#                 2]) * dr * d2r + self.dphiii(r, pi[0], pi[1], pi[2]) * d3r)
-#
-#         d3phi_arr = np.array(d3phi_arr).T
-#         rho_arr = np.array(rho_arr).T
-#         drho_arr = np.array(drho_arr).T
-#         d2rho_arr = np.array(d2rho_arr).T
-#         d3rho_arr = np.array(d3rho_arr).T
-#
-#         self.rho_is = [np.sum(self.ab(rho_arr, Ai)) for Ai in self.A]
-#         self.drho_is = [np.sum(self.ab(drho_arr, Ai)) for Ai in self.A]
-#         self.d2rho_is = [np.sum(self.ab(d2rho_arr, Ai)) for Ai in self.A]
-#         self.d3rho_is = [np.sum(self.ab(d3rho_arr, Ai)) for Ai in self.A]
-#         d3F_is = []
-#         for i, rho_i, drho_i, d2rho_i, d3rho_i in zip(self.types_new, self.rho_is, self.drho_is, self.d2rho_is,
-#                                                       self.d3rho_is):
-#             F0, F1, rho_e, n = self.pEOS_et[:, int(i)]
-#             d3F_is.append(self.d3F_i(rho_i, F0, F1, rho_e, n) * drho_i ** 3 + 3 * self.d2F_i(rho_i, F0, F1, rho_e,
-#                                                                                              n) * drho_i * d2rho_i + self.dF_i(
-#                 rho_i, F0, F1, rho_e, n) * d3rho_i)
-#
-#         d3FdV3 = np.sum(d3F_is)
-#
-#         d3PhidV3 = np.sum(self.ab(d3phi_arr, self.npair)) * self.nats / 2
-#
-#         return (d3FdV3 + d3PhidV3) * (self.mult_E) / (self.mult_V) ** 3
-#
-#     def d4E0dV4_T(self, V):
-#         """
-#         (d4E0/dV4)_T
-#
-#         :param float V: Volume.
-#         """
-#         if type(V) == np.ndarray:
-#             return np.array([self.d4E0dV4_T(Vi) for Vi in V])
-#         V = V / self.mult_V
-#         pEOS_pt = self.pEOS_pt_ABCD.T
-#
-#         r = self.ndist * (V / self.Vstar) ** (1 / 3)
-#         dr = self.ndist * (V / self.Vstar) ** (-2 / 3) / 3 / self.Vstar
-#         d2r = -2 * self.ndist * (V / self.Vstar) ** (-5 / 3) / 9 / self.Vstar ** 2
-#         d3r = 10 * self.ndist * (V / self.Vstar) ** (-8 / 3) / 27 / self.Vstar ** 3
-#         d4r = -80 * self.ndist * (V / self.Vstar) ** (-11 / 3) / 81 / self.Vstar ** 4
-#
-#         rho_arr = []
-#         drho_arr = []
-#         d2rho_arr = []
-#         d3rho_arr = []
-#         d4rho_arr = []
-#         d4phi_arr = []
-#
-#         for pi in pEOS_pt:
-#             rho_arr.append(self.rhoii(r, pi[3], pi[4], pi[5]))
-#             drho_arr.append(self.drhoii(r, pi[3], pi[4], pi[5]) * dr)
-#             d2rho_arr.append(self.d2rhoii(r, pi[3], pi[4], pi[5]) * dr ** 2 + self.drhoii(r, pi[3], pi[4], pi[5]) * d2r)
-#             d3rho_arr.append(self.d3rhoii(r, pi[3], pi[4], pi[5]) * dr ** 3 + 3 * self.d2rhoii(r, pi[3], pi[4], pi[
-#                 5]) * dr * d2r + self.drhoii(r, pi[3], pi[4], pi[5]) * d3r)
-#             d4rho_arr.append(self.d4rhoii(r, pi[3], pi[4], pi[5]) * dr ** 4 + 6 * self.d3rhoii(r, pi[3], pi[4], pi[
-#                 5]) * dr ** 2 * d2r + 3 * self.d2rhoii(r, pi[3], pi[4], pi[5]) * d2r ** 2 + 4 * self.d2rhoii(r, pi[3],
-#                                                                                                              pi[4], pi[
-#                                                                                                                  5]) * dr * d3r + self.drhoii(
-#                 r, pi[3], pi[4], pi[5]) * d4r)
-#             d4phi_arr.append(self.d4phiii(r, pi[0], pi[1], pi[2]) * dr ** 4 + 6 * self.d3phiii(r, pi[0], pi[1], pi[
-#                 2]) * dr ** 2 * d2r + 3 * self.d2phiii(r, pi[0], pi[1], pi[2]) * d2r ** 2 + 4 * self.d2phiii(r, pi[0],
-#                                                                                                              pi[1], pi[
-#                                                                                                                  2]) * dr * d3r + self.dphiii(
-#                 r, pi[0], pi[1], pi[2]) * d4r)
-#
-#         d4phi_arr = np.array(d4phi_arr).T
-#         rho_arr = np.array(rho_arr).T
-#         drho_arr = np.array(drho_arr).T
-#         d2rho_arr = np.array(d2rho_arr).T
-#         d3rho_arr = np.array(d3rho_arr).T
-#         d4rho_arr = np.array(d4rho_arr).T
-#
-#         self.rho_is = [np.sum(self.ab(rho_arr, Ai)) for Ai in self.A]
-#         self.drho_is = [np.sum(self.ab(drho_arr, Ai)) for Ai in self.A]
-#         self.d2rho_is = [np.sum(self.ab(d2rho_arr, Ai)) for Ai in self.A]
-#         self.d3rho_is = [np.sum(self.ab(d3rho_arr, Ai)) for Ai in self.A]
-#         self.d4rho_is = [np.sum(self.ab(d4rho_arr, Ai)) for Ai in self.A]
-#         d4F_is = []
-#         for i, rho_i, drho_i, d2rho_i, d3rho_i, d4rho_i in zip(self.types_new, self.rho_is, self.drho_is, self.d2rho_is,
-#                                                                self.d3rho_is, self.d4rho_is):
-#             F0, F1, rho_e, n = self.pEOS_et[:, int(i)]
-#             d4F_is.append(self.d4F_i(rho_i, F0, F1, rho_e, n) * drho_i ** 4 + 6 * self.d3F_i(rho_i, F0, F1, rho_e,
-#                                                                                              n) * drho_i ** 2 * d2rho_i + 3 * self.d2F_i(
-#                 rho_i, F0, F1, rho_e, n) * d2rho_i ** 2 + 4 * self.d2F_i(rho_i, F0, F1, rho_e,
-#                                                                          n) * drho_i * d3rho_i + self.dF_i(rho_i, F0,
-#                                                                                                            F1, rho_e,
-#                                                                                                            n) * d4rho_i)
-#
-#         d4FdV4 = np.sum(d4F_is)
-#
-#         d4PhidV4 = np.sum(self.ab(d4phi_arr, self.npair)) * self.nats / 2
-#
-#         return (d4FdV4 + d4PhidV4) * (self.mult_E) / (self.mult_V) ** 4
-#
-#     def d5E0dV5_T(self, V):
-#         """
-#         (d5E0/dV5)_T
-#
-#         :param float V: Volume.
-#         """
-#         if type(V) == np.ndarray:
-#             return np.array([self.d5E0dV5_T(Vi) for Vi in V])
-#         V = V / self.mult_V
-#         pEOS_pt = self.pEOS_pt_ABCD.T
-#
-#         r = self.ndist * (V / self.Vstar) ** (1 / 3)
-#         dr = self.ndist * (V / self.Vstar) ** (-2 / 3) / 3 / self.Vstar
-#         d2r = -2 * self.ndist * (V / self.Vstar) ** (-5 / 3) / 9 / self.Vstar ** 2
-#         d3r = 10 * self.ndist * (V / self.Vstar) ** (-8 / 3) / 27 / self.Vstar ** 3
-#         d4r = -80 * self.ndist * (V / self.Vstar) ** (-11 / 3) / 81 / self.Vstar ** 4
-#         d5r = 880 * self.ndist * (V / self.Vstar) ** (-14 / 3) / 243 / self.Vstar ** 5
-#
-#         rho_arr = []
-#         drho_arr = []
-#         d2rho_arr = []
-#         d3rho_arr = []
-#         d4rho_arr = []
-#         d5rho_arr = []
-#         d5phi_arr = []
-#
-#         for pi in pEOS_pt:
-#             rho_arr.append(self.rhoii(r, pi[3], pi[4], pi[5]))
-#             drho_arr.append(self.drhoii(r, pi[3], pi[4], pi[5]) * dr)
-#             d2rho_arr.append(self.d2rhoii(r, pi[3], pi[4], pi[5]) * dr ** 2 + self.drhoii(r, pi[3], pi[4], pi[5]) * d2r)
-#             d3rho_arr.append(self.d3rhoii(r, pi[3], pi[4], pi[5]) * dr ** 3 + 3 * self.d2rhoii(r, pi[3], pi[4], pi[
-#                 5]) * dr * d2r + self.drhoii(r, pi[3], pi[4], pi[5]) * d3r)
-#             d4rho_arr.append(self.d4rhoii(r, pi[3], pi[4], pi[5]) * dr ** 4 + 6 * self.d3rhoii(r, pi[3], pi[4], pi[
-#                 5]) * dr ** 2 * d2r + 3 * self.d2rhoii(r, pi[3], pi[4], pi[5]) * d2r ** 2 + 4 * self.d2rhoii(r, pi[3],
-#                                                                                                              pi[4], pi[
-#                                                                                                                  5]) * dr * d3r + self.drhoii(
-#                 r, pi[3], pi[4], pi[5]) * d4r)
-#             d5rho_arr.append(
-#                 self.d5rhoii(r, pi[3], pi[4], pi[5]) * dr ** 5 + 10 * self.d4rhoii(r, pi[3], pi[4], pi[
-#                     5]) * dr ** 3 * d2r + 15 * self.d3rhoii(r, pi[3], pi[4], pi[5]) * dr * d2r ** 2 + 10 * self.d3rhoii(
-#                     r, pi[3], pi[4], pi[5]) * dr ** 2 * d3r + 10 * self.d2rhoii(r, pi[3], pi[4],
-#                                                                                 pi[5]) * d2r * d3r + 5 * self.d2rhoii(r,
-#                                                                                                                       pi[
-#                                                                                                                           3],
-#                                                                                                                       pi[
-#                                                                                                                           4],
-#                                                                                                                       pi[
-#                                                                                                                           5]) * dr * d4r + self.drhoii(
-#                     r, pi[3], pi[4], pi[5]) * d5r)
-#
-#             d5phi_arr.append(self.d5phiii(r, pi[0], pi[1], pi[2]) * dr ** 5 + 10 * self.d4phiii(r, pi[0], pi[1], pi[
-#                 2]) * dr ** 3 * d2r + 15 * self.d3phiii(r, pi[0], pi[1], pi[2]) * dr * d2r ** 2 + 10 * self.d3phiii(r,
-#                                                                                                                     pi[
-#                                                                                                                         0],
-#                                                                                                                     pi[
-#                                                                                                                         1],
-#                                                                                                                     pi[
-#                                                                                                                         2]) * dr ** 2 * d3r + 10 * self.d2phiii(
-#                 r, pi[0], pi[1], pi[2]) * d2r * d3r + 5 * self.d2phiii(r, pi[0], pi[1], pi[2]) * dr * d4r + self.dphiii(
-#                 r, pi[0], pi[1], pi[2]) * d5r)
-#
-#         d5phi_arr = np.array(d5phi_arr).T
-#         rho_arr = np.array(rho_arr).T
-#         drho_arr = np.array(drho_arr).T
-#         d2rho_arr = np.array(d2rho_arr).T
-#         d3rho_arr = np.array(d3rho_arr).T
-#         d4rho_arr = np.array(d4rho_arr).T
-#         d5rho_arr = np.array(d5rho_arr).T
-#
-#         self.rho_is = [np.sum(self.ab(rho_arr, Ai)) for Ai in self.A]
-#         self.drho_is = [np.sum(self.ab(drho_arr, Ai)) for Ai in self.A]
-#         self.d2rho_is = [np.sum(self.ab(d2rho_arr, Ai)) for Ai in self.A]
-#         self.d3rho_is = [np.sum(self.ab(d3rho_arr, Ai)) for Ai in self.A]
-#         self.d4rho_is = [np.sum(self.ab(d4rho_arr, Ai)) for Ai in self.A]
-#         self.d5rho_is = [np.sum(self.ab(d5rho_arr, Ai)) for Ai in self.A]
-#         d5F_is = []
-#         for i, rho_i, drho_i, d2rho_i, d3rho_i, d4rho_i, d5rho_i in zip(self.types_new, self.rho_is, self.drho_is,
-#                                                                         self.d2rho_is, self.d3rho_is, self.d4rho_is,
-#                                                                         self.d5rho_is):
-#             F0, F1, rho_e, n = self.pEOS_et[:, int(i)]
-#             d5F_is.append(self.d5F_i(rho_i, F0, F1, rho_e, n) * drho_i ** 5 + 10 * self.d4F_i(rho_i, F0, F1, rho_e,
-#                                                                                               n) * drho_i ** 3 * d2rho_i + 15 * self.d3F_i(
-#                 rho_i, F0, F1, rho_e, n) * drho_i * d2rho_i ** 2 + 10 * self.d3F_i(rho_i, F0, F1, rho_e,
-#                                                                                    n) * drho_i ** 2 * d3rho_i + 10 * self.d2F_i(
-#                 rho_i, F0, F1, rho_e, n) * d2rho_i * d3rho_i + 5 * self.d2F_i(rho_i, F0, F1, rho_e,
-#                                                                               n) * drho_i * d4rho_i + self.dF_i(rho_i,
-#                                                                                                                 F0, F1,
-#                                                                                                                 rho_e,
-#                                                                                                                 n) * d5rho_i)
-#
-#         d5FdV5 = np.sum(d5F_is)
-#
-#         d5PhidV5 = np.sum(self.ab(d5phi_arr, self.npair)) * self.nats / 2
-#
-#         return (d5FdV5 + d5PhidV5) * (self.mult_E) / (self.mult_V) ** 5
-#
-#     def d6E0dV6_T(self, V):
-#         """
-#         (d6E0/dV6)_T
-#
-#         :param float V: Volume.
-#         """
-#         if type(V) == np.ndarray:
-#             return np.array([self.d6E0dV6_T(Vi) for Vi in V])
-#         V = V / self.mult_V
-#         pEOS_pt = self.pEOS_pt_ABCD.T
-#
-#         r = self.ndist * (V / self.Vstar) ** (1 / 3)
-#         dr = self.ndist * (V / self.Vstar) ** (-2 / 3) / 3 / self.Vstar
-#         d2r = -2 * self.ndist * (V / self.Vstar) ** (-5 / 3) / 9 / self.Vstar ** 2
-#         d3r = 10 * self.ndist * (V / self.Vstar) ** (-8 / 3) / 27 / self.Vstar ** 3
-#         d4r = -80 * self.ndist * (V / self.Vstar) ** (-11 / 3) / 81 / self.Vstar ** 4
-#         d5r = 880 * self.ndist * (V / self.Vstar) ** (-14 / 3) / 243 / self.Vstar ** 5
-#         d6r = -12320 * self.ndist * (V / self.Vstar) ** (-17 / 3) / 729 / self.Vstar ** 6
-#
-#         rho_arr = []
-#         drho_arr = []
-#         d2rho_arr = []
-#         d3rho_arr = []
-#         d4rho_arr = []
-#         d5rho_arr = []
-#         d6rho_arr = []
-#         d6phi_arr = []
-#
-#         for pi in pEOS_pt:
-#             rho_arr.append(self.rhoii(r, pi[3], pi[4], pi[5]))
-#             drho_arr.append(self.drhoii(r, pi[3], pi[4], pi[5]) * dr)
-#             d2rho_arr.append(self.d2rhoii(r, pi[3], pi[4], pi[5]) * dr ** 2 + self.drhoii(r, pi[3], pi[4], pi[5]) * d2r)
-#             d3rho_arr.append(self.d3rhoii(r, pi[3], pi[4], pi[5]) * dr ** 3 + 3 * self.d2rhoii(r, pi[3], pi[4], pi[
-#                 5]) * dr * d2r + self.drhoii(r, pi[3], pi[4], pi[5]) * d3r)
-#             d4rho_arr.append(self.d4rhoii(r, pi[3], pi[4], pi[5]) * dr ** 4 + 6 * self.d3rhoii(r, pi[3], pi[4], pi[
-#                 5]) * dr ** 2 * d2r + 3 * self.d2rhoii(r, pi[3], pi[4], pi[5]) * d2r ** 2 + 4 * self.d2rhoii(r, pi[3],
-#                                                                                                              pi[4], pi[
-#                                                                                                                  5]) * dr * d3r + self.drhoii(
-#                 r, pi[3], pi[4], pi[5]) * d4r)
-#             d5rho_arr.append(self.d5rhoii(r, pi[3], pi[4], pi[5]) * dr ** 5 + 10 * self.d4rhoii(r, pi[3], pi[4], pi[
-#                 5]) * dr ** 3 * d2r + 15 * self.d3rhoii(r, pi[3], pi[4], pi[5]) * dr * d2r ** 2 + 10 * self.d3rhoii(r,
-#                                                                                                                     pi[
-#                                                                                                                         3],
-#                                                                                                                     pi[
-#                                                                                                                         4],
-#                                                                                                                     pi[
-#                                                                                                                         5]) * dr ** 2 * d3r + 10 * self.d2rhoii(
-#                 r, pi[3], pi[4], pi[5]) * d2r * d3r + 5 * self.d2rhoii(r, pi[3], pi[4], pi[5]) * dr * d4r + self.drhoii(
-#                 r, pi[3], pi[4], pi[5]) * d5r)
-#
-#             d6rho_arr.append(
-#                 1 * self.d6rhoii(r, pi[3], pi[4], pi[5]) * dr ** 6 +
-#                 15 * self.d5rhoii(r, pi[3], pi[4], pi[5]) * dr ** 4 * d2r +
-#                 45 * self.d4rhoii(r, pi[3], pi[4], pi[5]) * dr ** 2 * d2r ** 2 +
-#                 20 * self.d4rhoii(r, pi[3], pi[4], pi[5]) * dr ** 3 * d3r +
-#                 15 * self.d3rhoii(r, pi[3], pi[4], pi[5]) * d2r ** 3 +
-#                 60 * self.d3rhoii(r, pi[3], pi[4], pi[5]) * dr * d2r * d3r +
-#                 15 * self.d3rhoii(r, pi[3], pi[4], pi[5]) * dr ** 2 * d4r +
-#                 10 * self.d2rhoii(r, pi[3], pi[4], pi[5]) * d3r ** 2 +
-#                 15 * self.d2rhoii(r, pi[3], pi[4], pi[5]) * d2r * d4r +
-#                 6 * self.d2rhoii(r, pi[3], pi[4], pi[5]) * dr * d5r +
-#                 1 * self.drhoii(r, pi[3], pi[4], pi[5]) * d6r)
-#             d6phi_arr.append(self.d6phiii(r, pi[0], pi[1], pi[2]) * dr ** 6 + 15 * self.d5phiii(r, pi[0], pi[1], pi[
-#                 2]) * dr ** 4 * d2r + 45 * self.d4phiii(r, pi[0], pi[1],
-#                                                         pi[2]) * dr ** 2 * d2r ** 2 + 20 * self.d4phiii(r, pi[0], pi[1],
-#                                                                                                         pi[
-#                                                                                                             2]) * dr ** 3 * d3r + 15 * self.d3phiii(
-#                 r, pi[0], pi[1], pi[2]) * d2r ** 3 + 60 * self.d3phiii(r, pi[0], pi[1],
-#                                                                        pi[2]) * dr * d2r * d3r + 15 * self.d3phiii(r,
-#                                                                                                                    pi[
-#                                                                                                                        0],
-#                                                                                                                    pi[
-#                                                                                                                        1],
-#                                                                                                                    pi[
-#                                                                                                                        2]) * dr ** 2 * d4r + 10 * self.d2phiii(
-#                 r, pi[0], pi[1], pi[2]) * d3r ** 2 + 15 * self.d2phiii(r, pi[0], pi[1],
-#                                                                        pi[2]) * d2r * d4r + 6 * self.d2phiii(r, pi[0],
-#                                                                                                              pi[1], pi[
-#                                                                                                                  2]) * dr * d5r + self.dphiii(
-#                 r, pi[0], pi[1], pi[2]) * d6r)
-#
-#         d6phi_arr = np.array(d6phi_arr).T
-#         rho_arr = np.array(rho_arr).T
-#         drho_arr = np.array(drho_arr).T
-#         d2rho_arr = np.array(d2rho_arr).T
-#         d3rho_arr = np.array(d3rho_arr).T
-#         d4rho_arr = np.array(d4rho_arr).T
-#         d5rho_arr = np.array(d5rho_arr).T
-#         d6rho_arr = np.array(d6rho_arr).T
-#
-#         self.rho_is = [np.sum(self.ab(rho_arr, Ai)) for Ai in self.A]
-#         self.drho_is = [np.sum(self.ab(drho_arr, Ai)) for Ai in self.A]
-#         self.d2rho_is = [np.sum(self.ab(d2rho_arr, Ai)) for Ai in self.A]
-#         self.d3rho_is = [np.sum(self.ab(d3rho_arr, Ai)) for Ai in self.A]
-#         self.d4rho_is = [np.sum(self.ab(d4rho_arr, Ai)) for Ai in self.A]
-#         self.d5rho_is = [np.sum(self.ab(d5rho_arr, Ai)) for Ai in self.A]
-#         self.d6rho_is = [np.sum(self.ab(d6rho_arr, Ai)) for Ai in self.A]
-#         d6F_is = []
-#         for i, rho_i, drho_i, d2rho_i, d3rho_i, d4rho_i, d5rho_i in zip(self.types_new, self.rho_is, self.drho_is,
-#                                                                         self.d2rho_is, self.d3rho_is, self.d4rho_is,
-#                                                                         self.d5rho_is):
-#             F0, F1, rho_e, n = self.pEOS_et[:, int(i)]
-#             d6F_is.append(self.d6F_i(rho_i, F0, F1, rho_e, n) * drho_i ** 6 + 15 * self.d5F_i(rho_i, F0, F1, rho_e,
-#                                                                                               n) * drho_i ** 4 * d2rho_i + 45 * self.d4F_i(
-#                 rho_i, F0, F1, rho_e, n) * drho_i ** 2 * d2rho_i ** 2 + 20 * self.d4F_i(rho_i, F0, F1, rho_e,
-#                                                                                         n) * drho_i ** 3 * d3rho_i + 15 * self.d3F_i(
-#                 rho_i, F0, F1, rho_e, n) * d2rho_i ** 3 + 60 * self.d3F_i(rho_i, F0, F1, rho_e,
-#                                                                           n) * drho_i * d2rho_i * d3rho_i + 15 * self.d3F_i(
-#                 rho_i, F0, F1, rho_e, n) * drho_i ** 2 * d4rho_i + 10 * self.d2F_i(rho_i, F0, F1, rho_e,
-#                                                                                    n) * d3rho_i ** 2 + 15 * self.d2F_i(
-#                 rho_i, F0, F1, rho_e, n) * d2rho_i * d4rho_i + 6 * self.d2F_i(rho_i, F0, F1, rho_e,
-#                                                                               n) * drho_i * d5rho_i + self.dF_i(rho_i,
-#                                                                                                                 F0, F1,
-#                                                                                                                 rho_e,
-#                                                                                                                 n) * d6r)
-#
-#         d6FdV6 = np.sum(d6F_is)
-#         d6PhidV6 = np.sum(self.ab(d6phi_arr, self.npair)) * self.nats / 2
-#         return (d6FdV6 + d6PhidV6) * (self.mult_E) / (self.mult_V) ** 6
-#
-#     def error2min(self, P, Vdata, Edata):
-#         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-#         return  Ecalc-Edata # [a_i - b_i for a_i, b_i in zip(Ecalc, Edata)]  #
-#
-
 class EAM:  #
     """
     EAM potential and derivatives.
@@ -2888,8 +2242,8 @@ class EAM:  #
         self.Vstar = Vstar
         #
         if units == 'J/mol':
-            self.mult_V = (1e-30 * 6.02e23)
-            self.mult_E = (0.160218e-18 * 6.02214e23)
+            self.mult_V = A3_ATOM_TO_M3_MOL
+            self.mult_E = EV_ATOM_TO_J_MOL
         #
         elif units == 'eV/atom':
             self.mult_V = 1
@@ -2906,7 +2260,14 @@ class EAM:  #
         #     self.params_elmt_type(pEOS_et)
         pass
 
-    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True) -> None:
+    def _set_fit_params(self, p) -> None:
+        """Set the raw parameter vector and the pair / element parameters derived from it."""
+        self.pEOS = np.array(p, dtype=float)
+        pEOS_pt, pEOS_et = self.paramos_raw_2_pt_et(self.pEOS)
+        self.params_pair_type(pEOS_pt)
+        self.params_elmt_type(pEOS_et)
+
+    def fitEOS(self, Vdata: np.ndarray, Edata: np.ndarray, initial_parameters: np.ndarray = None, fit: bool = True, rel_tol: float = 0.02, max_starts: int = 12, on_failure: str = 'raise') -> np.ndarray:
         """
         Parameters fitting.
 
@@ -2918,14 +2279,17 @@ class EAM:  #
         :type initial_parameters: np.ndarray
         :param fit: True to run the fitting. False to just use the input parameters.
         :type fit: bool.
+        :param rel_tol: A fit is accepted when its rms is below rel_tol times the energy range of the data (and it has
+            a minimum with B0 > 0 within a factor 2 of the data volumes); otherwise other starting points are tried.
+        :param max_starts: Maximum number of starting points.
+        :param on_failure: 'raise' (EOSFitError, default) or 'warn' (keep the best attempt) when no start passes.
 
         :return: Optimal parameters.
         :rtype: np.ndarray
         """
         if fit:
-            pEOS = initial_parameters#[1 for _ in initial_parameters]#
-            popt = least_squares(self.error2min, pEOS, args=(Vdata, Edata))['x']#, bounds=(0, 1e2))['x']
-            self.pEOS = popt
+            self.pEOS = _fit_with_restarts(self, Vdata, Edata, initial_parameters, (-np.inf, np.inf), 'pair',
+                                           rel_tol, max_starts, on_failure)
         if not fit:
             self.pEOS = initial_parameters
     #
@@ -2933,8 +2297,7 @@ class EAM:  #
 
         self.params_pair_type(pEOS_pt)
         self.params_elmt_type(pEOS_et)
-        mV = minimize(self.E0, [np.mean(Vdata)], bounds=[(min(Vdata), max(Vdata))])
-        self.V0 = mV['x'][0]
+        self.V0 = _V0_from_dE0dV(self, Vdata)  # root of dE0/dV (was a bounded minimize, finding 3.10)
         # pr0nt('xxxxx')
     #
         return self.pEOS
@@ -3375,7 +2738,7 @@ class EAM:  #
         d3rho_arr = np.array([d3rho_arr_funct(pEOS_pt[:, 3], pEOS_pt[:, 4], pEOS_pt[:, 5])])
         d4rho_arr = np.array([d4rho_arr_funct(pEOS_pt[:, 3], pEOS_pt[:, 4], pEOS_pt[:, 5])])
         d5rho_arr = np.array([d5rho_arr_funct(pEOS_pt[:, 3], pEOS_pt[:, 4], pEOS_pt[:, 5])])
-        d5phi_arr = np.array([d5phi_arr_funct(pEOS_pt[:, 3], pEOS_pt[:, 4], pEOS_pt[:, 5])])
+        d5phi_arr = np.array([d5phi_arr_funct(pEOS_pt[:, 0], pEOS_pt[:, 1], pEOS_pt[:, 2])])  # pair parameters (were the density ones, finding 3.7)
 
         self.rho_is = [np.sum(self.ab(rho_arr, Ai)) for Ai in self.A]
         self.drho_is = [np.sum(self.ab(drho_arr, Ai)) for Ai in self.A]
@@ -3463,10 +2826,11 @@ class EAM:  #
         self.d5rho_is = [np.sum(self.ab(d5rho_arr, Ai)) for Ai in self.A]
         self.d6rho_is = [np.sum(self.ab(d6rho_arr, Ai)) for Ai in self.A]
         d6F_is = []
-        for i, rho_i, drho_i, d2rho_i, d3rho_i, d4rho_i, d5rho_i in zip(self.types_new, self.rho_is, self.drho_is,
+        for i, rho_i, drho_i, d2rho_i, d3rho_i, d4rho_i, d5rho_i, d6rho_i in zip(self.types_new, self.rho_is, self.drho_is,
                                                                         self.d2rho_is, self.d3rho_is, self.d4rho_is,
-                                                                        self.d5rho_is):
+                                                                        self.d5rho_is, self.d6rho_is):
             F0, F1, rho_e, n = self.pEOS_et[:, int(i)]
+            # last term: F'(rho) * d6rho/dV6 (was F'(rho) * d6r/dV6, finding 3.7)
             d6F_is.append(self.d6F_i(rho_i, F0, F1, rho_e, n) * drho_i ** 6 + 15 * self.d5F_i(rho_i, F0, F1, rho_e,
                                                                                               n) * drho_i ** 4 * d2rho_i + 45 * self.d4F_i(
                 rho_i, F0, F1, rho_e, n) * drho_i ** 2 * d2rho_i ** 2 + 20 * self.d4F_i(rho_i, F0, F1, rho_e,
@@ -3479,7 +2843,7 @@ class EAM:  #
                                                                               n) * drho_i * d5rho_i + self.dF_i(rho_i,
                                                                                                                 F0, F1,
                                                                                                                 rho_e,
-                                                                                                                n) * d6r)
+                                                                                                                n) * d6rho_i)
 
         d6FdV6 = np.sum(d6F_is)
         d6PhidV6 = np.sum(self.ab(d6phi_arr, self.npair)) * self.nats / 2
@@ -3499,7 +2863,7 @@ class EAM:  #
         :rtype: np.ndarray
         """
         Ecalc = [self.E04min(Vi, P) for Vi in Vdata]
-        return (Ecalc - Edata)**2
+        return np.asarray(Ecalc) - np.asarray(Edata)  # residuals; least_squares squares them (review finding 3.5)
 
 
 def EVBBp_to_TBparams(pEOS):

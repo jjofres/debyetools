@@ -2,6 +2,9 @@ import unittest
 import numpy as np
 from debyetools.potentials import MP, BM, EAM
 from debyetools.aux_functions import load_V_E, load_cell
+import os
+from debyetools.constants import A3_ATOM_TO_M3_MOL, EV_ATOM_TO_J_MOL
+HERE = os.path.dirname(os.path.abspath(__file__))  # test data paths are relative to this file
 class EOSparametrizationTestCase(unittest.TestCase):
     def setUp(self):
         self.V_DFT = np.array([7.2328381349E-06,7.4766214899E-06,7.7258220323E-06,7.9804992917E-06,8.2407127976E-06,8.5065220794E-06,8.7779866668E-06,9.0551660893E-06,9.3381198763E-06,9.6269075575E-06,9.9215886624E-06,1.0222222720E-05,1.0528869261E-05,1.0841587814E-05,1.1160437909E-05,1.1485479075E-05,1.1816770842E-05,1.2154372740E-05,1.2498344297E-05,1.2848745044E-05,1.3205634510E-05])
@@ -26,8 +29,8 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
     def test_EOS_Morse_Al_fcc_evaluations_eV_units(self):
         """ Test evaluation of Morse potential using Al fcc DFT data, eV/atom units."""
-        V_DFT = self.V_DFT/(1e-30*6.02e23)
-        E_DFT = self.E_DFT/(0.160218e-18*6.02214e23)
+        V_DFT = self.V_DFT/A3_ATOM_TO_M3_MOL
+        E_DFT = self.E_DFT/EV_ATOM_TO_J_MOL
 
         p_EOS = np.array([3.492281316e-01, 9.977375168e-01, 3.246481751e+00])
         eos_Morse = MP(self.formula, self.primitive_cell(4.0396918604), self.basis_vectors, self.cutoff, self.number_of_neighbor_levels, units='eV/atom', parameters = p_EOS)
@@ -43,7 +46,8 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
         eos_Morse.fitEOS(self.V_DFT, self.E_DFT, initial_parameters=initial_parameters)
         print('XXXXXX', eos_Morse.pEOS)
-        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([0.34883 , 0.996078, 3.248167]))
+        # B4: least-squares fit (residuals no longer squared twice, finding 3.5); rms 253.3 J/mol (was 261.1 with the old objective)
+        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([0.34922882, 0.99785577, 3.24609702]))
 
     def test_EOS_BM3_Al_fcc_eval(self):
         """ Test fitting of BM3 potential using Al fcc DFT data."""
@@ -67,7 +71,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
     def test_EOS_BM3_Al_fcc_fit_read_inpts(self):
         """ Test fitting of BM3 potential using Al fcc DFT data."""
 
-        folder_name = './tests/inpt_files/Al_fcc'#./tests/inpt_files/Al_fcc'
+        folder_name = os.path.join(HERE, 'inpt_files', 'Al_fcc')
         V_DFT, E_DFT = load_V_E(folder_name+'/SUMMARY.fcc', folder_name+'/CONTCAR.5', units='J/mol')
 
         eos_BM3 = BM()
@@ -79,7 +83,7 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
     def test_EOS_Morse_Al_fcc_fitting_reading_from_file(self):
         """ Test fitting of Morse potential using Al fcc DFT data."""
-        folder_name = './tests/inpt_files/Al_fcc'
+        folder_name = os.path.join(HERE, 'inpt_files', 'Al_fcc')
         V_DFT, E_DFT = load_V_E(folder_name+'/SUMMARY.fcc', folder_name + '/CONTCAR.5', units='J/mol')
 
         formula, primitive_cell, sbasis_vectors = load_cell(folder_name+'/CONTCAR.5')
@@ -89,7 +93,9 @@ class EOSparametrizationTestCase(unittest.TestCase):
 
         eos_Morse.fitEOS(V_DFT, E_DFT, initial_parameters=initial_parameters)
 
-        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([0.350297, 1.005236, 3.241272]))
+        # B4: least-squares fit (finding 3.5); E0= energies (C-DOC3): rms 239.9 J/mol
+        # (F= energies: [0.35106063, 1.00824164, 3.23853085], rms 257.6 J/mol)
+        np.testing.assert_array_almost_equal(eos_Morse.pEOS, np.array([0.35165943, 1.01142837, 3.23587268]))
 
 if __name__=='__main__':
     unittest.main()

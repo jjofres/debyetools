@@ -1,0 +1,21 @@
+{
+ "env": {
+  "python": "3.10.12",
+  "numpy": "1.26.4",
+  "scipy": "1.13.1",
+  "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35",
+  "git_head": "7880efe74d0b5b55132d9e7abed40e466b31c209"
+ },
+ "errors": {
+  "io/elastic_clamped/Al13Fe4_C2m": "ValueError",
+  "io/elastic_clamped/C_diamond": "ValueError",
+  "io/elastic_clamped/CaO_Fm3m": "ValueError",
+  "io/elastic_clamped/Fe3C_Pnma": "ValueError",
+  "io/elastic_clamped/InP_F43m": "ValueError",
+  "io/elastic_clamped/MgCl2_R3m": "ValueError",
+  "io/elastic_clamped/NaCl_Fm3m": "ValueError",
+  "io/elastic_clamped/NbC_Fm3m": "ValueError"
+ },
+ "n_keys": 2876,
+ "non_finite_keys": []
+}

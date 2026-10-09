@@ -2,97 +2,64 @@ import numpy as np
 from typing import Tuple
 
 
+def _vrh(EM: np.ndarray) -> Tuple[float, float, float, float, float, float, float, float]:
+    """
+    Voigt, Reuss and Hill averages from a 6x6 stiffness matrix (any symmetry).
+
+    Voigt: K_V = [C11+C22+C33 + 2(C12+C13+C23)]/9, G_V = [C11+C22+C33 - (C12+C13+C23) + 3(C44+C55+C66)]/15.
+    Reuss from the compliance S = C^-1: K_R = 1/[S11+S22+S33 + 2(S12+S13+S23)],
+    G_R = 15/[4(S11+S22+S33) - 4(S12+S13+S23) + 3(S44+S55+S66)].
+    These sums are invariant under any reordering of the three shear components, so the VASP order
+    (XX YY ZZ XY YZ ZX) and the Voigt order (XX YY ZZ YZ ZX XY) give the same result. The matrix is
+    symmetrised, (C + C^T)/2, before inversion.
+
+    :return: K_R, K_V, K_H, G_R, G_V, G_H, A_U, nu (moduli in the units of EM)
+    """
+    C = np.asarray(EM, dtype=float)
+    if C.shape != (6, 6):
+        raise ValueError('poisson_ratio: the elastic moduli matrix must be 6x6, got %s' % (C.shape,))
+    C = 0.5 * (C + C.T)
+    S = np.linalg.inv(C)
+    KV = (C[0, 0] + C[1, 1] + C[2, 2] + 2 * (C[0, 1] + C[0, 2] + C[1, 2])) / 9
+    GV = (C[0, 0] + C[1, 1] + C[2, 2] - (C[0, 1] + C[0, 2] + C[1, 2]) + 3 * (C[3, 3] + C[4, 4] + C[5, 5])) / 15
+    KR = 1 / (S[0, 0] + S[1, 1] + S[2, 2] + 2 * (S[0, 1] + S[0, 2] + S[1, 2]))
+    GR = 15 / (4 * (S[0, 0] + S[1, 1] + S[2, 2]) - 4 * (S[0, 1] + S[0, 2] + S[1, 2]) + 3 * (S[3, 3] + S[4, 4] + S[5, 5]))
+    K = (KR + KV) / 2
+    G = (GR + GV) / 2
+    Y = (9. * K * G) / (3. * K + G)
+    nu = (3. * K - Y) / (6. * K)
+    AU = 5 * GV / GR + KV / KR - 6
+    return KR, KV, K, GR, GV, G, AU, nu
+
+
 def poisson_ratio(EM: np.ndarray, quiet: bool = False) -> float|Tuple[float,float,float,float,float,float,float,float]:
     """
-    Calculation of the Poisson's ratio from elastic moduli matrix.
+    Poisson's ratio from the elastic moduli (stiffness) matrix, Voigt-Reuss-Hill average:
+    nu = (3K - Y)/(6K), Y = 9KG/(3K + G), K = (K_V + K_R)/2, G = (G_V + G_R)/2.
 
-    :param EM: Elastic moduli matrix.
+    The Reuss bounds are computed from the compliance S = C^-1, which is exact for any crystal symmetry
+    (cubic ... triclinic) and independent of the order of the shear components (VASP or Voigt).
+
+    :param EM: 6x6 elastic moduli matrix. nu is unit-free; with quiet=True the input is taken in kBar
+               (as returned by aux_functions.load_EM and get_elastic.get_EM) and the moduli are returned in GPa.
     :type EM: np.ndarray
-    :param quiet: (optional) If verbose.
+    :param quiet: if True, return all VRH quantities (see quiet_pa) instead of nu only.
     :type quiet: bool
-    :return: Poisson's ratio.
+    :return: Poisson's ratio, or (B_R, B_V, B, G_R, G_V, G, A_U, nu) if quiet.
     :rtype: float
     """
     if quiet:
         return quiet_pa(EM)
+    return _vrh(EM)[-1]
 
-    C11, C12, C13 = EM[0,0], EM[0,1], EM[0,2]
-    C22, C23 = EM[1,1], EM[1,2]
-    C33 = EM[2,2]
-    C44 = EM[3,3]
-    C55 = EM[4,4]
-    C66 = EM[5,5]
-
-    if EM[0,4]**2>0:
-        C15 = EM[0,4]
-        C25 = EM[1,4]
-        C35 = EM[2,4]
-        C46 = EM[3,5]
-    else:
-        C15 = EM[0,5]
-        C25 = EM[1,5]
-        C35 = EM[2,5]
-        C46 = EM[3,4]
-
-    f = C11*(C22*C55-C25**2)-C12*(C12*C55-C15*C25)+C15*(C12*C25-C15*C22)+C25*(C23*C35-C25*C33)
-    g = C11*C22*C33-C11*C23**2-C22*C13**2-C33*C12**2+2*C12*C13*C23
-    Omega=2*(C15*C25*(C33*C12-C13*C23)+C15*C35*(C22*C13-C12*C23)+C25*C35*(C11*C23-C12*C13)) -(C15**2*(C22*C33-C23**2)+C25**2*(C11*C33-C13**2)+C35**2*(C11*C22-C12**2))+g*C55
-    GV = 1/15*(C11+C22+C33+3*(C44+C55+C66)-(C12+C13+C23))
-    GR = 15*(4*((C33*C55-C35**2)*(C11+C22+C12) + (C23*C55-C25*C35)*(C11-C12-C23) + (C13*C35-C15*C33)*(C15+C25) + (C13*C55-C15*C35)*(C22-C12-C23-C13) + (C13*C25-C15*C23)*(C15-C25) + f)/Omega+3*(g/Omega+(C44+C66)/(C44*C66-C46**2)))**(-1)
-    BV = (C11+C22+C33+2*(C12+C13+C23))/9
-    BR = Omega*((C33*C55-C35**2)*(C11+C22-2*C12)+(C23*C55-C25*C35)*(2*C12-2*C11-C23) + (C13*C35-C15*C33)*(C15-2*C25)+(C13*C55-C15*C35)*(2*C12+2*C23-C13-2*C22)+2*(C13*C25-C15*C23)*(C25-C15)+f)**(-1)
-
-    B = (BR+BV)/2
-    S = (GR+GV)/2
-    Y = (9.*B*S)/(3.*B+S)
-    nu = (3.*B-Y)/(6.*B)
-
-    return nu
 
 def quiet_pa(EM: np.ndarray) -> Tuple[float,float,float,float,float,float,float,float]:
     """
-    Calculation of the Poisson's ratio from elastic moduli matrix.
+    Voigt-Reuss-Hill quantities from the elastic moduli matrix.
 
-    :param EM: Elastic moduli matrix.
+    :param EM: 6x6 elastic moduli matrix in kBar (as returned by load_EM / get_EM).
     :type EM: np.ndarray
-    :return: BR, BV, B, GR, GV, S, AU, nu
+    :return: B_R, B_V, B, G_R, G_V, G (bulk and shear moduli in GPa), A_U (universal anisotropy index), nu
     :rtype: Tuple[float,float,float,float,float,float,float,float]
     """
-    C11, C12, C13 = EM[0,0]*1e-1, EM[0,1]*1e-1, EM[0,2]*1e-1
-    C22, C23 = EM[1,1]*1e-1, EM[1,2]*1e-1
-    C33 = EM[2,2]*1e-1
-    C44 = EM[3,3]*1e-1
-    C55 = EM[4,4]*1e-1
-    C66 = EM[5,5]*1e-1
-
-    if EM[0,4]*1e-1>0:
-        C15 = EM[0,4]*1e-1
-        C25 = EM[1,4]*1e-1
-        C35 = EM[2,4]*1e-1
-        C46 = EM[3,5]*1e-1
-    else:
-        C15 = EM[0,5]*1e-1
-        C25 = EM[1,5]*1e-1
-        C35 = EM[2,5]*1e-1
-        C46 = EM[3,4]*1e-1
-
-    f = C11*(C22*C55-C25**2)-C12*(C12*C55-C15*C25)+C15*(C12*C25-C15*C22)+C25*(C23*C35-C25*C33)
-    g = C11*C22*C33-C11*C23**2-C22*C13**2-C33*C12**2+2*C12*C13*C23
-    Omega=2*(C15*C25*(C33*C12-C13*C23)+C15*C35*(C22*C13-C12*C23)+C25*C35*(C11*C23-C12*C13)) -(C15**2*(C22*C33-C23**2)+C25**2*(C11*C33-C13**2)+C35**2*(C11*C22-C12**2))+g*C55
-    GV = 1/15*(C11+C22+C33+3*(C44+C55+C66)-(C12+C13+C23))
-    GR = 15*(4*((C33*C55-C35**2)*(C11+C22+C12) + (C23*C55-C25*C35)*(C11-C12-C23) + (C13*C35-C15*C33)*(C15+C25) + (C13*C55-C15*C35)*(C22-C12-C23-C13) + (C13*C25-C15*C23)*(C15-C25) + f)/Omega+3*(g/Omega+(C44+C66)/(C44*C66-C46**2)))**(-1)
-    BV = (C11+C22+C33+2*(C12+C13+C23))/9
-    BR = Omega*((C33*C55-C35**2)*(C11+C22-2*C12)+(C23*C55-C25*C35)*(2*C12-2*C11-C23) + (C13*C35-C15*C33)*(C15-2*C25)+(C13*C55-C15*C35)*(2*C12+2*C23-C13-2*C22)+2*(C13*C25-C15*C23)*(C25-C15)+f)**(-1)
-
-    Br=BR
-    Bv=BV
-    Sr=GR
-    Sv=GV
-    B = (BR+BV)/2
-    S = (GR+GV)/2
-    Y = (9.*B*S)/(3.*B+S)
-    nu = (3.*B-Y)/(6.*B)
-    AU = 5*Sv/Sr+Bv/Br-6
-
-    return BR, BV, B, GR, GV, S, AU, nu
-
+    return _vrh(np.asarray(EM, dtype=float) * 1e-1)

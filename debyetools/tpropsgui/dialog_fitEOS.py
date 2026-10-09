@@ -2,9 +2,10 @@ from PySide6.QtWidgets import QDialog, QMessageBox
 
 from debyetools.tpropsgui.ui_dialog_fitEOS import Ui_Form as Ui_iparams
 
-from debyetools.tpropsgui.atomtools import dt_potentials
+from debyetools.tpropsgui.atomtools import dt_potentials, interatomic_initial_guess
 
 import numpy as np
+import warnings
 
 from debyetools.tpropsgui.dialog_loadEOS import dialogLoadEOS
 
@@ -12,6 +13,7 @@ from PySide6.QtCore import QTimer
 
 from debyetools.tpropsgui.plot_EV import windowPlot
 from PySide6.QtGui import QPixmap, QPalette
+from debyetools.constants import A3_ATOM_TO_M3_MOL, EV_ATOM_TO_J_MOL
 
 
 def highlight_line_edit(line_edit, color="purple", duration=100):
@@ -69,7 +71,7 @@ class dialogFitEOS(QDialog):
 
     def get_EvV(self):
         if self.ui.radioButton_2.isChecked():
-            conv = [(1e-30 * 6.02e23), (0.160218e-18 * 6.02214e23)]
+            conv = [A3_ATOM_TO_M3_MOL, EV_ATOM_TO_J_MOL]  # debyetools.constants
         elif self.ui.radioButton_4.isChecked():
             conv = [1, 1]
 
@@ -84,10 +86,24 @@ class dialogFitEOS(QDialog):
         return (data[:, i] * conv[i] for i in range(ncols))
 
     def get_EOS_params(self):
-        txt = self.ui.lineEdit_3.text()
-        if txt == '':
-            return -3e5, 9e-6, 7e10, 4
-        return [float(ti) for ti in txt.replace(' ', '').split(',')]
+        """
+        Initial parameters typed in the dialog, or None when the field is empty, cannot be read or has the wrong
+        number of values for the EOS: fitEOS then starts from the data (analytic EOS) or from the Morse default.
+        """
+        txt = self.ui.lineEdit_3.text().replace(',', ' ').split()
+        try:
+            p = [float(ti) for ti in txt]
+        except ValueError:
+            return None
+        if not p:
+            return None
+        if self.eos_str in ('BM', 'RV', 'MG', 'TB', 'MU', 'PT') and len(p) != 4:
+            return None
+        if self.eos_str == 'MP' and len(p) != 3 * np.shape(self.eos.npair)[1]:
+            return None
+        if self.eos_str == 'EAM' and len(p) != 6 * len(self.eos.comb_types) + 4 * self.eos.ntypes:
+            return None
+        return p
 
     def on_pushloadEvV(self):
         self.dialog_loadEOS.mass = 0
@@ -111,30 +127,65 @@ class dialogFitEOS(QDialog):
 
         self.ui.progress_3.setValue(33)
         args = (None,)
-        if self.eos_str == 'MP':
-            print(self.molecule.__dir__())
-            print(self.molecule_from_crystal.__dir__())
+        if self.eos_str in ('MP', 'EAM'):
+            if getattr(self, 'molecule_from_crystal', None) is None:
+                QMessageBox.information(self, 'Error', 'Interatomic potentials need the crystal structure: tick the '
+                                        'crystal option in the start window.', QMessageBox.Ok)
+                self.ui.progress_3.setValue(0)
+                return
             self.molecule.formula, self.molecule.cell, self.molecule.basis, self.molecule.cutoff, self.molecule.number_of_NNs = self.molecule_from_crystal.formula, self.molecule_from_crystal.cell, self.molecule_from_crystal.basis, self.molecule_from_crystal.cutoff, self.molecule_from_crystal.number_of_NNs
             args = self.molecule.formula, self.molecule.cell, self.molecule.basis, self.molecule.cutoff, self.molecule.number_of_NNs
         self.eos = getattr(dt_potentials, self.eos_str)(*args)  # *self.ipotparamsdialog.args)
 
         try:
             Vdata, Edata = self.get_EvV()
+            if len(Vdata) < 2:
+                raise ValueError('at least two (V, E) points are needed')
         except Exception as e:
-            print(e)
-            error_msg = 'Something is wrong with the data for energy versus volume.\n Please check and try again.'
+            error_msg = 'Something is wrong with the data for energy versus volume:\n%s\nPlease check and try again.' % e
             QMessageBox.information(self, 'Error', error_msg, QMessageBox.Ok)
-
+            self.ui.progress_3.setValue(0)
+            return
 
         self.Vdata = Vdata
         self.Edata = Edata
 
         initial_guess = self.get_EOS_params()
-        self.eos.fitEOS(Vdata, Edata, initial_parameters=initial_guess, fit=True)
+        start_note = []
+        if self.eos_str == 'EAM' and initial_guess is None:
+            # EAM has no data-based start: use the default parameters for this crystal
+            initial_guess = interatomic_initial_guess('EAM', len(self.eos.comb_types))
+            start_note = ['EAM: the initial parameters were missing or had the wrong number of values (%d expected); '
+                          'the default start was used.' % len(initial_guess)]
+        try:
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter('always')
+                self.eos.fitEOS(Vdata, Edata, initial_parameters=initial_guess, fit=True)
+        except dt_potentials.EOSFitError as e:
+            # no starting point gave an acceptable fit: ask whether to keep the best attempt (G8)
+            answer = QMessageBox.question(self, 'EOS fit',
+                                          '%s\n\nKeep the best attempt anyway?' % e, QMessageBox.Yes | QMessageBox.No)
+            if answer != QMessageBox.Yes:
+                self.ui.progress_3.setValue(0)
+                return
+            try:
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter('always')
+                    self.eos.fitEOS(Vdata, Edata, initial_parameters=initial_guess, fit=True, on_failure='warn')
+            except Exception as e2:
+                QMessageBox.information(self, 'Error', 'The EOS fit failed:\n%s' % e2, QMessageBox.Ok)
+                self.ui.progress_3.setValue(0)
+                return
+        except Exception as e:
+            QMessageBox.information(self, 'Error', 'The EOS fit failed:\n%s' % e, QMessageBox.Ok)
+            self.ui.progress_3.setValue(0)
+            return
 
         self.ui.lineEdit_3.setText(', '.join(['%.9e' % (p) for p in self.eos.pEOS]))
-
         self.ui.progress_3.setValue(100)
+        notes = start_note + [str(w.message) for w in caught if issubclass(w.category, UserWarning)]
+        if notes:
+            QMessageBox.information(self, 'EOS fit', '\n\n'.join(notes), QMessageBox.Ok)
 
     def is_dark_mode(self):
         # Detect if the application is in dark mode using the palette

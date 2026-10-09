@@ -1,14 +1,17 @@
 import numpy as np
+import warnings
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QMainWindow, QTableWidgetItem, QMenu, QMessageBox, QApplication
+from PySide6.QtWidgets import QMainWindow, QTableWidgetItem, QMenu, QMessageBox, QApplication, QPushButton, QCheckBox
 from debyetools.fs_compound_db import fit_FS as dt_fit_FS
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.widgets import Cursor
 
-from debyetools.tpropsgui.atomtools import atom_energy
+from debyetools.tpropsgui.atomtools import REFERENCES
+from debyetools.tpropsgui.dialog_refEnergies import dialogRefEnergies
 from debyetools.tpropsgui.ui_cp_window import Ui_MainWindow as Ui_Cp
 from PySide6.QtGui import QPixmap, QPalette
+from debyetools.constants import EV_ATOM_TO_J_MOL
 
 
 # from debyetools.fs_compound_db import Cp2fit as dt_Cp2fit
@@ -58,6 +61,17 @@ class dialogCpWindow(QMainWindow):
         self.ui.pushBack.clicked.connect(self.on_pushBack)
 
         self.ui.pushExport.clicked.connect(self.on_pushExport)
+        # elemental reference energies of the formation energy, editable for the session (G2)
+        self.pushRefs = QPushButton('Reference energies...', self.ui.centralwidget)
+        self.ui.verticalLayout_5.insertWidget(1, self.pushRefs)
+        self.pushRefs.clicked.connect(self.on_pushRefs)
+        # optional T^-3 term of the FactSage Cp fit (D11, default off); toggling refits without recomputing (G16)
+        self.checkCpT3 = QCheckBox('T^(-3) term', self.ui.centralwidget)
+        self.checkCpT3.setChecked(False)
+        self.checkCpT3.setToolTip('Fit the T^-3 coefficient of the FactSage Cp polynomial (fit_FS cp_T3). '
+                                  'Off: 5 terms, T^-3 coefficient = 0.')
+        self.ui.horizontalLayout_5.insertWidget(1, self.checkCpT3)
+        self.checkCpT3.toggled.connect(self.on_toggle_cpT3)
         self.ui.pushCloseAll.clicked.connect(self.on_pushCloseAll)
 
         # Connect the textChanged signals to a shared color change method
@@ -90,22 +104,12 @@ class dialogCpWindow(QMainWindow):
            # Trigger No action
 
     def on_pushExport(self):
-        txt4output = f'{self.formula}$'
-
-        txt4output += f'{self.Ef:.7e}'
-
-        txt4output += f'${self.S298:7e}$'
-
-        lst4output = []
-        rcount = self.ui.tableWidget.rowCount()
-        for ix in range(2, rcount):
-            p = self.ui.tableWidget.item(ix, 0).text()
-            lst4output.append(f'{p}')
-        txt4output += '&'.join(lst4output)
-        txt4output += '$'
-        t4out = [f'{p:.2e}' for p in [self.FS_Tfrom, self.FS_Tto]]
-        txt4output += '&'.join(t4out)
-
+        # same content as dtoutput4cmpnd: Ef, S298 and Cp coefficients all per formula unit, at the reference
+        # pressure (was: Cp coefficients per mol-atom from the table next to Ef, S298 per formula unit, G7)
+        txt4output = getattr(self, 'txt4output', None)
+        if txt4output is None:
+            QMessageBox.information(self, 'Warning', 'Nothing to export yet.', QMessageBox.Ok)
+            return
         with open('export_dtoutput4cmpnd', 'w') as f:
             f.write(txt4output)
 
@@ -119,29 +123,47 @@ class dialogCpWindow(QMainWindow):
         self.plot_prop('T', self.proplist[i])
 
     def selectionchange(self, i):
+        if i < 0 or i >= len(self.Ps):
+            return
         Pi = self.Ps[i]
-        self.ui.tableWidget.setItem(0, 0, QTableWidgetItem('%.5e' % (self.dict_H298['%.1f' % (Pi / 1e9)])))
-        self.ui.tableWidget.setItem(1, 0, QTableWidgetItem('%.5e' % (self.dict_S298['%.1f' % (Pi / 1e9)])))
-        for ix, p in enumerate(self.dict_FS['%.1f' % (Pi / 1e9)]['Cp']):
+        self.ui.tableWidget.setItem(0, 0, QTableWidgetItem('%.5e' % (self.dict_H298[self.pkey(Pi)])))
+        self.ui.tableWidget.setItem(1, 0, QTableWidgetItem('%.5e' % (self.dict_S298[self.pkey(Pi)])))
+        for ix, p in enumerate(self.dict_FS[self.pkey(Pi)]['Cp']):
             self.ui.tableWidget.setItem(ix + 2, 0, QTableWidgetItem('%.5e' % (p)))
 
-    def get_T(self):
-        T_initial, T_final, Tstep = (float(sti) for sti in self.ui.lineEdit.text().split())
-        T = np.arange(T_initial, T_final + Tstep, Tstep)
-        T = np.r_[T, [298.15]]
-        T.sort()
+    @staticmethod
+    def _grid(txt):
+        """'x0 x1 step' -> x0, x0 + step, ... up to x1 (never beyond, G12); a single number -> that number."""
+        vals = [float(sti) for sti in txt.split()]
+        if len(vals) == 1:
+            return np.array(vals)
+        x0, x1, step = vals
+        if step <= 0 or x1 < x0:
+            raise ValueError('expected "start end step" with step > 0 and end >= start, got %r' % txt)
+        n = int(np.floor((x1 - x0) / step + 1e-9)) + 1
+        return x0 + step * np.arange(n)
 
+    def get_T(self):
+        T = self._grid(self.ui.lineEdit.text())
+        T = np.unique(np.where(T <= 0, 0.1, T))  # min_G needs T > 0: a start at 0 K is computed at 0.1 K
+        if not np.any(np.abs(T - 298.15) < 1e-6):  # 298.15 K is needed for H298 and S298
+            T = np.sort(np.r_[T, [298.15]])
         return T
+
+    @staticmethod
+    def _p_decimals(Ps):
+        """Fewest decimals (at least 1) for which the labels of the pressures Ps (Pa) in GPa are all different."""
+        for d in range(1, 10):
+            if len({'%.*f' % (d, P / 1e9) for P in Ps}) == len(Ps):
+                return d
+        return 9
+
+    def pkey(self, P):
+        """Label of the pressure P (Pa) in GPa, used as the key of the per-pressure results and in the combo box."""
+        return '%.*f' % (getattr(self, 'p_decimals', 1), P / 1e9)
 
     def get_P(self):
-        Ps = self.ui.lineEdit_2.text().split()
-        if len(Ps) == 1:
-            return np.array([float(sti) for sti in Ps])
-        T_initial, T_final, Tstep = (float(sti) for sti in self.ui.lineEdit_2.text().split())
-        T = np.arange(T_initial, T_final + Tstep, Tstep)
-        T.sort()
-
-        return T
+        return self._grid(self.ui.lineEdit_2.text())
 
     def get_FS_T(self):
         return float(self.ui.lineEdit_3.text()), float(self.ui.lineEdit_4.text())
@@ -229,6 +251,8 @@ class dialogCpWindow(QMainWindow):
         self.lines = []
         for i, Pi_str in enumerate(self.dict_tp.keys()):
             tprops_dict = self.dict_tp[Pi_str]
+            if not isinstance(tprops_dict, dict):  # pressure skipped (no stable volume)
+                continue
 
             X = tprops_dict[str_x]
             Y = tprops_dict[str_y]
@@ -245,22 +269,145 @@ class dialogCpWindow(QMainWindow):
 
         self.canvas.draw()
 
-    def check_type_in_energies(self, ti):
-        number_of_occurences = 0
-        last_occurence = ''
-        for key_ai in atom_energy.keys():
-            if ti in key_ai:
-                number_of_occurences += 1
-                last_occurence = key_ai
-                # print(key_ai)
-        if number_of_occurences == 1:
-            return last_occurence
+    def compute_Ef(self):
+        """Static formation energy per formula unit, Ef = nats * (E0(V0) - mean_i E_i^ref), with E_i^ref the
+        reference energy of the exact POTCAR used for element i (G2). Returns the notes for the user."""
+        molecule = self.molecule
+        elements = list(dict.fromkeys(molecule.types))
+        notes = []
+        missing = [el for el in elements if REFERENCES.energy(REFERENCES.potential(el)) is None]
+        assumed = [el for el in elements if REFERENCES.assumed(el)]
+        if assumed:
+            notes.append('POTCAR not read from an OUTCAR for %s; assumed %s. Check it with "Reference energies...".'
+                         % (', '.join(assumed), ', '.join("'%s'" % REFERENCES.potential(el) for el in assumed)))
+        if missing:
+            self.Ef = np.nan
+            notes.append('No reference energy for %s: the formation energy is not computed. Enter the value with '
+                         '"Reference energies...".'
+                         % ', '.join('%s (%s)' % (el, REFERENCES.potential(el)) for el in missing))
         else:
-            return ti
+            E_ref = np.mean([REFERENCES.energy(REFERENCES.potential(ti)) for ti in molecule.types]) * EV_ATOM_TO_J_MOL
+            self.Ef = (molecule.eos.E0(molecule.eos.V0) - E_ref) * len(molecule.types)
+        return notes
+
+    def store_element_H298(self):
+        """A pure-element run at P = 0 stores its H(298.15 K) as the H298 reference of its POTCAR (G14)."""
+        elements = list(dict.fromkeys(self.molecule.types))
+        H = self.dict_H298[self.pkey(self.P_ref)]
+        if len(elements) != 1 or not np.isfinite(H):
+            return []
+        if self.P_ref != 0:
+            return ['H298 of %s not stored as a reference: the run does not include P = 0.' % elements[0]]
+        pot = REFERENCES.potential(elements[0])
+        source = 'run %s (%s, %s)' % (self.formula, type(self.molecule.eos).__name__, self.modestr)
+        REFERENCES.h298_runs[pot] = (float(H), source, self.modestr)
+        return []
+
+    def compute_H298(self):
+        """H298 for the FactSage Compound module (G14): formation enthalpy per formula unit,
+        DH298 = nats * (H_cmp(298.15) - mean_i H_i(298.15)), with H = G + TS of the compound run (J/mol-atom, at the
+        reference pressure) and H_i the H298 reference of the POTCAR of element i (pure-element run of this session
+        or entered). Without all H_i: the static Ef (no zero-point or thermal part), with a note.
+        Sets self.Ef and self.H298, self.H298_kind ('DH298' or 'static Ef'); returns the notes for the user."""
+        notes = self.compute_Ef()
+        molecule = self.molecule
+        elements = list(dict.fromkeys(molecule.types))
+        H_cmp = self.dict_H298[self.pkey(self.P_ref)]
+        missing = [el for el in elements if REFERENCES.h298(REFERENCES.potential(el)) is None]
+        if np.isfinite(H_cmp) and not missing:
+            H_ref = np.mean([REFERENCES.h298(REFERENCES.potential(ti)) for ti in molecule.types])
+            self.H298 = (H_cmp - H_ref) * len(molecule.types)
+            self.H298_kind = 'DH298'
+            # the static Ef is not needed for DH298: no note about a missing static reference energy
+            notes = [n for n in notes if not n.startswith('No reference energy')]
+            if self.P_ref != 0:
+                notes.append('H298: compound enthalpy taken at %s GPa (P = 0 not computed).' % self.pkey(self.P_ref))
+            other_mode = [el for el in elements if REFERENCES.potential(el) in REFERENCES.h298_runs
+                          and REFERENCES.potential(el) not in REFERENCES.h298_edited
+                          and REFERENCES.h298_runs[REFERENCES.potential(el)][2] != self.modestr]
+            if other_mode:
+                notes.append('H298 reference of %s computed with another Debye model than this run (%s).'
+                             % (', '.join(other_mode), self.modestr))
+        else:
+            self.H298 = self.Ef
+            self.H298_kind = 'static Ef'
+            if not np.isfinite(H_cmp):
+                notes.append('298.15 K not reached: the exported H298 is the static Ef.')
+            if missing:
+                notes.append('No H298 reference for %s: the exported H298 is the static Ef (no zero-point or thermal '
+                             'part). Run the pure element(s) in this session (same POTCAR and settings, P = 0) or '
+                             'enter the value with "Reference energies...".'
+                             % ', '.join('%s (%s)' % (el, REFERENCES.potential(el)) for el in missing))
+        return notes
+
+    def show_export_rows(self):
+        """Two rows below the per-pressure values: the exported H298 and S298, per formula unit (G14)."""
+        table = self.ui.tableWidget
+        if table.rowCount() < 10:
+            table.setRowCount(10)
+        rows = [('H298 export (%s)' % self.H298_kind, self.H298, 'J/mol-formula'),
+                ('S298 export', self.S298, 'J/K/mol-formula')]
+        for i, (label, value, unit) in enumerate(rows):
+            table.setVerticalHeaderItem(8 + i, QTableWidgetItem(label))
+            for j, txt in enumerate(['%.5e' % value, unit]):
+                item = QTableWidgetItem(txt)
+                item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                table.setItem(8 + i, j, item)
+
+    def build_export(self):
+        """One export text, every value per formula unit (H298, S298 and the Cp coefficients) at the reference
+        pressure; written to dtoutput4cmpnd now and to export_dtoutput4cmpnd by the Export button (G7, G14)."""
+        key = self.pkey(self.P_ref)
+        nats = self.nats
+        txt4output = f'{self.formula}$' + f'{self.H298:.7e}' + f'${self.S298:.7e}$'
+        txt4output += '&'.join([f'{p * nats:.7e}' for p in self.dict_FS[key]['Cp']])
+        txt4output += '$' + '&'.join([f'{p:.2e}' for p in [self.FS_Tfrom, self.FS_Tto]])
+        self.txt4output = txt4output
+        with open('dtoutput4cmpnd', 'w') as f:
+            f.write(txt4output)
+
+    def fit_FS_at(self, k, tp):
+        """FactSage Cp fit of one pressure, only inside the computed temperature range (G6); T^-3 term if the
+        check box is on (G16, D11). Returns the notes for the user."""
+        notes = []
+        Tmax = float(tp['T'][-1])
+        if Tmax < self.FS_Tto - 1e-6:
+            notes.append('P = %s GPa: FactSage Cp fit limited to %.1f K (last stable temperature).' % (k, Tmax))
+        if np.sum((tp['T'] >= self.FS_Tfrom) & (tp['T'] <= self.FS_Tto)) >= 6:
+            self.dict_FS[k] = dt_fit_FS(tp, self.FS_Tfrom, min(self.FS_Tto, Tmax), cp_T3=self.checkCpT3.isChecked())
+        else:
+            self.dict_FS[k] = {'Cp': [np.nan] * 6}
+            notes.append('P = %s GPa: fewer than 6 temperatures between %.2f and %.2f K; no FactSage fit.'
+                         % (k, self.FS_Tfrom, self.FS_Tto))
+        return notes
+
+    def on_toggle_cpT3(self):
+        """Refit the FactSage Cp coefficients of the last run with / without the T^-3 term (same T window)."""
+        if getattr(self, 'txt4output', None) is None:
+            return
+        for k, tp in self.dict_tp.items():
+            if isinstance(tp, dict):
+                self.fit_FS_at(k, tp)
+        self.build_export()
+        self.selectionchange(self.ui.comboBox.currentIndex())
+
+    def on_pushRefs(self):
+        if getattr(self, 'txt4output', None) is None:
+            QMessageBox.information(self, 'Warning', 'Run a calculation first.', QMessageBox.Ok)
+            return
+        self.dialog_refs = dialogRefEnergies(self.molecule.types, self, on_apply=self.on_refs_applied)
+        self.dialog_refs.show()
+
+    def on_refs_applied(self):
+        notes = self.compute_H298()
+        self.build_export()
+        self.show_export_rows()
+        msg = ['Exported H298 = %.6e J/mol per formula unit (%s).' % (self.H298, self.H298_kind),
+               'Static Ef = %.6e J/mol per formula unit.' % self.Ef]
+        QMessageBox.information(self, 'Formation enthalpy', '\n'.join(notes + msg), QMessageBox.Ok)
 
     def debye_run(self, molecule, ui_progress, formula):
         self.formula = formula
-        txt4output = f'{formula}$'
         if self.ui.radioButton.isChecked():
             mode = 'jjsl'
             self.modestr = 'Slater'
@@ -279,67 +426,66 @@ class dialogCpWindow(QMainWindow):
         T = self.get_T()
         Ps = self.get_P() * 1e9
         self.Ps = Ps
+        self.FS_Tfrom, self.FS_Tto = self.get_FS_T()
 
-        self.dict_tp = {'%.1f' % (Pi / 1e9): '' for Pi in Ps}
-        self.dict_FS = {'%.1f' % (Pi / 1e9): {'Cp': [0]} for Pi in Ps}
-        self.dict_H298 = {'%.1f' % (Pi / 1e9): 0 for Pi in Ps}
-        self.dict_S298 = {'%.1f' % (Pi / 1e9): -1 for Pi in Ps}
+        # pressure labels (GPa) with as many decimals as needed to keep them distinct: '%.1f' merged pressures
+        # closer than 0.05 GPa, which then overwrote each other (G17)
+        self.p_decimals = self._p_decimals(Ps)
+        key = self.pkey
+        self.dict_tp = {key(Pi): '' for Pi in Ps}
+        self.dict_FS = {key(Pi): {'Cp': [np.nan] * 6} for Pi in Ps}
+        self.dict_H298 = {key(Pi): np.nan for Pi in Ps}
+        self.dict_S298 = {key(Pi): np.nan for Pi in Ps}
+        notes = []
 
         lP = len(Ps)
-        progress = (0) / lP
-        ui_progress.setValue(progress * 100)
+        ui_progress.setValue(0)
         for ix, P in enumerate(Ps):
+            self.ui.comboBox.addItem(key(P))
 
-            self.ui.comboBox.addItem('%.1f' % (P / 1e9))
-
-            molecule.min_G(T, P)
+            with warnings.catch_warnings(record=True) as caught:
+                warnings.simplefilter('always')
+                molecule.min_G(T, P)
+            # min_G truncation (D10) is reported instead of only printed to the console (G6)
+            notes += ['P = %s GPa: %s' % (key(P), w.message) for w in caught if 'min_G' in str(w.message)]
+            if len(molecule.T) == 0:
+                notes.append('P = %s GPa: no stable volume at any temperature; nothing computed.' % key(P))
+                continue
 
             molecule.eval_props()
+            ui_progress.setValue(int((ix + 1) / lP * 100))
+            tp = molecule.tprops_dict
+            self.dict_tp[key(P)] = tp
 
-            progress = (ix + 1) / lP
-            ui_progress.setValue(progress * 100)
+            notes += self.fit_FS_at(key(P), tp)
 
-            self.dict_tp['%.1f' % (P / 1e9)] = molecule.tprops_dict
+            ix_T0 = np.where(np.abs(tp['T'] - 298.15) < 1e-6)[0]
+            if len(ix_T0):
+                i0 = ix_T0[0]
+                self.dict_H298[key(P)] = tp['G'][i0] + tp['T'][i0] * tp['S'][i0]
+                self.dict_S298[key(P)] = tp['S'][i0]
+            else:
+                notes.append('P = %s GPa: 298.15 K was not reached; H298 and S298 not available.' % key(P))
 
-            self.FS_Tfrom, self.FS_Tto = self.get_FS_T()
+        computed = [Pi for Pi in Ps if isinstance(self.dict_tp[key(Pi)], dict)]
+        if not computed:
+            QMessageBox.information(self, 'Warning', '\n'.join(notes) or 'Nothing was computed.', QMessageBox.Ok)
+            return
 
-            self.dict_FS['%.1f' % (P / 1e9)] = dt_fit_FS(molecule.tprops_dict, self.FS_Tfrom, self.FS_Tto)
+        # reference pressure for the table and the export: P = 0 if computed, otherwise the lowest pressure (G7)
+        self.P_ref = min(computed, key=abs)
+        nats = len(molecule.types)
+        self.nats = nats
+        notes += self.store_element_H298()
+        notes += self.compute_H298()
+        self.S298 = self.dict_S298[key(self.P_ref)] * nats
+        self.build_export()
+        self.show_export_rows()
 
-            ix_T0 = np.where(np.round(molecule.tprops_dict['T'], 2) == np.round(298.15, 2))[0][0]
+        self.ui.comboBox.setCurrentText(key(self.P_ref))
+        self.selectionchange(self.ui.comboBox.currentIndex())
 
-            self.dict_H298['%.1f' % (P / 1e9)] = molecule.tprops_dict['G'][ix_T0] + molecule.tprops_dict['T'][ix_T0] * \
-                                                 molecule.tprops_dict['S'][ix_T0]
-            self.dict_S298['%.1f' % (P / 1e9)] = molecule.tprops_dict['S'][ix_T0]
-
-            #            self.plot_Cp(self.dict_tp['%.1f'%(P/1e9)], self.dict_FS['%.1f'%(P/1e9)])
-            nats = len(molecule.types)
-            if P == 0:
-                # print(molecule.__dict__.keys())
-                Ef = molecule.eos.E0(molecule.eos.V0) - sum([atom_energy[self.check_type_in_energies(ti)] for ti in molecule.types]) * (
-                            0.160218e-18 * 6.02214e23) / len(molecule.types)
-                self.Ef = Ef*nats
-                txt4output += f'{Ef * nats:.7e}'
-        self.S298 = self.dict_S298['%.1f' % (0 / 1e9)] * nats
-        txt4output += f'${self.dict_S298['%.1f' % (0 / 1e9)] * nats:.7e}$'
-
-        self.ui.tableWidget.setItem(0, 0, QTableWidgetItem('%.5e' % (self.dict_H298['%.1f' % (0 / 1e9)])))
-        self.ui.tableWidget.setItem(1, 0, QTableWidgetItem('%.5e' % (self.dict_S298['%.1f' % (0 / 1e9)])))
-
-        lst4output = []
-        for ix, p in enumerate(self.dict_FS['%.1f' % (0 / 1e9)]['Cp']):
-            lst4output.append(f'{p * nats:.7e}')
-            self.ui.tableWidget.setItem(ix + 2, 0, QTableWidgetItem('%.5e' % (p)))
-        txt4output += '&'.join(lst4output)
-        txt4output += '$'
-        t4out = [f'{p:.2e}' for p in [self.FS_Tfrom, self.FS_Tto]]
-        txt4output += '&'.join(t4out)
-
-        with open('dtoutput4cmpnd', 'w') as f:
-            f.write(txt4output)
-        #            self._ax.text(Y[-1],X[-1],'P=')
-
-        #        print('xxxx', list(self.dict_tp[list(self.dict_tp.keys())[0]].keys()))
-        self.proplist = list(self.dict_tp[list(self.dict_tp.keys())[0]].keys())
+        self.proplist = list(self.dict_tp[key(self.P_ref)].keys())
         current_plot = self.current_plot
         self.ui.comboBox_2.clear()
 
@@ -351,9 +497,8 @@ class dialogCpWindow(QMainWindow):
 
         self.plot_prop('T', self.proplist[self.current_plot])
 
-    #        handles_1, labels_1 = self._ax.get_legend_handles_labels()
-    #        by_label_1 = dict(zip(labels_1, handles_1))
-    #        self._ax.legend(by_label_1.values(), by_label_1.keys())
+        if notes:
+            QMessageBox.information(self, 'Warning', '\n'.join(notes), QMessageBox.Ok)
 
     def right_menu(self, pos):
         menu = QMenu()

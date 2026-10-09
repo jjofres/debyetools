@@ -18,7 +18,10 @@ class dialogElastic(QDialog):
 
 
     def on_pushPlots(self):
-        # print('ssss')
+        # clear the axes first: pressing Plots again drew every curve and label on top (G20)
+        for axs in [self.dialog_plots.ax1, self.dialog_plots.ax2, self.dialog_plots.ax3, self.dialog_plots.ax4]:
+            for ax in axs:
+                ax.cla()
         self.dialog_plots.ax1, self.dialog_plots.ax2, self.dialog_plots.ax3, self.dialog_plots.ax4 = elastic.run_script_plots([self.dialog_plots.ax1, self.dialog_plots.ax2, self.dialog_plots.ax3, self.dialog_plots.ax4], self.EM)
 
         # self.dialog_plots.ax1[0].plot([0,1],[0,1])
@@ -38,4 +41,7 @@ class dialogElastic(QDialog):
         for i, axi in enumerate(self.dialog_plots.ax4):
             axi.text(5/4*np.pi, axi.get_rmax()*2, f'{planestr[i]} plane', fontsize=8, ha='center')
 
+        for canvas in [self.dialog_plots.canvas1, self.dialog_plots.canvas2, self.dialog_plots.canvas3,
+                       self.dialog_plots.canvas4]:
+            canvas.draw_idle()
         self.dialog_plots.show()

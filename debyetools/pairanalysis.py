@@ -7,49 +7,53 @@ def neighbor_list(size: np.ndarray, basis: np.ndarray, cell: np.ndarray, cutoff:
     """ calculate a list i, j, dij where i and j are a pair of atoms of
     indexes i and j, respectively, and dij is the distance between them.
 
+    All image cells that can hold a neighbour within the cut-off are included:
+    for an atom pair in image cell n, the fractional component i of the pair
+    vector is n_i + (f_j - f_i), and ``abs(r . b_i) <= cutoff*norm(b_i)`` (b_i reciprocal
+    vectors, a_i . b_j = delta_ij, 1/norm(b_i) = interplanar spacing). Hence
+    ``abs(n_i) <= cutoff*norm(b_i) + span_i``, with span_i the spread of the basis in
+    fractional coordinate i. This holds for any cell shape and any cut-off.
+
     :param np.ndarray size: Number of times we are replicating the primitive cel
-    :param np.ndarray basis: atoms position within a single primitive cell
-    :param np.ndarray cell: the primitive cell
+    :param np.ndarray basis: atoms position within a single primitive cell (fractional)
+    :param np.ndarray cell: the primitive cell (rows = lattice vectors)
     :param float cutoff: cut-off distance
-    :return: D, I , J
-    :rtype: Tuple[np.ndarray, np.ndarray, np.ndarray]
-    
+    :return: distances, I, J, image-cell coordinates, image-cell index of each pair
+    :rtype: Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+
     """
-    max_depth = np.array([2*int(m) for m in cutoff/np.linalg.norm(cell, axis=1)])
+    cell = np.asarray(cell, dtype=float)
+    basis_frac = np.asarray(basis, dtype=float)
+    recip = np.linalg.inv(cell).T
+    span = np.ptp(basis_frac, axis=0)
+    max_depth = np.ceil(cutoff*np.linalg.norm(recip, axis=1) + span).astype(int)
     center = np.array([0,0,0])
-    basis = np.dot(basis, cell)
+    basis = np.dot(basis_frac, cell)
     size_g = size + 2*max_depth
 
     cell_coords_centered = afn.generate_cells_coordinates(size, cell, center)
     cell_coords_centered_g = afn.generate_cells_coordinates(size_g, cell, center-max_depth)
 
-    XCs = []
-    Is = []
-    Js = []
-    CIXs = []
+    nb = len(basis)
+    ng = len(cell_coords_centered_g)
+    # pair order: image cell, then atom i, then atom j (same order as the former nested loops)
+    ij_I = np.repeat(np.arange(nb), nb)
+    ij_J = np.tile(np.arange(nb), nb)
+    Is = np.tile(ij_I, ng)
+    Js = np.tile(ij_J, ng)
+    CIXs = np.repeat(np.arange(ng), nb*nb)
+    Xg = cell_coords_centered_g[:, None, :] + basis[None, :, :]          # (ng, nb, 3)
 
-
-    ixs = np.arange(len(basis))
-    jxs = np.arange(len(basis))
-
+    XCs, Iall, Jall, Call = [], [], [], []
     for cell_coords_i in cell_coords_centered:
-        ix_neighbor = np.where(np.all(abs(cell_coords_centered_g-cell_coords_i)<=cutoff, axis=1))[0]
-        Xs = np.array([cell_coords_i,]*len(basis))+basis
+        Xs = cell_coords_i + basis                                        # (nb, 3)
+        XCs.append(((Xs[None, :, None, :] - Xg[:, None, :, :])**2).reshape(-1, 3))
+        Iall.append(Is); Jall.append(Js); Call.append(CIXs)
 
-        for ixx, cell_coords_i_g in enumerate(cell_coords_centered_g[ix_neighbor]):
-            Xsg = np.array([cell_coords_i_g,]*len(basis))+basis
-            for x, xg in it.product(Xs, Xsg):
-                XCs.append((x-xg)**2)
-            for i, j in it.product(ixs, jxs):
-                Is.append(i)
-                Js.append(j)
-                CIXs.append(ix_neighbor[ixx])
-
-
-    XCs = np.array(XCs)
-    Is = np.array(Is)
-    Js = np.array(Js)
-    CIXs = np.array(CIXs)
+    XCs = np.concatenate(XCs)
+    Is = np.concatenate(Iall)
+    Js = np.concatenate(Jall)
+    CIXs = np.concatenate(Call)
 
     CX = np.sum(XCs/cutoff**2, axis=1)
 
@@ -82,10 +86,6 @@ def pair_analysis(atom_types, cutoff, basis, cell, prec=10, full=False):
 
     combs_types,types_all = afn.c_types(atom_types)
 
-    bins_dAxBy =list(set([li for li in list(set(np.append(dAxBy, [cutoff])))]))
-    bins_dAxBy.sort()
-    distances = bins_dAxBy[:-1]
-
     ptlst = []
     pairtype = 0
     for i,j,d in zip(iAxBy,jAxBy,dAxBy):
@@ -94,16 +94,13 @@ def pair_analysis(atom_types, cutoff, basis, cell, prec=10, full=False):
                 pairtype = ii
         ptlst.append(pairtype)
 
-    ptlst = np.array(ptlst)
+    ptlst = np.array(ptlst, dtype=int)
 
-    ds = ['' for x in range(len(combs_types))]
-    for i in range(len(combs_types)):
-        ds[i] = np.array([d for d in dAxBy[np.where(ptlst==i)[0]]])
-    hs = ['' for x in range(len(combs_types))]
-    bs = ['' for x in range(len(combs_types))]
-    for i in range(len(combs_types)):
-        hs[i], bs[i] = np.histogram(ds[i], bins=bins_dAxBy)
-    tot_num_bonds_per_molecule = np.array(hs).T
+    # count pairs per unique (rounded) distance and pair type; a shell lying exactly
+    # at the cut-off is kept as its own shell
+    distances = np.unique(dAxBy)
+    tot_num_bonds_per_molecule = np.zeros((len(distances), len(combs_types)), dtype=int)
+    np.add.at(tot_num_bonds_per_molecule, (np.searchsorted(distances, dAxBy), ptlst), 1)
     num_bonds_per_formula = tot_num_bonds_per_molecule/nat
 
     if full:

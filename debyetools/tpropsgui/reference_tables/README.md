@@ -8,7 +8,10 @@ The Cp window computes
   `H298` (J/mol-atom, same energy scale as the E(V) data).
 
 Built-in values: `atomtools.atom_energy` (copy of `examples/Nb/calculations/elements_energies.out`; PBE PAW,
-ground-state structure of each POTCAR; Al agrees with the Materials Project value to 1 meV/atom). Missing there:
+ground-state structure of each POTCAR; Al agrees with the Materials Project value to 1 meV/atom). The values are
+consistent with VASP's `E0=` (energy at σ → 0), the energy `load_V_E` reads: the E0 fits of the V_sv, Cu and
+Li_sv test sets agree to about 1 meV/atom, the `F=` fits differ by up to 8 meV/atom (V). Values added by hand
+should also be E0 (σ → 0). Missing there:
 H, N, O, F, P, S, Cl, Br, I, Sb, Sm, Mg_pv, Mg_sv, Th, Pa, U, Np, Ra, Fr, Po, At, noble gases.
 
 Any value can be added or overridden for a session in **Reference energies…** and kept in a CSV file with

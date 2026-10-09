@@ -422,6 +422,8 @@ atomic_color = {k:v for k, v in zip(atomic_symbols, atomic_colors)}
 # Elemental reference energies, eV/atom, VASP PAW_PBE, keyed by the exact POTCAR name (e.g. 'Cr' and 'Cr_pv'
 # differ). Removed (G2): Mg_pv = +1.66 and Mg_sv = +10.21 (positive, not a ground-state energy), Sb = Sm = 0
 # (placeholders). Missing potentials are entered by the user in the Reference energies dialog.
+# Energy convention: consistent with VASP's E0 (sigma -> 0), as read by load_V_E (C-DOC3); checked against the
+# E0 fits of the V_sv, Cu and Li_sv test sets to ~1 meV/atom (the F= fits differ by up to 8 meV/atom for V).
 atom_energy = {
 'VA': -0.00001,
 'Ac': -4.04728,

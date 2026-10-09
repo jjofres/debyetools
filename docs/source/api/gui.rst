@@ -143,7 +143,8 @@ the element symbol), the static reference energy E ref (eV/atom; built-in values
 reference enthalpy H298 ref (J/mol-atom). Values can be edited for the session, saved to and loaded from a CSV file
 (**Save table...**, **Load table...**; file format and a script for placeholder values in
 ``debyetools/tpropsgui/reference_tables``), and the POTCAR names can be read from an OUTCAR. The references must
-come from calculations with the same settings as the compound.
+come from calculations with the same settings as the compound, and E ref is the energy at zero smearing (VASP's
+``E0=``, the value ``load_V_E`` reads; the built-in values follow this convention).
 
 .. Screenshot: gui_reference_energies.png
 

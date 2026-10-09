@@ -145,6 +145,9 @@ reference enthalpy H298 ref (J/mol-atom). Values can be edited for the session, 
 ``debyetools/tpropsgui/reference_tables``), and the POTCAR names can be read from an OUTCAR. The references must
 come from calculations with the same settings as the compound, and E ref is the energy at zero smearing (VASP's
 ``E0=``, the value ``load_V_E`` reads; the built-in values follow this convention).
+Placeholder values from the Materials Project are in ``reference_tables/mp_placeholders_PBE.csv``; for H, N, O, F
+and Cl they are uncorrected PBE energies (O\ :sub:`2` overbinding: oxide formation energies too negative by about
+0.7 eV per O atom; see the README in that folder).
 
 .. Screenshot: gui_reference_energies.png
 

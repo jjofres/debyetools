@@ -10,7 +10,8 @@ These are placeholders: they come from MP's settings (520 eV cutoff, MP POTCAR c
 for O, N, H, F, Cl, Br, I a molecular crystal, not the isolated molecule). Replace them with your own calculations
 done with the same settings as the compound (see README.md in this folder).
 
-Usage (needs an MP API key, https://next-gen.materialsproject.org/api, and `pip install mp-api`):
+Usage (needs an MP API key, https://next-gen.materialsproject.org/api, and recent packages:
+`pip install -U mp-api pymatgen`; an older pymatgen fails with "No module named 'pymatgen.core.entries'"):
 
     python fetch_mp_references.py --api-key YOUR_KEY            # or set MP_API_KEY
     python fetch_mp_references.py --elements O N Sb --out my.csv
@@ -86,7 +87,13 @@ def main(argv=None):
     with MPRester(a.api_key) as mpr:
         def get_entries(el):
             return mpr.get_entries(el, compatible_only=False, additional_criteria={'thermo_types': ['GGA_GGA+U']})
-        rows = rows_for(a.elements, get_entries)
+        try:
+            rows = rows_for(a.elements, get_entries)
+        except ModuleNotFoundError as e:
+            if 'pymatgen' not in str(e):
+                raise
+            sys.exit('%s\nThe Materials Project server sends classes that this pymatgen does not have; update both '
+                     'packages:  pip install -U pymatgen mp-api' % e)
     write_table(a.out, rows)
     print('%d element(s) written to %s' % (len(rows), a.out))
     for r in rows:

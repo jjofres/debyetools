@@ -57,12 +57,12 @@ Using ``debyetools`` through the GUI
 
 ``debyetools`` is a Python_ library that also comes with a graphical user interface to help perform quick calculations without the need to code scripts.
 
-.. Screenshot to replace with the current results window (gui_cp_window.png, see source/api/gui.rst).
 .. _tProps_prop:
-.. figure::  ./images/property_interface.jpeg
+.. figure::  ./images/gui_cp_window.png
    :align:   center
+   :width: 90%
 
-   ``debyetools`` property viewer.
+   ``debyetools`` results window.
 
 Using ``debyetools`` as a Python_ library. Example: Al fcc
 ----------------------------------------------------------

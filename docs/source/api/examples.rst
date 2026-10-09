@@ -130,21 +130,21 @@ The fitted polynomial against the calculated heat capacity:
 Thermodynamic properties with the ``debyetools`` interface
 ===========================================================
 
-.. Screenshots to replace with the current windows (Al3Li L12 with the inputs above).
-
 The same calculations as the previous example can be carried out with the ``debyetools`` :ref:`GUI <gui>`.
 
-.. figure::  ./images/example_main_window_Al_fcc.jpeg
+.. figure::  ./images/gui_main_window.png
    :align:   center
+   :width: 60%
 
-   `debyetools main interface`
+   ``debyetools`` main window.
 
 The results are plotted in the results window that opens with **run >**; here the number of temperatures was increased from the default to show smoother curves.
 
-.. figure::  ./images/example_tprops_viewer_Al_fcc.jpeg
+.. figure::  ./images/gui_cp_window.png
    :align:   center
+   :width: 90%
 
-   `debyetools viewer window`
+   ``debyetools`` results window.
 
 
 .. _Cp_ga_example:

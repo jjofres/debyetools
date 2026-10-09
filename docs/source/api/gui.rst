@@ -34,10 +34,6 @@ or inside Python:
 Messages (fit restarts, truncated temperature ranges, missing references, …) are shown in message boxes; errors
 are also printed to the console.
 
-.. Screenshots to add (PNG, in ./images/), one per window, marked below with "Screenshot:":
-   gui_start_window.png, gui_crystal_dialog.png, gui_main_window.png, gui_fit_eos.png, gui_poisson.png,
-   gui_elastic_plots.png, gui_doscar.png, gui_cp_window.png, gui_reference_energies.png
-
 Start window
 ============
 
@@ -50,7 +46,11 @@ Start window
   potential; the crystal dialog opens with **Next**. Without it, the analytic EOS are offered (Birch-Murnaghan,
   Rose-Vinet, Mie-Gruneisen, TB-SMA, Murnaghan, Poirier-Tarantola).
 
-.. Screenshot: gui_start_window.png
+.. figure:: ./images/gui_start_window.png
+   :align: center
+   :width: 70%
+
+   Start window: compound, mean atomic mass (arithmetic or logarithmic) and the structure option.
 
 Crystal structure (Morse, EAM)
 ------------------------------
@@ -60,7 +60,11 @@ neighbour shells, then **Update**: the cell is drawn, the pair analysis is liste
 pair type) and the default initial parameters of the potential are written (Morse: 3 per pair type; EAM: 6 per pair
 type and 4 per element type). **Next** opens the main window with Morse and EAM in the EOS list.
 
-.. Screenshot: gui_crystal_dialog.png
+.. figure:: ./images/gui_crystal_dialog.png
+   :align: center
+   :width: 90%
+
+   Crystal structure dialog (for the Morse and EAM potentials): cell, basis, cut-off and pair analysis.
 
 Main window: parametrization
 ============================
@@ -74,7 +78,11 @@ Main window: parametrization
   <contributions>` for the definitions and units).
 * **T** and **P**: ``start end step`` in K and GPa (a single value is allowed); **run >** opens the results window.
 
-.. Screenshot: gui_main_window.png
+.. figure:: ./images/gui_main_window.png
+   :align: center
+   :width: 60%
+
+   Main window: EOS, Poisson's ratio, contributions and the temperature and pressure grids.
 
 EOS fit
 -------
@@ -86,7 +94,11 @@ asks whether to keep the best attempt. **plot E(V)** compares the fit with the d
 parameters to the main window. EAM fits of compounds can take a minute or more, during which the window does not
 respond.
 
-.. Screenshot: gui_fit_eos.png
+.. figure:: ./images/gui_fit_eos.png
+   :align: center
+   :width: 60%
+
+   EOS fit dialog: energy-volume data loaded from a SUMMARY and a CONTCAR.
 
 Poisson's ratio and elastic properties
 --------------------------------------
@@ -98,8 +110,17 @@ index and the Poisson's ratio. **More...** opens a report (eigenvalues of the st
 and maximum of the Young's modulus, linear compressibility, shear modulus and Poisson's ratio with their directions)
 and **Plots** draws them in the xy, xz and yz planes (negative values in green, as magnitudes).
 
-.. Screenshot: gui_poisson.png
-.. Screenshot: gui_elastic_plots.png
+.. figure:: ./images/gui_poisson.png
+   :align: center
+   :width: 80%
+
+   Elastic properties dialog: stiffness tensor (GPa, Voigt order) and averages.
+
+.. figure:: ./images/gui_elastic_plots.png
+   :align: center
+   :width: 60%
+
+   Directional elastic properties (Young's modulus, linear compressibility, shear modulus, Poisson's ratio).
 
 Electronic contribution
 -----------------------
@@ -108,7 +129,11 @@ Electronic contribution
 volume, in any order: each file is paired with the volume written in it) and fits N(E\ :sub:`F`)(V). If E(V) data
 were entered in the EOS fit, the volumes are cross-checked.
 
-.. Screenshot: gui_doscar.png
+.. figure:: ./images/gui_doscar.png
+   :align: center
+   :width: 50%
+
+   DOSCAR dialog: the selected DOSCARs and the fitted N(E\ :sub:`F`)(V) parameters.
 
 Results window
 ==============
@@ -133,7 +158,11 @@ per formula unit, the values exported for the FactSage Compound module:
 ``export_dtoutput4cmpnd`` (the same content is written to ``dtoutput4cmpnd`` after every run), in the working
 folder.
 
-.. Screenshot: gui_cp_window.png
+.. figure:: ./images/gui_cp_window.png
+   :align: center
+   :width: 90%
+
+   Results window: properties at each pressure, FactSage parameters and export.
 
 Reference energies
 ------------------
@@ -149,7 +178,11 @@ Placeholder values from the Materials Project are in ``reference_tables/mp_place
 and Cl they are uncorrected PBE energies (O\ :sub:`2` overbinding: oxide formation energies too negative by about
 0.7 eV per O atom; see the README in that folder).
 
-.. Screenshot: gui_reference_energies.png
+.. figure:: ./images/gui_reference_energies.png
+   :align: center
+   :width: 90%
+
+   Reference energies dialog: POTCAR, static reference energy and H298 reference of each element.
 
 .. _VASP: https://www.vasp.at/
 .. _`examples input files`: https://github.com/jjofres/debyetools/tree/main/tests/inpt_files

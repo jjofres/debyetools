@@ -354,7 +354,7 @@ class Ui_Form(object):
         self.label_9.setText(QCoreApplication.translate("Form", u"B (Voigt):", None))
         self.label_10.setText(QCoreApplication.translate("Form", u"B (Reuss):", None))
         self.label_11.setText(QCoreApplication.translate("Form", u"B (Voigt-Reuss-Hill):", None))
-        self.label_15.setText(QCoreApplication.translate("Form", u"Universal anisotrpy:", None))
+        self.label_15.setText(QCoreApplication.translate("Form", u"Universal anisotropy:", None))
         self.lineEdit_5.setText("")
         self.lineEdit_4.setText("")
         self.lineEdit_6.setText("")
@@ -362,7 +362,7 @@ class Ui_Form(object):
         self.label_20.setText(QCoreApplication.translate("Form", u"GPa", None))
         self.label_23.setText(QCoreApplication.translate("Form", u"GPa", None))
         self.label_22.setText(QCoreApplication.translate("Form", u"GPa", None))
-        self.label_21.setText(QCoreApplication.translate("Form", u"GPa", None))
+        self.label_21.setText(QCoreApplication.translate("Form", u"", None))  # A^U is dimensionless
         self.label_12.setText(QCoreApplication.translate("Form", u"S (Voigt):", None))
         self.label_13.setText(QCoreApplication.translate("Form", u"S (Reuss):", None))
         self.label_14.setText(QCoreApplication.translate("Form", u"S (Voigt-Reuss-Hill):", None))

@@ -400,7 +400,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"debyetools - [termodynamic properties]", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"debyetools - [thermodynamic properties]", None))
         self.label_12.setText(QCoreApplication.translate("MainWindow", u"                                                                           property to plot:", None))
         self.comboBox_2.setItemText(0, QCoreApplication.translate("MainWindow", u"New Item", None))
         self.comboBox_2.setItemText(1, QCoreApplication.translate("MainWindow", u"New Item", None))

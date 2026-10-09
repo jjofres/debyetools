@@ -88,7 +88,7 @@ class Ui_Dialog(object):
         Dialog.setWindowTitle(QCoreApplication.translate("Dialog", u"debyetools - [elastic properties plots]", None))
         self.label_5.setText(QCoreApplication.translate("Dialog", u"Variations of the elastic moduli:", None))
         self.label.setText(QCoreApplication.translate("Dialog", u"Young's modulus", None))
-        self.label_2.setText(QCoreApplication.translate("Dialog", u"Linear compresibiliy", None))
+        self.label_2.setText(QCoreApplication.translate("Dialog", u"Linear compressibility", None))
         self.label_3.setText(QCoreApplication.translate("Dialog", u"Shear modulus", None))
         self.label_4.setText(QCoreApplication.translate("Dialog", u"Poisson's ratio", None))
     # retranslateUi

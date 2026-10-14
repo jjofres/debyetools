@@ -14,13 +14,27 @@ class Electronic:
     parameters are obtained with :func:`fit_electronic`. S_el = -dF_el/dT and
     E_el = F_el + T*S_el = +(pi^2/6)*N_A*k_B^2*T^2*N(E_F)/eV.
 
-    Note: the supplementary material of the paper writes the derivatives with
-    pi^2/3 (equivalent to using the DOS of one spin channel); here the total DOS
-    and pi^2/6 are used (review decision D4).
+    Spin convention (argument ``spin``):
+
+    - ``'total'`` (default): N(E_F) is the total DOS (both spins summed, as returned by
+      :func:`debyetools.aux_functions.load_doscar` with ``spin='total'``) and the prefactor is pi^2/6.
+    - ``'per_spin'``: N(E_F) is the DOS of one spin channel (``load_doscar(..., spin='up')``) and the
+      prefactor is pi^2/3, the convention of the supplementary material of the paper. For a
+      non-magnetic system both conventions give the same F_el.
+
+    Using the total DOS with ``'per_spin'`` (pi^2/3) counts the electrons twice.
 
     :param float params: q0, q1, q2, q3 of N(E_F)(V).
+    :param str spin: 'total' (pi^2/6, total DOS) or 'per_spin' (pi^2/3, DOS of one spin channel).
     """
-    def __init__(self, *params: np.ndarray):
+    PREFACTOR = {'total': 1 / 6, 'per_spin': 1 / 3}
+
+    def __init__(self, *params: np.ndarray, spin: str = 'total'):
+        if spin not in self.PREFACTOR:
+            raise ValueError("Electronic: spin must be 'total' (pi^2/6 with the total DOS) or 'per_spin' "
+                             "(pi^2/3 with the DOS of one spin channel); got %r." % (spin,))
+        self.spin = spin
+        self.pf = self.PREFACTOR[spin]   # F_el = -pf * pi^2 * N_A * kB^2 * T^2 * N(E_F) / eV
         self.pel = params
         self.r=1
         for n,q in enumerate(params):
@@ -90,7 +104,7 @@ class Electronic:
         :return: E_el
         :rtype: float|np.ndarray
         """
-        return (1/6)*np.pi**2*NAv*self.r*kB**2*T**2*self.NfV(V)/eV
+        return self.pf*np.pi**2*NAv*self.r*kB**2*T**2*self.NfV(V)/eV
 
     def S(self, T: float|np.ndarray, V: float|np.ndarray) -> float|np.ndarray:
         """
@@ -103,7 +117,7 @@ class Electronic:
         :return: S_el
         :rtype: float|np.ndarray
         """
-        return (2/6)*np.pi**2*NAv*self.r*kB**2*T*self.NfV(V)/eV
+        return 2*self.pf*np.pi**2*NAv*self.r*kB**2*T*self.NfV(V)/eV
     def F(self, T: float|np.ndarray, V: float|np.ndarray) -> float|np.ndarray:
         """
         Electronic contribution to the free energy.
@@ -113,7 +127,7 @@ class Electronic:
         :return: F_el
         :rtype: float|np.ndarray
         """
-        return - (1/6)*np.pi**2*NAv*self.r*kB**2*T**2*self.NfV(V)/eV
+        return - self.pf*np.pi**2*NAv*self.r*kB**2*T**2*self.NfV(V)/eV
 
     def dFdV_T(self, T: float|np.ndarray, V: float|np.ndarray) -> float|np.ndarray:
         """
@@ -124,7 +138,7 @@ class Electronic:
         :return: F_el
         :rtype: float|np.ndarray
         """
-        return - (1/6)*np.pi**2*NAv*self.r*kB**2*T**2*self.dNfVdV_T(V)/eV
+        return - self.pf*np.pi**2*NAv*self.r*kB**2*T**2*self.dNfVdV_T(V)/eV
     def dFdT_V(self, T: float|np.ndarray, V: float|np.ndarray) -> float|np.ndarray:
         """
         Derivative of the electronic contribution to the free energy.
@@ -134,7 +148,7 @@ class Electronic:
         :return: F_el
         :rtype: float|np.ndarray
         """
-        return - 2*T*np.pi**2*NAv*self.r*kB**2*self.NfV(V)*(1/6)/eV
+        return - 2*T*np.pi**2*NAv*self.r*kB**2*self.NfV(V)*self.pf/eV
     def d2FdT2_V(self, T: float|np.ndarray, V: float|np.ndarray) -> float|np.ndarray:
         """
         Derivative of the electronic contribution to the free energy.
@@ -144,7 +158,7 @@ class Electronic:
         :return: F_el
         :rtype: float|np.ndarray
         """
-        return - 2*np.pi**2*NAv*self.r*kB**2*self.NfV(V)*(1/6)/eV
+        return - 2*np.pi**2*NAv*self.r*kB**2*self.NfV(V)*self.pf/eV
     def d2FdV2_T(self, T: float|np.ndarray, V: float|np.ndarray) -> float|np.ndarray:
         """
         Derivative of the electronic contribution to the free energy.
@@ -154,7 +168,7 @@ class Electronic:
         :return: F_el
         :rtype: float|np.ndarray
         """
-        return - (1/6)*np.pi**2*NAv*self.r*kB**2*T**2*self.d2NfVdV2_T(V)/eV
+        return - self.pf*np.pi**2*NAv*self.r*kB**2*T**2*self.d2NfVdV2_T(V)/eV
     def d3FdV3_T(self, T: float|np.ndarray, V: float|np.ndarray) -> float|np.ndarray:
         """
         Derivative of the electronic contribution to the free energy.
@@ -164,7 +178,7 @@ class Electronic:
         :return: F_el
         :rtype: float|np.ndarray
         """
-        return - (1/6)*np.pi**2*NAv*self.r*kB**2*T**2*self.d3NfVdV3_T(V)/eV
+        return - self.pf*np.pi**2*NAv*self.r*kB**2*T**2*self.d3NfVdV3_T(V)/eV
     def d4FdV4_T(self, T: float|np.ndarray, V: float|np.ndarray) -> float|np.ndarray:
         """
         Derivative of the electronic contribution to the free energy.
@@ -174,7 +188,7 @@ class Electronic:
         :return: F_el
         :rtype: float|np.ndarray
         """
-        return - (1/6)*np.pi**2*NAv*self.r*kB**2*T**2*self.d4NfVdV4_T(V)/eV
+        return - self.pf*np.pi**2*NAv*self.r*kB**2*T**2*self.d4NfVdV4_T(V)/eV
 
     def d2FdVdT(self, T: float|np.ndarray, V: float|np.ndarray) -> float|np.ndarray:
         """
@@ -185,7 +199,7 @@ class Electronic:
         :return: F_el
         :rtype: float|np.ndarray
         """
-        return -2*np.pi**2*NAv*self.r*kB**2*T*self.dNfVdV_T(V)*(1/6)/eV
+        return -2*np.pi**2*NAv*self.r*kB**2*T*self.dNfVdV_T(V)*self.pf/eV
     def d3FdV2dT(self, T: float|np.ndarray, V: float|np.ndarray) -> float|np.ndarray:
         """
         Derivative of the electronic contribution to the free energy.
@@ -195,7 +209,7 @@ class Electronic:
         :return: F_el
         :rtype: float|np.ndarray
         """
-        return -2*np.pi**2*NAv*self.r*kB**2*T*self.d2NfVdV2_T(V)*(1/6)/eV
+        return -2*np.pi**2*NAv*self.r*kB**2*T*self.d2NfVdV2_T(V)*self.pf/eV
     def d3FdVdT2(self, T: float|np.ndarray, V: float|np.ndarray) -> float|np.ndarray:
         """
         Derivative of the electronic contribution to the free energy.
@@ -205,7 +219,7 @@ class Electronic:
         :return: F_el
         :rtype: float|np.ndarray
         """
-        return -2*np.pi**2*NAv*self.r*kB**2*self.dNfVdV_T(V)*(1/6)/eV
+        return -2*np.pi**2*NAv*self.r*kB**2*self.dNfVdV_T(V)*self.pf/eV
 
 def N_at_Fermi(E: np.ndarray, N: np.ndarray, Ef: float, sigma: float = 0.0) -> float:
     """

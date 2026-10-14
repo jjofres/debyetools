@@ -35,6 +35,8 @@ class nDeb:
     :param object EOS: Equation of state instance (potentials.BM, RV, MG, TB, MU, PT, MP, EAM). Its V0 and
         B0 = V0 E0''(V0) are also used by the vacancy and intrinsic-anharmonicity terms.
     :param np.ndarray p_electronic: Electronic contribution parameters (q0, q1, q2, q3), see electronic.Electronic.
+    :param str el_spin: spin convention of the electronic term: 'total' (default, pi^2/6 with the total DOS) or
+        'per_spin' (pi^2/3 with the DOS of one spin channel); must match how N(E_F) was obtained (load_doscar spin).
     :param np.ndarray p_defects: Mono-vacancy parameters (Evac00, Svac00, Tm, a): formation energy
         E_vac = Evac00 k_B Tm and entropy S_vac = Svac00 k_B (Evac00, Svac00 dimensionless), Tm in K, a
         dimensionless coefficient of the volume dependence of E_vac (see defects.Defects).
@@ -54,7 +56,7 @@ class nDeb:
     """
 
     def __init__(self, nu: float, m: float, p_intanh: np.ndarray, EOS: object, p_electronic: np.ndarray, p_defects: np.ndarray, p_anh: np.ndarray, *args: object, units: str = 'J/mol',
-                 mode: str = 'jjsl', xsparams=(0,0,0,0,0,0), r =1):
+                 mode: str = 'jjsl', xsparams=(0,0,0,0,0,0), r =1, el_spin: str = 'total'):
 
         a0, m0 = p_intanh
         q0, q1, q2, q3 = p_electronic
@@ -79,7 +81,7 @@ class nDeb:
 
         self.anh = Anharmonicity(s0, s1, s2)
         self.intanh = intAnharmonicity(a0, m0, EOS.V0)
-        self.el = Electronic(q0, q1, q2, q3)
+        self.el = Electronic(q0, q1, q2, q3, spin=el_spin)
         self.deff = Defects(Evac00, Svac00, Tm, a, EOS.V0 * EOS.d2E0dV2_T(EOS.V0), EOS.V0, r=r)
 
         self.EOS = EOS  # getattr(pots,EOS_name)(*args,units=units, parameters = p_EOS)

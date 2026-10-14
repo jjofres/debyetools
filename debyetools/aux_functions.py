@@ -91,24 +91,32 @@ def gen_Ps(Pi, Pf, nPs):
     return np.linspace(Pi, Pf, int(nPs))
 
 
-def load_doscar(filename_sufix: str, list_filetags: list = None) -> tuple[list, list, list]:
+def load_doscar(filename_sufix: str, list_filetags: list = None, spin: str = 'total') -> tuple[list, list, list]:
     """
     Read the total electronic DOS of a series of VASP DOSCAR files (one per volume).
 
     Only the total-DOS block (NEDOS lines after the 6-line header) is read; projected
     blocks are ignored. For spin-polarised files (ISPIN = 2, 5 columns) the two spin
-    channels are summed; for ISPIN = 1 (3 columns) the DOS column is used. The DOS is
-    divided by the number of atoms.
+    channels are summed (spin='total') or one channel is returned (spin='up' / 'down');
+    for ISPIN = 1 (3 columns) the DOS column is the total DOS and one spin channel is
+    half of it. The DOS is divided by the number of atoms.
+
+    Use spin='total' with Electronic(..., spin='total') (pi^2/6, default) and spin='up' with
+    spin='per_spin' (pi^2/3); see debyetools.electronic.Electronic.
 
     :param filename_sufix: common part of the file names (path + prefix).
     :type filename_sufix: str
     :param list_filetags: filename tags appended to filename_sufix (default
         '-0.10' ... '0.10'), in the same order as the volumes.
     :type list_filetags: list
-    :return: E (energy grids, eV), N (total DOS, states/eV/atom), Ef (Fermi levels, eV),
+    :param spin: 'total' (default, both spins summed), 'up' or 'down' (one spin channel).
+    :type spin: str
+    :return: E (energy grids, eV), N (DOS, states/eV/atom), Ef (Fermi levels, eV),
         one entry per file.
     :rtype: tuple[list,list,list]
     """
+    if spin not in ('total', 'up', 'down'):
+        raise ValueError("load_doscar: spin must be 'total', 'up' or 'down'; got %r." % (spin,))
     if list_filetags is None:
         list_filetags = ['-0.10', '-0.09', '-0.08', '-0.07', '-0.06', '-0.05', '-0.04', '-0.03',
                          '-0.02', '-0.01', '-0.00', '0.01', '0.02', '0.03', '0.04', '0.05', '0.06',
@@ -128,9 +136,9 @@ def load_doscar(filename_sufix: str, list_filetags: list = None) -> tuple[list, 
         if block.ndim != 2 or block.shape[0] != nedos:
             raise ValueError("%s: expected %d total-DOS lines." % (filename, nedos))
         if block.shape[1] == 5:
-            dos = block[:, 1] + block[:, 2]
+            dos = {'total': block[:, 1] + block[:, 2], 'up': block[:, 1], 'down': block[:, 2]}[spin]
         elif block.shape[1] == 3:
-            dos = block[:, 1]
+            dos = block[:, 1] if spin == 'total' else 0.5 * block[:, 1]
         else:
             raise ValueError("%s: unexpected number of columns (%d) in the total-DOS block."
                              % (filename, block.shape[1]))

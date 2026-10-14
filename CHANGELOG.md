@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### New
+
+- Spin convention of the electronic term: `nDeb(..., el_spin='total' | 'per_spin')` and
+  `Electronic(..., spin=...)`. `'total'` (default, unchanged results): F_el = −(π²/6) k_B² T² N(E_F) with the total DOS;
+  `'per_spin'`: π²/3 with the DOS of one spin channel (the convention of the supplementary material). For a
+  non-magnetic system both give the same F_el; π²/3 with the total DOS counts the electrons twice.
+- `load_doscar(..., spin='total' | 'up' | 'down')`: one spin channel (ISPIN = 2), or half the DOS (ISPIN = 1).
+
 ## 3.0.0 (2026-10)
 
 Version 3.0.0 is the result of a complete review of the code (formulas, derivatives, units, file readers,

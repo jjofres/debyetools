@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from debyetools.electronic import fit_electronic, N_at_Fermi, NfV_poly_fun
+from debyetools.electronic import fit_electronic, N_at_Fermi, NfV_poly_fun, Electronic
 from debyetools.aux_functions import load_doscar, load_V_E
 import os
 HERE = os.path.dirname(os.path.abspath(__file__))  # test data paths are relative to this file
@@ -47,6 +47,31 @@ class ElectronicContributionFittingTestCase(unittest.TestCase):
         np.testing.assert_allclose(NfV_poly_fun(Vs, *q), 0.4 * (Vs / V0) ** (2 / 3), rtol=1e-4)
         with self.assertRaises(ValueError):
             fit_electronic(Vs, None, [Eg], [0.1 + 0.05 * Eg], [6.0], mode='scaling')
+
+    def test_spin_convention(self):
+        """Electronic(spin='per_spin') with the DOS of one spin channel = Electronic(spin='total') with the total DOS."""
+        q = np.array([4.2770342390528375e+00, -6.1243936920817429e+05, 3.4610090270859642e+09, 1.9514025478772152e+15])
+        el_t, el_s = Electronic(*q, spin='total'), Electronic(*(q / 2), spin='per_spin')
+        el_t2 = Electronic(*q, spin='per_spin')
+        T, V = np.array([10., 300., 1500.]), np.array([9.5e-6, 1.0e-5, 1.05e-5])
+        for name in ('E', 'S', 'F', 'dFdV_T', 'dFdT_V', 'd2FdT2_V', 'd2FdV2_T', 'd3FdV3_T', 'd4FdV4_T',
+                     'd2FdVdT', 'd3FdV2dT', 'd3FdVdT2'):
+            a, b, c = getattr(el_t, name)(T, V), getattr(el_s, name)(T, V), getattr(el_t2, name)(T, V)
+            np.testing.assert_allclose(b, a, rtol=1e-14, atol=0, err_msg=name)
+            np.testing.assert_allclose(c, 2 * a, rtol=1e-14, atol=0, err_msg=name)
+        self.assertEqual(Electronic(*q).pf, 1 / 6)
+        with self.assertRaises(ValueError):
+            Electronic(*q, spin='both')
+
+    def test_load_doscar_spin_channels(self):
+        """load_doscar: up + down = total (ISPIN = 2 files); invalid spin raises."""
+        Et, Nt, Eft = load_doscar(AL + '/DOSCAR.EvV.', list_filetags=AL_TAGS[:3])
+        Eu, Nu, _ = load_doscar(AL + '/DOSCAR.EvV.', list_filetags=AL_TAGS[:3], spin='up')
+        Ed, Nd, _ = load_doscar(AL + '/DOSCAR.EvV.', list_filetags=AL_TAGS[:3], spin='down')
+        for nt, nu, nd in zip(Nt, Nu, Nd):
+            np.testing.assert_allclose(nu + nd, nt, rtol=1e-12, atol=1e-15)
+        with self.assertRaises(ValueError):
+            load_doscar(AL + '/DOSCAR.EvV.', list_filetags=AL_TAGS[:1], spin='both')
 
     def test_length_mismatch(self):
         Vs = np.linspace(7.2e-6, 13.2e-6, 21)

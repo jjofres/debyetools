@@ -136,3 +136,7 @@ debyetools/examples/Nb/calculations/GA_fitting_simple.py
 debyetools/optim_bkp.py
 
 export_dtoutput4cmpnd
+
+docs/_paper_figs/
+
+Claude outputs/
